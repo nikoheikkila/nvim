@@ -1,5 +1,6 @@
 {
   "conform.nvim": { "branch": "master", "commit": "619363c30309d29ffa631e67c8183f2a72caa373" },
+  "laserwave.nvim": { "branch": "main", "commit": "c29fc55d33e0606d88939637fe8165041a4c8600" },
   "lazy.nvim": { "branch": "main", "commit": "306a05526ada86a7b30af95c5cc81ffba93fef97" },
   "markdown-plus.nvim": { "branch": "main", "commit": "54550db5a4b722f7c597828b8fa8f16945cf1b75" },
   "render-markdown.nvim": { "branch": "main", "commit": "dcb77511efb1665b5073d8396a0033b3e4d680f6" }

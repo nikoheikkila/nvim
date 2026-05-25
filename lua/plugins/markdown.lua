@@ -90,6 +90,17 @@ return {
     opts = {
       render_modes = true,
     },
+    config = function(_, opts)
+      require("render-markdown").setup(opts)
+      -- render-markdown sets its own opaque code block backgrounds that don't
+      -- inherit theme transparency. Clear them so the terminal bg shows through.
+      local function fix_code_hl()
+        vim.api.nvim_set_hl(0, "RenderMarkdownCode", { bg = "NONE" })
+        vim.api.nvim_set_hl(0, "RenderMarkdownCodeBorder", { bg = "NONE" })
+      end
+      fix_code_hl()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = fix_code_hl })
+    end,
   },
 
   {
