@@ -1,3 +1,88 @@
+local function rename_image_at_cursor()
+  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+  col = col + 1 -- convert 0-based to 1-based
+  local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
+
+  -- Scan line for image references ![alt](path) and find one under cursor
+  local found_path
+  local pos = 1
+  while pos <= #line do
+    local s = line:find("!%[", pos)
+    if not s then break end
+
+    local cb = line:find("%]%(", s)
+    if not cb then break end
+
+    local cp = line:find(")", cb + 2, true)
+    if not cp then break end
+
+    if col >= s and col <= cp then
+      local raw = line:sub(cb + 2, cp - 1)
+      -- Strip optional title (quoted string after space)
+      found_path = raw:match("^([^%s\"']+)")
+      break
+    end
+
+    pos = cp + 1
+  end
+
+  if not found_path or found_path == "" then
+    vim.notify("No image reference under cursor", vim.log.levels.WARN)
+    return
+  end
+
+  if found_path:match("^https?://") then
+    vim.notify("Cannot rename a remote URL", vim.log.levels.WARN)
+    return
+  end
+
+  local buf_file = vim.api.nvim_buf_get_name(0)
+  if buf_file == "" then
+    vim.notify("Buffer has no file — save it first", vim.log.levels.ERROR)
+    return
+  end
+  local buf_dir = vim.fn.fnamemodify(buf_file, ":h")
+
+  local full_path = found_path:sub(1, 1) == "/"
+    and found_path
+    or vim.fn.fnamemodify(buf_dir .. "/" .. found_path, ":p")
+
+  if vim.fn.filereadable(full_path) == 0 then
+    vim.notify("File not found: " .. full_path, vim.log.levels.ERROR)
+    return
+  end
+
+  local current_name = vim.fn.fnamemodify(found_path, ":t")
+
+  vim.ui.input({ prompt = "Rename image to: ", default = current_name }, function(new_name)
+    if not new_name or new_name == "" or new_name == current_name then
+      return
+    end
+
+    -- Replace the filename component while keeping the directory prefix
+    local new_path = found_path:gsub("([^/]+)$", function() return new_name end, 1)
+    local new_full = found_path:sub(1, 1) == "/"
+      and new_path
+      or vim.fn.fnamemodify(buf_dir .. "/" .. new_path, ":p")
+
+    local ok, err = os.rename(full_path, new_full)
+    if not ok then
+      vim.notify("Rename failed: " .. (err or "unknown error"), vim.log.levels.ERROR)
+      return
+    end
+
+    -- Replace all occurrences of the old path in the buffer
+    local bufnr = vim.api.nvim_get_current_buf()
+    local all_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    for i, l in ipairs(all_lines) do
+      all_lines[i] = l:gsub(vim.pesc(found_path), function() return new_path end)
+    end
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, all_lines)
+
+    vim.notify(("Renamed: %s → %s"):format(found_path, new_path), vim.log.levels.INFO)
+  end)
+end
+
 local function setup_keymaps(buf)
   -- Bold: plugin uses ** correctly
   vim.keymap.set({ "n", "x" }, "<C-b>", "<Plug>(MarkdownPlusBold)", { buffer = buf, desc = "Toggle bold" })
@@ -54,6 +139,7 @@ local function setup_keymaps(buf)
   -- Image
   vim.keymap.set("n", "<C-S-I>", "<Plug>(MarkdownPlusInsertImage)", { buffer = buf, desc = "Insert image" })
   vim.keymap.set("x", "<C-S-I>", "<Plug>(MarkdownPlusSelectionToImage)", { buffer = buf, desc = "Selection to image" })
+  vim.keymap.set("n", "<F2>", rename_image_at_cursor, { buffer = buf, desc = "Rename image at cursor" })
 end
 
 return {
