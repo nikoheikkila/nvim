@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "lua-guide": {
+      "source": "ar4mirez/samuel",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/lua-guide/SKILL.md",
+      "computedHash": "bcea5eddc74ee18023de98d97203aabbff91241652159f6ca56c29785e9825b9"
+    }
+  }
+}
