@@ -11,8 +11,12 @@ jobs:
     name: Lint & Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            build-type: mingw
 
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +25,7 @@ jobs:
         uses: leafo/gh-actions-lua@v10
         with:
           luaVersion: "5.4"
+          buildType: ${{ matrix.build-type }}
 
       - name: Set up LuaRocks
         uses: leafo/gh-actions-luarocks@v4
