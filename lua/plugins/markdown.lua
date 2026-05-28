@@ -1,37 +1,18 @@
+local mu = require("lib.markdown_utils")
+
 local function rename_image_at_cursor()
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
   col = col + 1 -- convert 0-based to 1-based
   local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
 
-  -- Scan line for image references ![alt](path) and find one under cursor
-  local found_path
-  local pos = 1
-  while pos <= #line do
-    local s = line:find("!%[", pos)
-    if not s then break end
-
-    local cb = line:find("%]%(", s)
-    if not cb then break end
-
-    local cp = line:find(")", cb + 2, true)
-    if not cp then break end
-
-    if col >= s and col <= cp then
-      local raw = line:sub(cb + 2, cp - 1)
-      -- Strip optional title (quoted string after space)
-      found_path = raw:match("^([^%s\"']+)")
-      break
-    end
-
-    pos = cp + 1
-  end
+  local found_path = mu.find_image_path_at(line, col)
 
   if not found_path or found_path == "" then
     vim.notify("No image reference under cursor", vim.log.levels.WARN)
     return
   end
 
-  if found_path:match("^https?://") then
+  if mu.is_remote_url(found_path) then
     vim.notify("Cannot rename a remote URL", vim.log.levels.WARN)
     return
   end
@@ -59,8 +40,7 @@ local function rename_image_at_cursor()
       return
     end
 
-    -- Replace the filename component while keeping the directory prefix
-    local new_path = found_path:gsub("([^/]+)$", function() return new_name end, 1)
+    local new_path = mu.replace_filename(found_path, new_name)
     local new_full = found_path:sub(1, 1) == "/"
       and new_path
       or vim.fn.fnamemodify(buf_dir .. "/" .. new_path, ":p")
@@ -113,24 +93,8 @@ local function setup_keymaps(buf)
   local function checklist_toggle()
     local row = vim.api.nvim_win_get_cursor(0)[1]
     local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
-    if line == "" then
-      return
-    end
-    local new_line
-    if line:match("^%s*[%-%+%*]%s+%[.?%]") then
-      -- Checklist item: toggle [ ] <-> [x]
-      new_line = line:gsub("%[(.?)%]", function(state)
-        return (state == "x" or state == "X") and "[ ]" or "[x]"
-      end, 1)
-    elseif line:match("^%s*[%-%+%*]%s") then
-      -- List item without checkbox: add [ ]
-      new_line = line:gsub("^(%s*[%-%+%*]%s+)", "%1[ ] ", 1)
-    else
-      -- Plain line: prepend "- [ ] "
-      local indent = line:match("^(%s*)") or ""
-      local content = line:match("^%s*(.*)") or ""
-      new_line = indent .. "- [ ] " .. content
-    end
+    local new_line = mu.toggle_checklist_line(line)
+    if new_line == line then return end
     vim.api.nvim_buf_set_lines(0, row - 1, row, false, { new_line })
   end
   vim.keymap.set({ "n", "i" }, "<C-l>", checklist_toggle, { buffer = buf, desc = "Toggle checklist item" })
