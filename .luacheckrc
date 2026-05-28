@@ -1,1 +1,1 @@
-globals = { "vim", "jit" }
+globals = { "vim" }

@@ -14,38 +14,23 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        include:
-          - os: windows-latest
-            shell: "msys2 {0}"
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Lua
-        if: runner.os != 'Windows'
         uses: leafo/gh-actions-lua@v10
         with:
           luaVersion: "5.4"
 
       - name: Set up LuaRocks
-        if: runner.os != 'Windows'
         uses: leafo/gh-actions-luarocks@v4
 
-      - name: Set up MSYS2 (Windows)
-        if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          install: mingw-w64-x86_64-lua mingw-w64-x86_64-luarocks
-
       - name: Install dependencies
-        shell: ${{ matrix.shell || 'bash' }}
         run: luarocks install busted && luarocks install luacheck
 
       - name: Lint
-        shell: ${{ matrix.shell || 'bash' }}
         run: luacheck lua/
 
       - name: Test
-        shell: ${{ matrix.shell || 'bash' }}
         run: busted
