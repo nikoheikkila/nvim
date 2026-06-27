@@ -8,11 +8,14 @@
 ├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
 └── lua/
     ├── config/
+    │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
     │   └── options.lua        # Core editor options (wrap, textwidth, colorcolumn)
     ├── lib/
-    │   └── markdown_utils.lua # Pure-Lua utility functions for markdown editing
+    │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
+    │   └── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
     └── plugins/
+        ├── git.lua            # Lazygit integration (lazygit.nvim)
         ├── markdown.lua       # All markdown plugin specs
         ├── theme.lua          # Colorscheme (laserwave.nvim, transparent)
         ├── ui.lua             # UI plugins (bufferline.nvim, lualine.nvim)
@@ -21,7 +24,7 @@
     └── markdown_utils_spec.lua  # Busted unit tests for lib/markdown_utils.lua
 ```
 
-`init.lua` calls `require("config.options")` then `require("config.lazy")`. All plugin specs live under `lua/plugins/` and are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new file to `lua/plugins/` is enough to activate new plugins.
+`init.lua` calls `require("config.options")`, then `require("config.autocmds")`, then `require("config.lazy")`. All plugin specs live under `lua/plugins/` and are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new file to `lua/plugins/` is enough to activate new plugins.
 
 ## Plugin Manager
 
@@ -166,6 +169,14 @@ Loads the laserwave colorscheme with `transparent = true` so the terminal backgr
 ### `lua/plugins/zen.lua` — `folke/zen-mode.nvim`
 
 Distraction-free writing mode. `<C-z>` toggles Zen Mode (global keymap). Disables line numbers, sign column, cursorline, and sets window width to 80 columns.
+
+### `lua/plugins/git.lua` — `kdheepak/lazygit.nvim`
+
+Opens Lazygit in a floating window ("modal") over the current buffer. Lazy-loaded via its `keys` and `cmd` triggers; depends on `nvim-lua/plenary.nvim` for path handling.
+
+- `<leader>g` (global keymap) runs `:LazyGitCurrentFile`, scoping Lazygit to the **current file's Git repository** (falling back to the project/cwd Git root). Quit Lazygit with `q` to return to the buffer.
+- A **PATH guard** checks `vim.fn.executable("lazygit")` first and emits a clean `vim.notify` error instead of a raw stack trace when the binary is missing.
+- Floating-window options are set in `init` (`winblend = 0`, `scaling_factor = 0.9`) to stay consistent with the transparent laserwave theme.
 
 ## Adding New Plugins
 
