@@ -4,11 +4,12 @@
 
 ```
 ~/.config/nvim/
-├── init.lua                   # Entry point — requires config.options then config.lazy
+├── init.lua                   # Entry point — requires config.options, autocmds, keymaps, then config.lazy
 ├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
 └── lua/
     ├── config/
     │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save)
+    │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
     │   └── options.lua        # Core editor options (wrap, textwidth, colorcolumn)
     ├── lib/
@@ -24,7 +25,7 @@
     └── markdown_utils_spec.lua  # Busted unit tests for lib/markdown_utils.lua
 ```
 
-`init.lua` calls `require("config.options")`, then `require("config.autocmds")`, then `require("config.lazy")`. All plugin specs live under `lua/plugins/` and are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new file to `lua/plugins/` is enough to activate new plugins.
+`init.lua` calls `require("config.options")`, then `require("config.autocmds")`, then `require("config.keymaps")`, then `require("config.lazy")`. All plugin specs live under `lua/plugins/` and are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new file to `lua/plugins/` is enough to activate new plugins.
 
 ## Plugin Manager
 
@@ -45,6 +46,21 @@ Sets core editor options applied before lazy.nvim loads:
 | `linebreak` | `true` | Break at word boundaries, not mid-word |
 | `textwidth` | `120` | Hard-wrap column for formatting operators |
 | `colorcolumn` | `"120"` | Visual ruler at column 120 |
+
+## Core Keymaps (`lua/config/keymaps.lua`)
+
+Global, non-plugin keymaps loaded from `init.lua` before lazy.nvim. Currently holds the line-move bindings, which move the current line (or a visual selection) up/down using the `:m[ove]` command with `==` to reindent:
+
+| Key | Mode | Action |
+|---|---|---|
+| `<M-Up>` | n | Move current line up |
+| `<M-Down>` | n | Move current line down |
+| `<M-Up>` | i | Move current line up (returns to insert via `gi`) |
+| `<M-Down>` | i | Move current line down (returns to insert via `gi`) |
+| `<M-Up>` | x | Move selection up (stays selected via `gv=gv`) |
+| `<M-Down>` | x | Move selection down (stays selected via `gv=gv`) |
+
+**Terminal compatibility:** `<M-…>` is the Alt/Option key. On macOS the Option key does not send a Meta modifier by default — the terminal must be configured to (Kitty/Ghostty/WezTerm via the Kitty keyboard protocol, or iTerm2/Terminal.app with "Use Option as Meta key"). Where it is not, the mappings are silently inert. Verify registration with `:verbose imap <M-Up>`.
 
 ## Markdown Utilities (`lua/lib/markdown_utils.lua`)
 
