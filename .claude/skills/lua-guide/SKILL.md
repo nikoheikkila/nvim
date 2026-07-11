@@ -233,6 +233,8 @@ max_line_length = 120
 max_cyclomatic_complexity = 10
 ```
 
+Many Neovim plugins export a convenience global alongside their module (e.g. `folke/snacks.nvim` sets `_G.Snacks`). If `.luacheckrc` doesn't allowlist that name under `globals`/`read_globals`, referencing it directly fails lint. Prefer `require("plugin_name")` over the bare global in config/keymaps — it produces identical behavior and needs no `.luacheckrc` change. Only add the global to `read_globals` if there's a specific reason to match upstream examples verbatim.
+
 ### StyLua
 
 ```toml
