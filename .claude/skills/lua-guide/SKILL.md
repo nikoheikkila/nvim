@@ -221,9 +221,39 @@ end)
 - Test edge cases: `nil`, empty tables, boundary values, type mismatches
 - Run: `busted --verbose`
 
+### Headless Neovim Verification
+
+- `vim.ui.input()`/`vim.ui.select()` are blocking, modal calls — driving them through synthetic `vim.api.nvim_feedkeys()` in `nvim --headless` is timing-fragile (typed keys can leak into normal-mode commands instead of reaching the prompt), so don't rely on it as a test technique. Instead, call the logic that sits behind the prompt directly and feed its result straight into the next step, bypassing the interactive prompt entirely.
+- To simulate a missing external binary without uninstalling it, build a scratch `PATH` containing symlinks to every entry of the real `PATH` except the target binary — don't just strip the target's whole directory from `$PATH`, since unrelated tools (including `nvim` itself) often live alongside it (e.g. both under `/opt/homebrew/bin`).
+
 ## Tooling
 
-### Luacheck
+### Selene (Recommended)
+
+A modern, actively-maintained Lua linter written in Rust (https://github.com/Kampfkarren/selene) — a standalone binary with no Lua VM dependency, so it can never suffer a Lua-version incompatibility the way a Lua-based linter can. Config is TOML, with English-named lints (not luacheck's numeric codes):
+
+```toml
+# selene.toml
+std = "lua51+vim"   -- LuaJIT (Neovim's embedded Lua) is a Lua 5.1 dialect
+
+[rules]
+mixed_table = "allow"   -- lazy.nvim-style `{ "plugin", key = value }` specs trip this otherwise
+```
+
+Selene ships **no built-in Neovim/`vim` standard library** — only `lua51`/`lua52`/`lua53`/`lua54`/`roblox` are built in. For Neovim plugin/config code, vendor a small custom std file named `vim.yml` next to `selene.toml` (the modern YAML std format; TOML std files are the legacy format):
+
+```yaml
+# vim.yml
+globals:
+  vim:
+    any: true
+```
+
+Many Neovim plugins export a convenience global alongside their module (e.g. `folke/snacks.nvim` sets `_G.Snacks`). If `vim.yml` doesn't declare that name, referencing it directly fails lint. Prefer `require("plugin_name")` over the bare global in config/keymaps — it produces identical behavior and needs no `vim.yml` change.
+
+### Luacheck (Legacy)
+
+Luacheck (https://github.com/mpeterv/luacheck) is unmaintained since October 2018 (v1.2.0 was the final release) — prefer Selene above for new projects. If working on a legacy project that still uses it:
 
 ```lua
 -- .luacheckrc
@@ -233,7 +263,7 @@ max_line_length = 120
 max_cyclomatic_complexity = 10
 ```
 
-Many Neovim plugins export a convenience global alongside their module (e.g. `folke/snacks.nvim` sets `_G.Snacks`). If `.luacheckrc` doesn't allowlist that name under `globals`/`read_globals`, referencing it directly fails lint. Prefer `require("plugin_name")` over the bare global in config/keymaps — it produces identical behavior and needs no `.luacheckrc` change. Only add the global to `read_globals` if there's a specific reason to match upstream examples verbatim.
+Same `_G.Snacks`-style global caveat applies (`globals`/`read_globals` in `.luacheckrc`). Being written in Lua itself (unlike Selene), luacheck is also vulnerable to Lua-version incompatibilities in its own runtime — e.g. `luacheck` 1.2.0 crashes on load under Lua 5.5 (`attempt to assign to const variable`), so a plain `luarocks install luacheck` on a machine whose default Lua targets 5.5 (as Homebrew's does) produces a binary that cannot run at all.
 
 ### StyLua
 
@@ -252,10 +282,10 @@ call_parentheses = "Always"
 lua myfile.lua                # Run Lua script
 luajit myfile.lua             # Run with LuaJIT
 busted --verbose              # Run tests
-luacheck .                    # Lint
+selene .                      # Lint
 stylua .                      # Format
 luarocks install busted       # Install test framework
-luarocks install luacheck     # Install linter
+brew install selene           # Install linter (or: cargo install selene)
 ```
 
 ## References
@@ -272,7 +302,8 @@ For detailed patterns and examples, see:
 - [LuaJIT FFI Tutorial](https://luajit.org/ext_ffi_tutorial.html)
 - [Neovim Lua Guide](https://neovim.io/doc/user/lua-guide.html)
 - [Busted Testing Framework](https://lunarmodules.github.io/busted/)
-- [Luacheck Linter](https://github.com/mpeterv/luacheck)
+- [Selene Linter](https://github.com/Kampfkarren/selene)
+- [Luacheck Linter](https://github.com/mpeterv/luacheck) (legacy/unmaintained since 2018)
 - [StyLua Formatter](https://github.com/JohnnyMorganz/StyLua)
 - [Love2D Wiki](https://love2d.org/wiki/Main_Page)
 - [Lua Style Guide](https://github.com/Olivine-Labs/lua-style-guide)

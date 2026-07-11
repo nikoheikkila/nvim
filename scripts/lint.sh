@@ -2,9 +2,9 @@
 # Same lint command CI runs (.github/workflows/ci.yml).
 set -eu
 
-if ! command -v luacheck >/dev/null 2>&1; then
-  echo "luacheck not found. Install it with: luarocks install luacheck" >&2
+if ! command -v selene >/dev/null 2>&1; then
+  echo "selene not found. Install it with: brew install selene (or: cargo install selene)" >&2
   exit 1
 fi
 
-exec luacheck lua/
+exec selene lua/

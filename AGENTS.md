@@ -10,9 +10,12 @@
 ├── AGENTS.md                  # This file — project instructions (single source of truth)
 ├── CLAUDE.md                  # Symlink -> AGENTS.md
 ├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
+├── selene.toml                # Lua linter config (std = "lua51+vim")
+├── vim.yml                    # Vendored selene std: declares the `vim` global
 ├── scripts/
 │   ├── lazy-install.sh        # Safe plugin fetch: `:Lazy install`, not `:Lazy sync`
-│   └── lint.sh                # Runs `luacheck lua/` (same command CI runs)
+│   ├── lint.sh                # Runs `selene lua/` (same command CI runs)
+│   └── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
 └── lua/
     ├── config/
     │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save)
@@ -21,16 +24,18 @@
     │   └── options.lua        # Core editor options (wrap, textwidth, colorcolumn)
     ├── lib/
     │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
-    │   └── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
+    │   ├── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
+    │   └── search_utils.lua   # Pure-Lua case-insensitive substring matcher (grep fallback)
     └── plugins/
         ├── git.lua            # Lazygit integration (lazygit.nvim)
         ├── markdown.lua       # All markdown plugin specs
-        ├── picker.lua         # Fuzzy file picker (snacks.nvim, picker module only)
+        ├── picker.lua         # Fuzzy file picker + project grep (snacks.nvim, picker module only)
         ├── theme.lua          # Colorscheme (laserwave.nvim, transparent)
         ├── ui.lua             # UI plugins (bufferline.nvim, lualine.nvim)
         └── zen.lua            # Distraction-free writing (zen-mode.nvim)
 └── tests/
-    └── markdown_utils_spec.lua  # Busted unit tests for lib/markdown_utils.lua
+    ├── markdown_utils_spec.lua  # Busted unit tests for lib/markdown_utils.lua
+    └── search_utils_spec.lua    # Busted unit tests for lib/search_utils.lua
 ```
 
 `init.lua` calls `require("config.options")`, then `require("config.autocmds")`, then `require("config.keymaps")`, then `require("config.lazy")`. All plugin specs live under `lua/plugins/` and are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new file to `lua/plugins/` is enough to activate new plugins.
@@ -46,7 +51,7 @@
 
 ### Neovim plugin globals vs `require`
 
-Several plugins (e.g. `folke/snacks.nvim`) export a convenience global alongside their module (e.g. `_G.Snacks`). This repo's `.luacheckrc` only allowlists `globals = { "vim" }`. Prefer `require("plugin_name")` over the bare global in keymaps/config — it produces identical behavior and keeps `luacheck lua/` green without editing `.luacheckrc`. Only add the global to `read_globals` if there's a specific reason to match upstream examples verbatim.
+Several plugins (e.g. `folke/snacks.nvim`) export a convenience global alongside their module (e.g. `_G.Snacks`). This repo's `selene.toml` sets `std = "lua51+vim"`, which recognizes only the `vim` global (declared in the vendored `vim.yml` std file) — not plugin-injected globals like `Snacks`. Prefer `require("plugin_name")` over the bare global in keymaps/config — it produces identical behavior and keeps `selene lua/` green without editing `vim.yml`. Only add a plugin's global to `vim.yml` if there's a specific reason to match upstream examples verbatim.
 
 ## Editor Options (`lua/config/options.lua`)
 
@@ -208,12 +213,19 @@ Opens Lazygit in a floating window ("modal") over the current buffer. Lazy-loade
 
 ### `lua/plugins/picker.lua` — `folke/snacks.nvim` (picker module only)
 
-Fuzzy file finder, scoped to the current project.
+Fuzzy file finder and project grep, scoped to the current project.
 
 - `<leader><leader>` (mapleader pressed twice) runs `Snacks.picker.files()`, an fzf-style fuzzy finder: type to filter, `<Up>`/`<Down>` (or `<C-j>`/`<C-k>`) to move the selection, `<Enter>` to open the selected file in the current buffer. These are snacks.nvim's picker defaults — no custom keymaps or confirm actions were added.
+- `<leader>.` runs a full-project text search. If `rg` is on PATH, it calls `Snacks.picker.grep({ cwd = ... })` — snacks' own live-grep-as-you-type picker, using the same default `<Up>`/`<Down>`/`<Enter>`/`q` keymaps as `files`. If `rg` is missing, it `vim.notify`s a warning and falls back to a native-Lua search: prompt for a term via `vim.ui.input`, walk the project once with `vim.fs.dir`, match lines with `lib/search_utils.lua`, and open the same picker UI (`Snacks.picker.pick({ items = ... })`) with the static results.
 - **Project scoping**: `cwd` is computed via `vim.fs.root(0, { ".git" })`, walking up from the current buffer to the enclosing Git repo root, falling back to Neovim's cwd outside a repo — the same pattern already used by `lua/plugins/git.lua`'s Lazygit binding.
 - **Why only the picker module is enabled**: snacks.nvim bundles many unrelated features (dashboard, notifier, indent guides, scratch buffers, terminal, zen mode, file explorer, and more). Every module is opt-in by snacks' own design, so leaving a module out of `opts` keeps it disabled — only `picker = { enabled = true }` is set. `zen-mode.nvim` already covers this repo's distraction-free-writing needs, so snacks' own `zen` module is deliberately left off to avoid a redundant, competing implementation.
-- No external binary is required — `files` opportunistically shells out to `fd`/`ripgrep` if present for faster scanning, otherwise falls back to a pure-Lua directory walker.
+- No external binary is required for `files` — it opportunistically shells out to `fd`/`ripgrep` if present for faster scanning, otherwise falls back to a pure-Lua directory walker. `grep` has no such built-in fallback in snacks itself (`rg` is hardcoded in its source, confirmed by reading `snacks.nvim/lua/snacks/picker/source/grep.lua`) — the native-Lua fallback described above is hand-rolled in this repo, not provided by snacks.
+
+**Custom picker items without a custom finder**
+`Snacks.picker.pick()` accepts a plain `items` table directly (`{ items = {...} }`) — no async `finder` function is required for a static result set; this is what the `<leader>.` fallback relies on. Each item needs: `file` (path, joined with `cwd`), `cwd`, `pos = { line_1based, col_0based }` (used for the jump target and preview), `line` (raw text, rendered in the list), and `text` (used by the picker's own fuzzy re-filter over what's typed). `format = "file"` renders it the same as `files`/`grep`.
+
+**`vim.fs.dir`'s `skip` polarity is inverted from the naive expectation**
+The `skip(dir_name)` callback passed to `vim.fs.dir(path, { skip = ... })` must return `false` to *stop* recursing into that directory — any other return value (including `true`) continues the walk (confirmed in the Neovim runtime source, `vim/fs.lua`'s `opts.skip(f) ~= false` check). Easy to get backwards when writing an ignore-list predicate, e.g. `skip = function(name) return not SKIP_DIRS[vim.fs.basename(name)] end`.
 
 ## Adding New Plugins
 
@@ -252,26 +264,34 @@ or call the plugin's health module directly: `require("plugin_name.health").chec
 
 ## Testing
 
-Tests live in `tests/markdown_utils_spec.lua` and use [Busted](https://lunarmodules.github.io/busted/) with Lua 5.5.
+Tests live in `tests/markdown_utils_spec.lua` and `tests/search_utils_spec.lua`, and use [Busted](https://lunarmodules.github.io/busted/) with Lua 5.5.
 
 ### Install
 
 ```sh
 brew install luarocks
 luarocks install busted
-luarocks install luacheck
+brew install selene   # or: cargo install selene
 ```
 
-Verify: `busted --version` and `luacheck --version`
+Verify: `busted --version` and `selene --version`
+
+`selene` is a standalone Rust binary with no Lua/LuaRocks dependency — unlike a Lua-based linter, it can never break due to a local Lua-version mismatch.
 
 ### Run
 
 ```sh
 busted
-scripts/lint.sh   # or: luacheck lua/
+scripts/lint.sh   # or: selene lua/
 ```
 
-Reads `.busted` at the project root (`ROOT = { "tests" }`). The `package.path` preamble in the spec file makes `lib.markdown_utils` importable without Neovim. `luacheck lua/` is the same command CI runs (`.github/workflows/ci.yml`).
+Reads `.busted` at the project root (`ROOT = { "tests" }`). The `package.path` preamble in the spec file makes `lib.markdown_utils` importable without Neovim. `selene lua/` is the same command CI runs (`.github/workflows/ci.yml`).
+
+### Verifying interactive/headless picker behavior
+
+`vim.ui.input()` (and `vim.ui.select()`) are blocking, modal calls — driving them through synthetic `vim.api.nvim_feedkeys()` in `nvim --headless` is timing-fragile (typed keys can leak into normal-mode commands instead of reaching the prompt) and is not a reliable test technique. To verify code that sits behind a `vim.ui.input` prompt, replicate/call the underlying logic directly (e.g. the same `vim.fs.dir` walk + matcher calls used by the fallback in `lua/plugins/picker.lua`) and hand the result straight to the picker function, bypassing the interactive prompt entirely.
+
+To exercise an executable-guard fallback (e.g. `<leader>.`'s `rg`-missing path, or `<leader>g`'s `lazygit`-missing path) without uninstalling the real binary, use `scripts/test-without-binary.sh <binary> -- <command...>`. It builds a temporary `PATH` containing symlinks to everything except the named binary — safer than naively stripping the binary's whole directory from `$PATH`, since unrelated tools (including `nvim` itself) often live alongside it (e.g. both under `/opt/homebrew/bin`).
 
 ## Terminal Compatibility Note
 

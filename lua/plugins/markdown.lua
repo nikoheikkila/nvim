@@ -55,7 +55,9 @@ local function rename_image_at_cursor()
     local bufnr = vim.api.nvim_get_current_buf()
     local all_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     for i, l in ipairs(all_lines) do
-      all_lines[i] = l:gsub(vim.pesc(found_path), function() return new_path end)
+      all_lines[i] = l:gsub(vim.pesc(found_path), function()
+        return new_path
+      end)
     end
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, all_lines)
 
