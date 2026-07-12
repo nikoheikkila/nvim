@@ -51,8 +51,52 @@ Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
 | [yousefhadder/markdown-plus.nvim](https://github.com/yousefhadder/markdown-plus.nvim) | Core Markdown editing: bold, italic, links, images, checklists, list management |
 | [MeanderingProgrammer/render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | In-buffer rendering of headings, code blocks, tables, and checkboxes |
 | [stevearc/conform.nvim](https://github.com/stevearc/conform.nvim) | Auto-format on save via `prettier` |
+| [nvim-neo-tree/neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) | File tree sidebar with mouse support and bulk file operations |
+| [folke/snacks.nvim](https://github.com/folke/snacks.nvim) | Fuzzy file picker and project-wide text search (picker module only) |
+| [kdheepak/lazygit.nvim](https://github.com/kdheepak/lazygit.nvim) | Lazygit in a floating window |
+| [akinsho/bufferline.nvim](https://github.com/akinsho/bufferline.nvim) | Buffer tabs at the top |
+| [nvim-lualine/lualine.nvim](https://github.com/nvim-lualine/lualine.nvim) | Status line |
+| [folke/zen-mode.nvim](https://github.com/folke/zen-mode.nvim) | Distraction-free writing mode |
+| [lcoram/laserwave.nvim](https://github.com/lcoram/laserwave.nvim) | Colorscheme (transparent background) |
 
 All plugins are managed by [folke/lazy.nvim](https://github.com/folke/lazy.nvim), which bootstraps itself automatically.
+
+## General Shortcuts
+
+The leader key is `Space`.
+
+| Key | Action |
+|---|---|
+| `Space` `Space` | Fuzzy file picker (project-scoped) |
+| `Space` `.` | Live grep across the project |
+| `Space` `e` | Toggle the file tree sidebar |
+| `Space` `g` | Open Lazygit for the current file's repository (quit with `q`) |
+| `Shift+H` / `Shift+L` | Previous / next buffer tab |
+| `Ctrl+Z` | Toggle Zen Mode |
+| `Alt+Up` / `Alt+Down` | Move current line or selection up / down |
+
+## File Explorer
+
+`Space e` toggles a file tree sidebar on the right. The tree follows the file you are editing and supports the mouse (double-click opens files and expands/collapses directories; the wheel scrolls).
+
+Inside the tree:
+
+| Key | Action |
+|---|---|
+| `j`/`k`, `Up`/`Down` | Move between entries |
+| `Enter` | Open file / expand or collapse directory |
+| `l`, `Right` | Open file / expand directory |
+| `h`, `Left` | Collapse directory |
+| `d` | Delete — press `y` to confirm, `n` or `Esc` to abort |
+| `r` | Rename (prompt pre-filled with the current name) |
+| `n` | New file at a typed path (`sub/dir/file.md` creates the parents; a trailing `/` creates a directory) |
+| `N` | New directory |
+| `m` | Move to another path |
+| `v` or `V` | Visual mode — select multiple entries with `j`/`k` or mouse drag |
+| `/` | Fuzzy filter within the tree |
+| `?` | Show all mappings |
+
+With a visual selection active: `d` deletes all selected entries after a single confirmation, `x` cuts and `p` pastes them into a target directory (bulk move), `y` + `p` copies them.
 
 ## Markdown Features
 
@@ -146,11 +190,15 @@ Open Neovim and run:
 :Lazy update
 ```
 
-To pin all plugins to their current versions (updating `lazy-lock.json`):
+This updates plugins and records the new versions in `lazy-lock.json` — commit that file to pin the working set.
 
+**Avoid `:Lazy sync`** — it also bumps every already-installed plugin to the latest commit, which silently changes far more than intended when you only meant to fetch one new plugin. To fetch newly added plugins without touching existing ones, use:
+
+```sh
+scripts/lazy-install.sh
 ```
-:Lazy sync
-```
+
+If `sync` ran by mistake, `git diff lazy-lock.json`, revert the unintended entries, and run `nvim --headless "+Lazy! restore" +qa` to re-checkout plugins to match the lockfile.
 
 ## Health Check
 

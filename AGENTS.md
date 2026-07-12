@@ -13,6 +13,7 @@
 ├── selene.toml                # Lua linter config (std = "lua51+vim")
 ├── vim.yml                    # Vendored selene std: declares the `vim` global
 ├── scripts/
+│   ├── headless-lua.sh        # Run a Lua script in a fully-loaded headless nvim (`nvim -l` skips user config)
 │   ├── lazy-install.sh        # Safe plugin fetch: `:Lazy install`, not `:Lazy sync`
 │   ├── lint.sh                # Runs `selene lua/` (same command CI runs)
 │   └── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
@@ -27,6 +28,7 @@
     │   ├── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
     │   └── search_utils.lua   # Pure-Lua case-insensitive substring matcher (grep fallback)
     └── plugins/
+        ├── explorer.lua       # File-tree sidebar (neo-tree.nvim)
         ├── git.lua            # Lazygit integration (lazygit.nvim)
         ├── markdown.lua       # All markdown plugin specs
         ├── picker.lua         # Fuzzy file picker + project grep (snacks.nvim, picker module only)
@@ -78,6 +80,29 @@ Global, non-plugin keymaps loaded from `init.lua` before lazy.nvim. Currently ho
 | `<M-Down>` | x | Move selection down (stays selected via `gv=gv`) |
 
 **Terminal compatibility:** `<M-…>` is the Alt/Option key. On macOS the Option key does not send a Meta modifier by default — the terminal must be configured to (Kitty/Ghostty/WezTerm via the Kitty keyboard protocol, or iTerm2/Terminal.app with "Use Option as Meta key"). Where it is not, the mappings are silently inert. Verify registration with `:verbose imap <M-Up>`.
+
+## Global Keymap Registry
+
+Every **global** (non-buffer-local) keymap in this config, in one place. **Check this table before choosing a key for a new mapping, and add a row when you create one** — keymaps are otherwise scattered across `keys` tables in six files and finding a free key requires a grep sweep. Buffer-local maps (markdown `<C-*>` keys, the neo-tree tree buffer) are documented in their own plugin sections, not here.
+
+| Key | Mode | Action | Source |
+|---|---|---|---|
+| `<M-Up>` / `<M-Down>` | n, i, v | Move line / selection up/down | `config/keymaps.lua` |
+| `<S-h>` / `<S-l>` | n | Prev / next buffer tab | `plugins/ui.lua` |
+| `[b` / `]b` | n | Prev / next buffer tab | `plugins/ui.lua` |
+| `[B` / `]B` | n | Move buffer tab left / right | `plugins/ui.lua` |
+| `<leader>n` / `<leader>p` | n | Next / prev buffer tab (duplicates `]b`/`[b`) | `plugins/ui.lua` |
+| `<leader>bp` | n | Pin buffer | `plugins/ui.lua` |
+| `<leader>bP` | n | Delete non-pinned buffers | `plugins/ui.lua` |
+| `<leader>br` / `<leader>bl` | n | Delete buffers to the right / left | `plugins/ui.lua` |
+| `<leader>bj` | n | Pick buffer | `plugins/ui.lua` |
+| `<leader>g` | n | Lazygit (current file's repo) | `plugins/git.lua` |
+| `<leader><leader>` | n | Fuzzy file picker (project) | `plugins/picker.lua` |
+| `<leader>.` | n | Project grep | `plugins/picker.lua` |
+| `<leader>e` | n | Toggle file tree sidebar | `plugins/explorer.lua` |
+| `<C-z>` | n | Toggle Zen Mode | `plugins/zen.lua` |
+
+**Prefix caveat:** `<leader>b` is a chord prefix (`bp`/`bP`/`br`/`bl`/`bj`). Mapping bare `<leader>b` would work but every press would pause for `timeoutlen` (~1s) while Neovim disambiguates — avoid single-key mappings that prefix an existing chord family.
 
 ## Markdown Utilities (`lua/lib/markdown_utils.lua`)
 
@@ -195,7 +220,7 @@ Loads the laserwave colorscheme with `transparent = true` so the terminal backgr
 
 ### `lua/plugins/ui.lua`
 
-**`akinsho/bufferline.nvim`** — Buffer tabs at the top. Keymaps: `<S-h>`/`<S-l>` to cycle tabs, `<leader>bd` to delete buffer.
+**`akinsho/bufferline.nvim`** — Buffer tabs at the top. Cycling: `<S-h>`/`<S-l>`, `[b`/`]b`, and `<leader>n`/`<leader>p`; reordering: `[B`/`]B`; pin/close/pick: `<leader>bp`/`bP`/`br`/`bl`/`bj` (full list in the Global Keymap Registry). Right-click on a tab deletes the buffer (`right_mouse_command = "bdelete! %d"`) — there is no `<leader>bd`-style delete keymap.
 
 **`nvim-lualine/lualine.nvim`** — Status line showing mode, git branch, diagnostics, diff stats, and clock.
 
@@ -226,6 +251,65 @@ Fuzzy file finder and project grep, scoped to the current project.
 
 **`vim.fs.dir`'s `skip` polarity is inverted from the naive expectation**
 The `skip(dir_name)` callback passed to `vim.fs.dir(path, { skip = ... })` must return `false` to *stop* recursing into that directory — any other return value (including `true`) continues the walk (confirmed in the Neovim runtime source, `vim/fs.lua`'s `opts.skip(f) ~= false` check). Easy to get backwards when writing an ignore-list predicate, e.g. `skip = function(name) return not SKIP_DIRS[vim.fs.basename(name)] end`.
+
+### `lua/plugins/explorer.lua` — `nvim-neo-tree/neo-tree.nvim`
+
+File-tree sidebar on the right (`window.position = "right"` — neo-tree's default is left; the default width of 40 is deliberately not restated in `opts`). Lazy-loaded via `keys`/`cmd`, so startup is unaffected; the first toggle has a one-time load delay. Adds one new dependency, `MunifTanjim/nui.nvim` — `plenary.nvim` and `nvim-web-devicons` were already installed (lazygit.nvim, bufferline/lualine). Netrw hijacking is explicitly disabled (`hijack_netrw_behavior = "disabled"`): lazy-loading means neo-tree could never hijack `nvim <dir>` at startup anyway, and disabling it keeps `:e <dir>` consistent after the plugin loads. `follow_current_file` keeps the tree cursor on the buffer being edited. `close_if_last_window = true` exits Neovim cleanly instead of leaving the sidebar as the last window.
+
+#### Global keymap
+
+| Key | Mode | Action |
+|---|---|---|
+| `<leader>e` | n | Toggle the file tree sidebar |
+
+The toggle also works while the tree is focused: neo-tree registers its buffer-local `<space>` (toggle_node) with `nowait = false`, so `<leader>`-prefixed chords still resolve. If upstream ever flips that flag, add `["<space>"] = "none"` to `window.mappings`.
+
+#### Tree-buffer keymaps (buffer-local)
+
+| Key | Action | Default or remapped? |
+|---|---|---|
+| `j`/`k`, `<Up>`/`<Down>` | Move between entries | Native (deliberately unmapped) |
+| `<CR>` | Open file / toggle directory | Default (`open`) |
+| `l`, `<Right>` | Open file / expand directory | Remapped — default `l` is `focus_preview`; preview stays on `P` |
+| `h`, `<Left>` | Collapse directory (on a file: jump to parent and collapse it) | Remapped (`close_node`) |
+| `d` | Delete with confirm prompt | Default |
+| `r` | Rename (prompt pre-filled) | Default |
+| `m` | Move to another path (prompt, relative to tree root) | Default |
+| `n` | New file at typed path (nested parents auto-created; trailing `/` creates a directory) | Remapped from default `a` |
+| `N` | New directory (dedicated prompt) | Remapped from default `A` |
+| `v` | Enter linewise Visual mode | Remapped — see visual-mode section below |
+| `<2-LeftMouse>` | Open file / toggle directory | Default (single click positions the cursor; wheel scrolls — Neovim's default `mouse=nvi`) |
+| `/` | Fuzzy filter within the tree | Default |
+
+`n`/`N` shadow search-next/prev only inside the tree buffer (all mappings are buffer-local), where `/` is neo-tree's fuzzy filter rather than vim search anyway. Single-click-to-open was deliberately not bound: it would make it impossible to click merely to focus the tree, and it fights mouse-drag visual selection. If ever wanted, it's one line: `["<LeftRelease>"] = "open"`.
+
+#### Visual-mode bulk operations
+
+For every mapping, neo-tree's renderer looks up `state.commands[func .. "_visual"]` and, when it exists, auto-maps the same key buffer-locally in visual mode. So `v`/`V` + motion (or mouse drag) selects multiple entries, then `d` bulk-deletes with a single confirm, `x` cuts and `p` on a directory bulk-moves, `y` + `p` bulk-copies. `r` and `m` have no `_visual` variants — bulk move is the `x`+`p` flow.
+
+**Why `v` is remapped to linewise `V`:** Vim disables `'cursorline'` while Visual mode is active, and charwise `v` highlights only the single character under the cursor until the selection grows — so entering visual mode appeared to lose the current-entry highlight entirely. Tree entries are whole lines, so `v` enters linewise Visual mode via a function mapping (`nvim_feedkeys("V", "n", false)`), keeping the entry visibly highlighted from the first keypress.
+
+#### Single-keypress confirmations
+
+Neo-tree's default confirmation dialog is a NUI popup that requires typing `y`/`n` and then pressing `<CR>`. The `config` function in `explorer.lua` replaces `require("neo-tree.ui.inputs").confirm` with a `vim.fn.confirm()`-based implementation: `y` confirms immediately, `n` or `<Esc>` aborts, and bare `<CR>` defaults to No. This affects every neo-tree confirmation (delete, overwrite on move/copy conflicts); text prompts (rename/add/move) keep their floating popups because only `confirm` is patched, not `input`. This is the same documented-patch approach as markdown.lua's italic pattern override — if the patch ever breaks after a neo-tree update, check that `M.confirm`'s signature in `lua/neo-tree/ui/inputs.lua` still matches `(message, callback?)` with a blocking boolean return when `callback` is nil.
+
+#### Transparency
+
+No highlight patching is needed (unlike `RenderMarkdownCode`): laserwave's `transparent = true` clears `Normal`'s background, `NormalNC` links to `Normal`, and laserwave's own `groups/plugins/neotree.lua` deliberately leaves `NeoTreeNormal`/`NeoTreeNormalNC`/`NeoTreeEndOfBuffer` undefined, so neo-tree's link-to-`Normal` defaults inherit the transparency (laserwave does ship fg-only `NeoTreeGit*` status colors). If a future update introduces an opaque region, follow the `markdown.lua` `ColorScheme`-autocmd precedent, clearing only `bg` and preserving `fg`.
+
+#### Verifying file operations headlessly
+
+The `d`/`r`/`n`/`m`/`N` prompts are nui popups — like `vim.ui.input`, unreliable to drive with feedkeys headlessly. Instead, stub the prompt module directly and call the same `fs_actions` functions the mappings invoke (this is how the setup was originally verified):
+
+```lua
+local inputs = require("neo-tree.ui.inputs")
+inputs.input = function(_, _, callback) callback("canned-answer") end
+inputs.confirm = function(_, callback) callback(true) end
+local fs = require("neo-tree.sources.filesystem.lib.fs_actions")
+-- fs.create_node(dir, nil, dir) / fs.rename_node(path, nil) / etc.
+```
+
+The operations complete via async libuv callbacks — `vim.wait()` for the expected filesystem state instead of asserting immediately.
 
 ## Adding New Plugins
 
@@ -292,6 +376,21 @@ Reads `.busted` at the project root (`ROOT = { "tests" }`). The `package.path` p
 `vim.ui.input()` (and `vim.ui.select()`) are blocking, modal calls — driving them through synthetic `vim.api.nvim_feedkeys()` in `nvim --headless` is timing-fragile (typed keys can leak into normal-mode commands instead of reaching the prompt) and is not a reliable test technique. To verify code that sits behind a `vim.ui.input` prompt, replicate/call the underlying logic directly (e.g. the same `vim.fs.dir` walk + matcher calls used by the fallback in `lua/plugins/picker.lua`) and hand the result straight to the picker function, bypassing the interactive prompt entirely.
 
 To exercise an executable-guard fallback (e.g. `<leader>.`'s `rg`-missing path, or `<leader>g`'s `lazygit`-missing path) without uninstalling the real binary, use `scripts/test-without-binary.sh <binary> -- <command...>`. It builds a temporary `PATH` containing symlinks to everything except the named binary — safer than naively stripping the binary's whole directory from `$PATH`, since unrelated tools (including `nvim` itself) often live alongside it (e.g. both under `/opt/homebrew/bin`).
+
+### Running Lua verification scripts headlessly
+
+Use `scripts/headless-lua.sh <script.lua> [working-dir]` to run a Lua script inside a fully-initialized Neovim. The pitfalls it exists to avoid:
+
+- **`nvim -l script.lua` does NOT load the user config** — it runs in script mode, lazy.nvim never bootstraps, and `require("<any plugin>")` fails with `module not found`. The working invocation is `nvim --headless -c "luafile script.lua" -c qa`.
+- **`nvim --cd <dir>` is not a real flag** (it errors with "Unknown option argument") — `cd` in the shell first, or use `--cmd "cd <dir>"`.
+- **Exit codes**: a Lua error inside `-c` does not reliably fail the process. Call `vim.cmd("cquit 1")` from the script on assertion failure so CI/shell callers see a non-zero exit.
+
+Patterns that proved reliable for verifying plugin behavior headlessly:
+
+- **Buffer-local keymaps**: focus the plugin window (e.g. `:Neotree focus`), then check `vim.fn.maparg(key, mode, false, true)` — `.buffer == 1` proves the mapping registered, `.desc` usually names the plugin command it's bound to. Works for visual-mode maps too (`mode = "x"`).
+- **Mode transitions** (e.g. "does pressing `v` enter linewise visual?"): `vim.api.nvim_feedkeys(key, "m", false)` followed by `vim.api.nvim_feedkeys("", "x", false)` to flush, then assert on `vim.fn.mode()`.
+- **Prompt-driven file operations**: don't feedkeys into prompts — stub the plugin's own prompt module and call the underlying action functions directly (see the neo-tree section's "Verifying file operations headlessly"). Lua module caching means every internal reference shares the stubbed table.
+- **Async plugin fs operations**: plugin file actions (e.g. neo-tree's `fs_actions`) complete via async libuv callbacks. Calling two in a row races — the second sees the first's work half-done and fails deep inside the plugin with a confusing nil-index error. `vim.wait(2000, cond_fn, 10)` for the expected filesystem state between steps.
 
 ## Terminal Compatibility Note
 

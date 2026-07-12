@@ -223,7 +223,22 @@ end)
 
 ### Headless Neovim Verification
 
+- **`nvim -l script.lua` does NOT load the user config** — it runs in script mode, so the plugin manager never bootstraps and `require("<plugin>")` fails with `module not found`. To run a script against the full config, use `nvim --headless -c "luafile script.lua" -c qa` instead.
+- **`nvim --cd <dir>` is not a real CLI flag** ("Unknown option argument") — `cd` in the shell before invoking, or pass `--cmd "cd <dir>"`.
+- **Signal failures explicitly**: a Lua error inside `-c` does not reliably produce a non-zero exit. Call `vim.cmd("cquit 1")` from the script on assertion failure.
 - `vim.ui.input()`/`vim.ui.select()` are blocking, modal calls — driving them through synthetic `vim.api.nvim_feedkeys()` in `nvim --headless` is timing-fragile (typed keys can leak into normal-mode commands instead of reaching the prompt), so don't rely on it as a test technique. Instead, call the logic that sits behind the prompt directly and feed its result straight into the next step, bypassing the interactive prompt entirely.
+- **Stub a plugin's prompt module to e2e-test prompt-driven flows.** Plugins often wrap prompts in their own module (e.g. neo-tree's `neo-tree.ui.inputs`). Because Lua caches modules, replacing functions on the required table intercepts every internal call site:
+
+  ```lua
+  local inputs = require("neo-tree.ui.inputs")
+  inputs.input = function(_, _, callback) callback("canned-answer") end
+  inputs.confirm = function(_, callback) callback(true) end
+  -- now call the plugin's underlying action functions directly
+  ```
+
+- **Plugin file operations are usually async** (libuv callbacks). Two sequential calls race — the second sees the first half-done and fails deep inside the plugin with a misleading nil-index error. Poll with `vim.wait(2000, cond_fn, 10)` for the expected state between steps instead of asserting immediately.
+- **Verify buffer-local keymaps** by focusing the plugin's window, then checking `vim.fn.maparg(key, mode, false, true)`: `.buffer == 1` proves registration and `.desc` names the bound command. Works for visual-mode maps too (`mode = "x"`).
+- **Verify mode transitions** (e.g. a mapping that should enter Visual mode): `vim.api.nvim_feedkeys(key, "m", false)` then `vim.api.nvim_feedkeys("", "x", false)` to flush, then assert on `vim.fn.mode()`.
 - To simulate a missing external binary without uninstalling it, build a scratch `PATH` containing symlinks to every entry of the real `PATH` except the target binary — don't just strip the target's whole directory from `$PATH`, since unrelated tools (including `nvim` itself) often live alongside it (e.g. both under `/opt/homebrew/bin`).
 
 ## Tooling
