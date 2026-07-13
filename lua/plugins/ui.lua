@@ -20,8 +20,15 @@ return {
     },
     opts = {
       options = {
-        close_command = "bdelete! %d",
-        right_mouse_command = "bdelete! %d",
+        -- Close (delete) only the clicked buffer, preserving the window layout so
+        -- the X / right-click never quits Neovim. snacks.bufdelete prompts before
+        -- discarding a modified buffer. snacks is lazy-loaded on this first require.
+        close_command = function(n)
+          require("snacks.bufdelete").delete(n)
+        end,
+        right_mouse_command = function(n)
+          require("snacks.bufdelete").delete(n)
+        end,
         diagnostics = "nvim_lsp",
         always_show_bufferline = false,
       },

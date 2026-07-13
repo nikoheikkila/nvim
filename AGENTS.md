@@ -6,7 +6,7 @@
 
 ```
 ~/.config/nvim/
-├── init.lua                   # Entry point — requires config.options, autocmds, keymaps, then config.lazy
+├── init.lua                   # Entry point — requires config.options, autocmds, keymaps, commands, then config.lazy
 ├── AGENTS.md                  # This file — project instructions (single source of truth)
 ├── CLAUDE.md                  # Symlink -> AGENTS.md
 ├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
@@ -20,6 +20,7 @@
 └── lua/
     ├── config/
     │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save)
+    │   ├── commands.lua       # Command-line overrides (:q/:x/:wq close current buffer, not Neovim)
     │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
     │   └── options.lua        # Core editor options (wrap, textwidth, colorcolumn)
@@ -40,7 +41,7 @@
     └── search_utils_spec.lua    # Busted unit tests for lib/search_utils.lua
 ```
 
-`init.lua` calls `require("config.options")`, then `require("config.autocmds")`, then `require("config.keymaps")`, then `require("config.lazy")`. All plugin specs live under `lua/plugins/` and are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new file to `lua/plugins/` is enough to activate new plugins.
+`init.lua` calls `require("config.options")`, then `require("config.autocmds")`, then `require("config.keymaps")`, then `require("config.commands")`, then `require("config.lazy")`. All plugin specs live under `lua/plugins/` and are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new file to `lua/plugins/` is enough to activate new plugins.
 
 ## Plugin Manager
 
@@ -80,6 +81,26 @@ Global, non-plugin keymaps loaded from `init.lua` before lazy.nvim. Currently ho
 | `<M-Down>` | x | Move selection down (stays selected via `gv=gv`) |
 
 **Terminal compatibility:** `<M-…>` is the Alt/Option key. On macOS the Option key does not send a Meta modifier by default — the terminal must be configured to (Kitty/Ghostty/WezTerm via the Kitty keyboard protocol, or iTerm2/Terminal.app with "Use Option as Meta key"). Where it is not, the mappings are silently inert. Verify registration with `:verbose imap <M-Up>`.
+
+## Command-line Overrides (`lua/config/commands.lua`)
+
+Bufferline tabs are treated like tabs, so `:q` / `:x` / `:wq` close the **current buffer** rather than the window or Neovim. `:qa` / `:xa` are unchanged and remain the way to actually quit.
+
+| Command | Result |
+|---|---|
+| `:q` | Close (delete) current buffer — prompts Yes/No/Cancel if modified |
+| `:q!` | Force-close current buffer, discarding changes |
+| `:x`, `:wq` | Write current buffer (if modified), then close it |
+| `:x!`, `:wq!` | Force-write current buffer, then close it |
+| `:qa`, `:xa`, `:qa!` | **Unchanged** — quit Neovim (all buffers) |
+
+**Mechanism.** `:q`/`:x`/`:wq` are built-in lowercase Ex commands and cannot be redefined directly, so `commands.lua` defines two `-bang` user commands — `BufClose` and `BufWriteClose` — and rewrites the bare commands to them via `<expr>` command-line abbreviations (`cnoreabbrev`). The `-bang` command is essential to the force variants: when the abbreviation fires as the `!` is typed, the trailing `!` lands on the command as its bang instead of corrupting the expansion (`q!` is not itself an abbreviatable sequence, so this is the clean way to support it). This is the same documented-patch spirit as the markdown italic and neo-tree confirm patches.
+
+The abbreviation guard `getcmdtype() ==# ':' && getcmdline() ==# '<word>'` fires only when the whole command line is exactly that bare word, so anything longer (`:qa`, `:xa`, `:wqa`, ranges) falls through to Vim's default. `:wq` gets its own abbreviation and does not collide with `q` (the `q` full-id abbreviation requires the preceding char to be non-keyword, and in `wq` it is the keyword char `w`).
+
+Both commands delegate the actual delete to snacks.nvim's `bufdelete` module (`require("snacks.bufdelete").delete{...}`), which swaps an alternate/new buffer into every window showing the target **before** deleting it — so the window layout survives and Neovim never quits. snacks is `keys`-lazy-loaded, but lazy.nvim auto-loads it on the first `require` of a submodule, so the deferred `require` inside the callbacks is enough; nothing is eager-loaded. On a modified buffer, snacks prompts Yes (save+close) / No (discard+close) / Cancel (abort). `BufWriteClose` writes first (`:update`, or `:write!` with a bang) so the buffer is already unmodified and the prompt is skipped.
+
+**Tradeoffs.** `:q` no longer closes a split window — it always closes the buffer; use `:close` or `<C-w>c` for windows/splits. Closing the last buffer leaves an empty `[No Name]` buffer (Neovim stays open, by design); use `:qa` to quit.
 
 ## Global Keymap Registry
 
@@ -220,7 +241,7 @@ Loads the laserwave colorscheme with `transparent = true` so the terminal backgr
 
 ### `lua/plugins/ui.lua`
 
-**`akinsho/bufferline.nvim`** — Buffer tabs at the top. Cycling: `<S-h>`/`<S-l>`, `[b`/`]b`, and `<leader>n`/`<leader>p`; reordering: `[B`/`]B`; pin/close/pick: `<leader>bp`/`bP`/`br`/`bl`/`bj` (full list in the Global Keymap Registry). Right-click on a tab deletes the buffer (`right_mouse_command = "bdelete! %d"`) — there is no `<leader>bd`-style delete keymap.
+**`akinsho/bufferline.nvim`** — Buffer tabs at the top. Cycling: `<S-h>`/`<S-l>`, `[b`/`]b`, and `<leader>n`/`<leader>p`; reordering: `[B`/`]B`; pin/close/pick: `<leader>bp`/`bP`/`br`/`bl`/`bj` (full list in the Global Keymap Registry). The tab `X` button and right-click both close **only that buffer** — `close_command`/`right_mouse_command` are set to `function(n) require("snacks.bufdelete").delete(n) end` (not the previous `"bdelete! %d"`), so they preserve the window layout and never quit Neovim; they prompt before discarding a modified buffer. There is no `<leader>bd`-style delete keymap. See "Command-line Overrides" for the matching `:q`/`:x` behavior.
 
 **`nvim-lualine/lualine.nvim`** — Status line showing mode, git branch, diagnostics, diff stats, and clock.
 
@@ -387,6 +408,8 @@ Use `scripts/headless-lua.sh <script.lua> [working-dir]` to run a Lua script ins
 
 Patterns that proved reliable for verifying plugin behavior headlessly:
 
+- **User commands and command-line abbreviations**: `vim.api.nvim_get_commands({})` returns a table keyed by command name (`cmds.BufClose ~= nil` proves registration); `vim.fn.execute("cabbrev q")` returns the abbreviation listing as a string to `:find` the expected RHS in. Both are reliable where feedkeys into `:` is not — this is how `config/commands.lua` was verified.
+- **A `keys`/`cmd`/`event`-lazy plugin's resolved config**: force it to load first with `require("lazy").load({ plugins = { "bufferline.nvim" } })`, then read `require("bufferline.config").options` to assert e.g. `close_command` is the function you set. Before the load its `setup()` hasn't run, so the config holds defaults.
 - **Buffer-local keymaps**: focus the plugin window (e.g. `:Neotree focus`), then check `vim.fn.maparg(key, mode, false, true)` — `.buffer == 1` proves the mapping registered, `.desc` usually names the plugin command it's bound to. Works for visual-mode maps too (`mode = "x"`).
 - **Mode transitions** (e.g. "does pressing `v` enter linewise visual?"): `vim.api.nvim_feedkeys(key, "m", false)` followed by `vim.api.nvim_feedkeys("", "x", false)` to flush, then assert on `vim.fn.mode()`.
 - **Prompt-driven file operations**: don't feedkeys into prompts — stub the plugin's own prompt module and call the underlying action functions directly (see the neo-tree section's "Verifying file operations headlessly"). Lua module caching means every internal reference shares the stubbed table.

@@ -75,6 +75,21 @@ The leader key is `Space`.
 | `Ctrl+Z` | Toggle Zen Mode |
 | `Alt+Up` / `Alt+Down` | Move current line or selection up / down |
 
+## Buffers
+
+Open files show as tabs along the top. They behave like tabs, so **closing a buffer does not quit Neovim** — the editor stays open with your other files.
+
+| Action | Result |
+|---|---|
+| Click a tab's `✗` (or right-click a tab) | Close only that buffer (prompts to save if it has unsaved changes) |
+| `:q` | Close the current buffer |
+| `:q!` | Close the current buffer, discarding unsaved changes |
+| `:x` / `:wq` | Save the current buffer, then close it |
+| `:qa` / `:xa` | Quit Neovim (all buffers) — `:xa` saves first |
+| `Shift+H` / `Shift+L` | Previous / next buffer tab |
+
+To close a split **window** (rather than a buffer), use `Ctrl+W` `c` or `:close`. Closing the last buffer leaves an empty buffer with Neovim still open; use `:qa` to quit for real.
+
 ## File Explorer
 
 `Space e` toggles a file tree sidebar on the right. The tree follows the file you are editing and supports the mouse (double-click opens files and expands/collapses directories; the wheel scrolls).
