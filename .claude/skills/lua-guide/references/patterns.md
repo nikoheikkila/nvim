@@ -8,6 +8,9 @@
 - [Coroutine Pipelines](#coroutine-pipelines)
 - [Read-Only Tables](#read-only-tables)
 - [Observer Pattern](#observer-pattern)
+- [Custom Iterator](#custom-iterator)
+- [Neovim Plugin Setup](#neovim-plugin-setup)
+- [Error Handling](#error-handling)
 
 ## OOP via Metatables
 
@@ -177,4 +180,64 @@ end
 local bus = EventEmitter.new()
 bus:on("user:created", function(u) print("Welcome, " .. u.name) end)
 bus:emit("user:created", { name = "Alice" })  --> Welcome, Alice
+```
+
+## Custom Iterator
+
+```lua
+local function range(start, stop, step)
+  step = step or 1
+  local i = start - step
+  return function()
+    i = i + step
+    if i <= stop then return i end
+  end
+end
+
+for n in range(1, 10, 2) do print(n) end  --> 1, 3, 5, 7, 9
+```
+
+## Neovim Plugin Setup
+
+```lua
+local api, keymap = vim.api, vim.keymap
+local M = {}
+
+function M.setup(opts)
+  opts = vim.tbl_deep_extend("force", { enabled = true, width = 80 }, opts or {})
+  if not opts.enabled then return end
+
+  local group = api.nvim_create_augroup("MyPlugin", { clear = true })
+  api.nvim_create_autocmd("BufWritePre", {
+    group = group, pattern = "*.lua",
+    callback = function(ev)
+      local lines = api.nvim_buf_get_lines(ev.buf, 0, -1, false)
+      for i, line in ipairs(lines) do lines[i] = line:gsub("%s+$", "") end
+      api.nvim_buf_set_lines(ev.buf, 0, -1, false, lines)
+    end,
+  })
+
+  keymap.set("n", "<leader>mp", function()
+    vim.notify("MyPlugin activated", vim.log.levels.INFO)
+  end, { desc = "Activate MyPlugin" })
+end
+
+return M
+```
+
+## Error Handling
+
+Return `nil, err_msg` from functions that can fail (idiomatic two-value return); reserve `error()` for violated preconditions; use `xpcall` with `debug.traceback` to catch programmer errors with a stack trace.
+
+```lua
+local function read_config(path)
+  local f, err = io.open(path, "r")
+  if not f then return nil, "cannot open config: " .. err end
+  local content = f:read("*a")
+  f:close()
+  return content
+end
+
+local ok, result = xpcall(dangerous_operation, debug.traceback)
+if not ok then log.error("failed: %s", result) end
 ```
