@@ -1,0 +1,17 @@
+# Basic .gitattributes for a Lua repo.
+
+# Auto detect
+##   Handle line endings automatically for files detected as
+##   text and leave all files detected as binary untouched.
+##   This will handle all files NOT defined below.
+*               text eol=lf
+
+# Lua
+*.lua		text diff=lua
+
+# Markdown
+*.md 		text diff=markdown linguist-detectable
+
+# Generated files
+lazy-lock.json 	linguist-generated
+
