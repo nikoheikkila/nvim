@@ -71,6 +71,7 @@ The leader key is `Space`.
 | `Space` `.` | Live grep across the project |
 | `Space` `e` | Toggle the file tree sidebar |
 | `Space` `g` | Open Lazygit for the current file's repository (quit with `q`) |
+| `Space` `n` `d` | Open today's daily note (see [Daily Notes](#daily-notes)) |
 | `Shift+H` / `Shift+L` | Previous / next buffer tab |
 | `Ctrl+Z` | Toggle Zen Mode |
 | `Alt+Up` / `Alt+Down` | Move current line or selection up / down |
@@ -87,8 +88,20 @@ Open files show as tabs along the top. They behave like tabs, so **closing a buf
 | `:x` / `:wq` | Save the current buffer, then close it |
 | `:qa` / `:xa` | Quit Neovim (all buffers) — `:xa` saves first |
 | `Shift+H` / `Shift+L` | Previous / next buffer tab |
+| `Space` `b` `n` / `Space` `b` `p` | Next / previous buffer tab |
 
 To close a split **window** (rather than a buffer), use `Ctrl+W` `c` or `:close`. Closing the last buffer leaves an empty buffer with Neovim still open; use `:qa` to quit for real.
+
+## Daily Notes
+
+`:Daily` (or `Space` `n` `d`) opens today's Markdown note — a file named `YYYY-MM-DD.md`. Running it again the same day reopens the same note, so it works as a running daily scratchpad; all the Markdown features below are active in it.
+
+Notes are stored in `$NVIM_NOTES_DIR`, or `~/Notes` if the variable is unset. The directory is created automatically on first use. To use a custom location, export an **absolute** path (a literal `~` in the value is not expanded):
+
+```sh
+set -gx NVIM_NOTES_DIR "$HOME/Documents/notes"   # fish
+export NVIM_NOTES_DIR="$HOME/Documents/notes"    # bash/zsh
+```
 
 ## File Explorer
 

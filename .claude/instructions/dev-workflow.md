@@ -37,7 +37,7 @@ or call the plugin's health module directly: `require("plugin_name.health").chec
 
 ## Testing
 
-Tests live in `tests/markdown_utils_spec.lua` and `tests/search_utils_spec.lua`, and use [Busted](https://lunarmodules.github.io/busted/) with Lua 5.5.
+Tests live in `tests/*_spec.lua` (one Busted spec per `lua/lib/` module) and use [Busted](https://lunarmodules.github.io/busted/) with Lua 5.5. Busted covers **only pure-Lua `lib/` code** — user commands, keymaps, and anything touching `vim.*` is covered by the headless smoke test instead (`scripts/smoke-test.sh`, below).
 
 ### Install
 
@@ -55,10 +55,13 @@ Verify: `busted --version` and `selene --version`
 
 ```sh
 busted
-scripts/lint.sh   # or: selene lua/
+scripts/lint.sh        # or: selene lua/
+scripts/smoke-test.sh  # headless config-level checks (commands, keymaps, leaders)
 ```
 
 Reads `.busted` at the project root (`ROOT = { "tests" }`). The `package.path` preamble in the spec file makes `lib.markdown_utils` importable without Neovim. `selene lua/` is the same command CI runs (`.github/workflows/ci.yml`).
+
+`scripts/smoke-test.sh` runs `scripts/verify-config.lua` in a fully-loaded headless Neovim and asserts the config-level contract: leader keys, `:Daily` end-to-end, the `:q`/`:x`/`:wq` abbreviations, and the global keymaps. **Extend `verify-config.lua` when adding a user command or global keymap** — it is the only regression net for wiring that Busted can't see.
 
 ### Verifying interactive/headless picker behavior
 
@@ -79,6 +82,9 @@ Patterns that proved reliable for verifying plugin behavior headlessly:
 - **User commands and command-line abbreviations**: `vim.api.nvim_get_commands({})` returns a table keyed by command name (`cmds.BufClose ~= nil` proves registration); `vim.fn.execute("cabbrev q")` returns the abbreviation listing as a string to `:find` the expected RHS in. Both are reliable where feedkeys into `:` is not — this is how `config/commands.lua` was verified.
 - **A `keys`/`cmd`/`event`-lazy plugin's resolved config**: force it to load first with `require("lazy").load({ plugins = { "bufferline.nvim" } })`, then read `require("bufferline.config").options` to assert e.g. `close_command` is the function you set. Before the load its `setup()` hasn't run, so the config holds defaults.
 - **Buffer-local keymaps**: focus the plugin window (e.g. `:Neotree focus`), then check `vim.fn.maparg(key, mode, false, true)` — `.buffer == 1` proves the mapping registered, `.desc` usually names the plugin command it's bound to. Works for visual-mode maps too (`mode = "x"`).
+- **Global `<leader>` keymaps**: `maparg()` needs the **literal** leader character in the lhs — `vim.fn.maparg(vim.g.mapleader .. "nd", "n")`, not `"<leader>nd"`. And assert against the *expected* leader: a `<leader>` map created before `vim.g.mapleader` is set silently binds under the default `\` and `maparg(" nd", ...)` returns `""` — exactly how the `<leader>nd` load-order bug was caught (leaders now live in `config/options.lua`, the first module `init.lua` loads; never create `<leader>` maps before it).
+- **Env-var-driven commands** (e.g. `:Daily` reading `NVIM_NOTES_DIR`): read the variable **at call time** inside the command, not at module load — then a headless script can just set `vim.env.NVIM_NOTES_DIR = dir` in-process before invoking, no shell wrapper needed. Compare resulting buffer names through `vim.fn.resolve()` — on macOS `tempname()` returns `/var/...` while buffer names resolve through the `/var -> /private/var` symlink.
+- **`print()` output interleaving**: in headless mode, message lines can visually run together after buffer-switching commands (`:edit`, `:enew`). End prints with an explicit `"\n"`, and treat the exit code (`cquit 1`) as the authoritative result, not the printed text.
 - **Mode transitions** (e.g. "does pressing `v` enter linewise visual?"): `vim.api.nvim_feedkeys(key, "m", false)` followed by `vim.api.nvim_feedkeys("", "x", false)` to flush, then assert on `vim.fn.mode()`.
 - **Prompt-driven file operations**: don't feedkeys into prompts — stub the plugin's own prompt module and call the underlying action functions directly (see `explorer.md`'s "Verifying file operations headlessly"). Lua module caching means every internal reference shares the stubbed table.
 - **Async plugin fs operations**: plugin file actions (e.g. neo-tree's `fs_actions`) complete via async libuv callbacks. Calling two in a row races — the second sees the first's work half-done and fails deep inside the plugin with a confusing nil-index error. `vim.wait(2000, cond_fn, 10)` for the expected filesystem state between steps.

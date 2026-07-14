@@ -4,7 +4,7 @@ Covers `lazy.lua`, `options.lua`, `keymaps.lua`, `commands.lua` — the non-plug
 
 ## Plugin Manager
 
-**lazy.nvim** is bootstrapped in `lua/config/lazy.lua`: if the repo is not found at `~/.local/share/nvim/lazy/lazy.nvim` it is cloned from GitHub, then added to `rtp`. Leader keys are set before `require("lazy").setup(...)` so all plugin keymaps inherit the correct leaders.
+**lazy.nvim** is bootstrapped in `lua/config/lazy.lua`: if the repo is not found at `~/.local/share/nvim/lazy/lazy.nvim` it is cloned from GitHub, then added to `rtp`. Leader keys are set in `lua/config/options.lua` — the first module loaded from `init.lua` — so both the core `<leader>` maps in `keymaps.lua` and all plugin `keys` specs inherit the correct leaders.
 
 - `mapleader` = `<Space>`
 - `maplocalleader` = `\`
@@ -17,7 +17,7 @@ Several plugins (e.g. `folke/snacks.nvim`) export a convenience global alongside
 
 ## Editor Options (`lua/config/options.lua`)
 
-Sets core editor options applied before lazy.nvim loads:
+Sets `mapleader` (`<Space>`) and `maplocalleader` (`\`) — they must precede both `keymaps.lua` and the lazy.nvim setup, and `options.lua` is loaded first — plus core editor options applied before lazy.nvim loads:
 
 | Option | Value | Effect |
 |---|---|---|
@@ -28,7 +28,7 @@ Sets core editor options applied before lazy.nvim loads:
 
 ## Core Keymaps (`lua/config/keymaps.lua`)
 
-Global, non-plugin keymaps loaded from `init.lua` before lazy.nvim. Currently holds the line-move bindings, which move the current line (or a visual selection) up/down using the `:m[ove]` command with `==` to reindent:
+Global, non-plugin keymaps loaded from `init.lua` before lazy.nvim. Holds the line-move bindings, which move the current line (or a visual selection) up/down using the `:m[ove]` command with `==` to reindent, and the daily-note map:
 
 | Key | Mode | Action |
 |---|---|---|
@@ -38,6 +38,7 @@ Global, non-plugin keymaps loaded from `init.lua` before lazy.nvim. Currently ho
 | `<M-Down>` | i | Move current line down (returns to insert via `gi`) |
 | `<M-Up>` | x | Move selection up (stays selected via `gv=gv`) |
 | `<M-Down>` | x | Move selection down (stays selected via `gv=gv`) |
+| `<leader>nd` | n | Open today's note (`:Daily`; mnemonic "new → daily") |
 
 **Terminal compatibility:** `<M-…>` is the Alt/Option key. On macOS the Option key does not send a Meta modifier by default — the terminal must be configured to (Kitty/Ghostty/WezTerm via the Kitty keyboard protocol, or iTerm2/Terminal.app with "Use Option as Meta key"). Where it is not, the mappings are silently inert. Verify registration with `:verbose imap <M-Up>`.
 
@@ -61,6 +62,10 @@ Both commands delegate the actual delete to snacks.nvim's `bufdelete` module (`r
 
 **Tradeoffs.** `:q` no longer closes a split window — it always closes the buffer; use `:close` or `<C-w>c` for windows/splits. Closing the last buffer leaves an empty `[No Name]` buffer (Neovim stays open, by design); use `:qa` to quit.
 
+## User Commands (`lua/config/commands.lua`)
+
+`:Daily` opens today's Markdown note — `YYYY-MM-DD.md` inside `$NVIM_NOTES_DIR` (default: `$HOME/Notes`). The directory is created on first use; the file is created by `:edit` and reopened on every later `:Daily` the same day. Filetype detection sets `markdown` from the `.md` name, so the markdown plugins activate normally. A literal `~` in `NVIM_NOTES_DIR` is **not** expanded — set it to an absolute path. Unlike `:q`/`:x`/`:wq` above, this is an ordinary uppercase user command and needs no `cnoreabbrev` machinery. Bound to `<leader>nd` in `keymaps.lua`.
+
 ## Global Keymap Registry
 
 Every **global** (non-buffer-local) keymap in this config, in one place. **Check this table before choosing a key for a new mapping, and add a row when you create one** — keymaps are otherwise scattered across `keys` tables in six files and finding a free key requires a grep sweep. Buffer-local maps (markdown `<C-*>` keys, the neo-tree tree buffer) are documented in their own files (`markdown.md`, `explorer.md`), not here.
@@ -71,15 +76,15 @@ Every **global** (non-buffer-local) keymap in this config, in one place. **Check
 | `<S-h>` / `<S-l>` | n | Prev / next buffer tab | `plugins/ui.lua` |
 | `[b` / `]b` | n | Prev / next buffer tab | `plugins/ui.lua` |
 | `[B` / `]B` | n | Move buffer tab left / right | `plugins/ui.lua` |
-| `<leader>n` / `<leader>p` | n | Next / prev buffer tab (duplicates `]b`/`[b`) | `plugins/ui.lua` |
-| `<leader>bp` | n | Pin buffer | `plugins/ui.lua` |
+| `<leader>bn` / `<leader>bp` | n | Next / prev buffer tab (duplicates `]b`/`[b`) | `plugins/ui.lua` |
 | `<leader>bP` | n | Delete non-pinned buffers | `plugins/ui.lua` |
 | `<leader>br` / `<leader>bl` | n | Delete buffers to the right / left | `plugins/ui.lua` |
 | `<leader>bj` | n | Pick buffer | `plugins/ui.lua` |
+| `<leader>nd` | n | Open today's note (`:Daily`) | `config/keymaps.lua` |
 | `<leader>g` | n | Lazygit (current file's repo) | `plugins/git.lua` |
 | `<leader><leader>` | n | Fuzzy file picker (project) | `plugins/picker.lua` |
 | `<leader>.` | n | Project grep | `plugins/picker.lua` |
 | `<leader>e` | n | Toggle file tree sidebar | `plugins/explorer.lua` |
 | `<C-z>` | n | Toggle Zen Mode | `plugins/zen.lua` |
 
-**Prefix caveat:** `<leader>b` is a chord prefix (`bp`/`bP`/`br`/`bl`/`bj`). Mapping bare `<leader>b` would work but every press would pause for `timeoutlen` (~1s) while Neovim disambiguates — avoid single-key mappings that prefix an existing chord family.
+**Prefix caveat:** `<leader>b` (`bn`/`bp`/`bP`/`br`/`bl`/`bj`) and `<leader>n` (`nd`) are chord prefixes. Mapping bare `<leader>b` or `<leader>n` would work but every press would pause for `timeoutlen` (~1s) while Neovim disambiguates — avoid single-key mappings that prefix an existing chord family. (This is why the old bare `<leader>n`/`<leader>p` buffer-cycle maps moved to `<leader>bn`/`<leader>bp` when `<leader>nd` was added.)

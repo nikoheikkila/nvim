@@ -1,5 +1,6 @@
 -- Make `:q` / `:x` / `:wq` close the CURRENT BUFFER instead of the window/Neovim,
 -- treating bufferline tabs like tabs. `:qa` / `:xa` remain the way to quit Neovim.
+-- Also defines `:Daily`, which opens today's Markdown note.
 --
 -- These are built-in lowercase Ex commands and cannot be redefined directly, so
 -- we expand them via command-line abbreviations to `-bang` user commands. The
@@ -36,3 +37,20 @@ vim.cmd([[
   cnoreabbrev <expr> x  (getcmdtype() ==# ':' && getcmdline() ==# 'x')  ? 'BufWriteClose' : 'x'
   cnoreabbrev <expr> wq (getcmdtype() ==# ':' && getcmdline() ==# 'wq') ? 'BufWriteClose' : 'wq'
 ]])
+
+-- `:Daily` opens today's note (`YYYY-MM-DD.md`) in $NVIM_NOTES_DIR (default
+-- ~/Notes), creating the directory on first use. Running it again the same day
+-- reopens the same note. A literal `~` in NVIM_NOTES_DIR is not expanded — use
+-- an absolute path. Filetype detection sets markdown from the `.md` name.
+vim.api.nvim_create_user_command("Daily", function()
+  local dir = vim.env.NVIM_NOTES_DIR
+  if dir == nil or dir == "" then
+    dir = vim.fs.joinpath(vim.env.HOME, "Notes")
+  end
+  local ok, err = pcall(vim.fn.mkdir, dir, "p")
+  if not ok then
+    vim.notify("Daily: cannot create notes dir " .. dir .. ": " .. err, vim.log.levels.ERROR)
+    return
+  end
+  vim.cmd.edit(vim.fs.joinpath(dir, os.date("%Y-%m-%d") .. ".md"))
+end, { desc = "Open today's Markdown note in $NVIM_NOTES_DIR (default ~/Notes)" })
