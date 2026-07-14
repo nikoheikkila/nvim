@@ -29,7 +29,7 @@ return {
           require("snacks.bufdelete").delete(n)
         end,
         diagnostics = "nvim_lsp",
-        always_show_bufferline = false,
+        always_show_bufferline = true,
       },
     },
   },
