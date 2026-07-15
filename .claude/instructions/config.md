@@ -25,6 +25,8 @@ Sets `mapleader` (`<Space>`) and `maplocalleader` (`\`) — they must precede bo
 | `linebreak` | `true` | Break at word boundaries, not mid-word |
 | `textwidth` | `120` | Hard-wrap column for formatting operators |
 | `colorcolumn` | `"120"` | Visual ruler at column 120 |
+| `mouse` | `"nvi"` | Mouse in normal/visual/insert — pins the Neovim default because Ctrl+Click multi-cursor (`plugins/multicursor.lua`) depends on it |
+| `mousemodel` | `"extend"` | No right-click popup menu — macOS synthesizes right-clicks from Ctrl+click (trackpad), and the default `popup_setpos` menu would swallow them before the multi-cursor mappings fire |
 
 ## Core Keymaps (`lua/config/keymaps.lua`)
 
@@ -86,5 +88,13 @@ Every **global** (non-buffer-local) keymap in this config, in one place. **Check
 | `<leader>.` | n | Project grep | `plugins/picker.lua` |
 | `<leader>e` | n | Toggle file tree sidebar | `plugins/explorer.lua` |
 | `<C-z>` | n | Toggle Zen Mode | `plugins/zen.lua` |
+| `<M-S-Up>` / `<M-S-Down>` | n, x, i | Duplicate cursor to line above/below, same column | `plugins/multicursor.lua` |
+| `I` / `A` | x | Multi-cursor insert at start / append at end of selected lines | `plugins/multicursor.lua` |
+| `<C-LeftMouse>` | n, i | Add/remove cursor at mouse click (replaces built-in mouse jump-to-tag) | `plugins/multicursor.lua` |
+| `<C-RightMouse>` / `<RightMouse>` | n, i | Same as `<C-LeftMouse>` — catches macOS's Ctrl+click→right-click synthesis, including terminals that strip the Ctrl modifier from mouse reports (Warp) | `plugins/multicursor.lua` |
+| `<Esc>` | n *(while cursors active)* | Reset to a single cursor — plugin whitelist map, exists only in multi-cursor mode | `plugins/multicursor.lua` |
+| `<LeftMouse>` | n, i, x *(while cursors active)* | Reset cursors, then perform the normal click — buffer-local via `pre_hook`/`post_hook` | `plugins/multicursor.lua` |
+
+**Mouse/terminal caveat:** on macOS trackpads, Ctrl+click is synthesized into a right-click before Neovim sees it, and some terminals additionally strip the Ctrl modifier from their mouse reports — Warp does (verified July 2026; Warp only forwards right-clicks to TUI apps at all since Nov 2024, warpdotdev/Warp#2085). So "Ctrl+click" can reach Neovim as `<C-LeftMouse>`, `<C-RightMouse>`, or a bare `<RightMouse>`, and the multi-cursor toggle is bound to all three. Consequence: a plain right-click (two-finger tap) also toggles a cursor — acceptable because `mousemodel = "extend"` already removed the right-click popup menu, leaving right-click otherwise jobless. The `<M-S-…>` maps need Option-as-Meta, same as `<M-Up>`/`<M-Down>` above.
 
 **Prefix caveat:** `<leader>b` (`bn`/`bp`/`bP`/`br`/`bl`/`bj`) and `<leader>n` (`nd`) are chord prefixes. Mapping bare `<leader>b` or `<leader>n` would work but every press would pause for `timeoutlen` (~1s) while Neovim disambiguates — avoid single-key mappings that prefix an existing chord family. (This is why the old bare `<leader>n`/`<leader>p` buffer-cycle maps moved to `<leader>bn`/`<leader>bp` when `<leader>nd` was added.)

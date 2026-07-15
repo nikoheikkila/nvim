@@ -13,6 +13,7 @@
 ├── selene.toml                # Lua linter config (std = "lua51+vim")
 ├── vim.yml                    # Vendored selene std: declares the `vim` global
 ├── scripts/
+│   ├── debug-keys.lua         # :luafile it to log which key/mouse events actually reach Neovim
 │   ├── headless-lua.sh        # Run a Lua script in a fully-loaded headless nvim (`nvim -l` skips user config)
 │   ├── lazy-install.sh        # Safe plugin fetch: `:Lazy install`, not `:Lazy sync`
 │   ├── lint.sh                # Runs `selene lua/` (same command CI runs)
@@ -25,7 +26,7 @@
     │   ├── commands.lua       # Command-line overrides (:q/:x/:wq close current buffer) + :Daily note command
     │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line, <leader>nd daily note)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
-    │   └── options.lua        # Leader keys + core editor options (wrap, textwidth, colorcolumn)
+    │   └── options.lua        # Leader keys + core editor options (wrap, textwidth, mouse, mousemodel)
     ├── lib/
     │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
     │   ├── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
@@ -34,8 +35,9 @@
         ├── explorer.lua       # File-tree sidebar (neo-tree.nvim)
         ├── git.lua            # Lazygit integration (lazygit.nvim)
         ├── markdown.lua       # All markdown plugin specs
+        ├── multicursor.lua    # Real-time multiple cursors (multiple-cursors.nvim)
         ├── picker.lua         # Fuzzy file picker + project grep (snacks.nvim, picker module only)
-        ├── theme.lua          # Colorscheme (laserwave.nvim, transparent)
+        ├── theme.lua          # Colorscheme (github-nvim-theme, github_dark_default)
         ├── ui.lua             # UI plugins (bufferline.nvim, lualine.nvim)
         └── zen.lua            # Distraction-free writing (zen-mode.nvim)
 └── tests/
@@ -60,4 +62,6 @@ Detailed guidance lives under `.claude/instructions/` — read the relevant file
 | [`explorer.md`](.claude/instructions/explorer.md) | neo-tree file-tree sidebar |
 | [`dev-workflow.md`](.claude/instructions/dev-workflow.md) | Adding/fetching plugins, running tests, headless Lua verification |
 
-Check `config.md`'s Global Keymap Registry before adding any new global keymap — six files declare keys and there's no other index.
+Check `config.md`'s Global Keymap Registry before adding any new global keymap — seven files declare keys and there's no other index.
+
+**Bindings must survive the terminal.** This config runs in Warp on macOS with a trackpad: the OS and terminal rewrite or swallow events before Neovim sees them (Ctrl+arrows go to Mission Control; Ctrl+click becomes a right-click and Warp strips the Ctrl modifier from mouse reports). Read `config.md`'s "Mouse/terminal caveat" before choosing any Ctrl-chord or mouse binding, and diagnose "dead" bindings with `:luafile scripts/debug-keys.lua` — `:map` only proves registration, not delivery.

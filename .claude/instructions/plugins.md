@@ -1,6 +1,6 @@
 # Smaller Plugins
 
-Covers `theme.lua`, `ui.lua`, `zen.lua`, `git.lua`, `picker.lua`. See `explorer.md` for neo-tree (kept standalone — the longest single-plugin section) and `markdown.md` for the markdown plugin stack.
+Covers `theme.lua`, `ui.lua`, `zen.lua`, `git.lua`, `multicursor.lua`, `picker.lua`. See `explorer.md` for neo-tree (kept standalone — the longest single-plugin section) and `markdown.md` for the markdown plugin stack.
 
 ### `lua/plugins/theme.lua` — `ribru17/bamboo.nvim` (via `lcoram/laserwave.nvim`)
 
@@ -23,6 +23,17 @@ Opens Lazygit in a floating window ("modal") over the current buffer. Lazy-loade
 - `<leader>g` (global keymap) runs `:LazyGitCurrentFile`, scoping Lazygit to the **current file's Git repository** (falling back to the project/cwd Git root). Quit Lazygit with `q` to return to the buffer.
 - A **PATH guard** checks `vim.fn.executable("lazygit")` first and emits a clean `vim.notify` error instead of a raw stack trace when the binary is missing.
 - Floating-window options are set in `init` (`winblend = 0`, `scaling_factor = 0.9`) to stay consistent with the transparent laserwave theme.
+
+### `lua/plugins/multicursor.lua` — `brenton-leighton/multiple-cursors.nvim`
+
+VS Code-style multiple cursors with **real-time** updates: every keystroke is mirrored at each virtual cursor live (insert-mode text via `InsertCharPre`/`TextChangedI` autocmds). This replaced `jake-stewart/multicursor.nvim`, whose insert-mode edits appear at other cursors only on leaving insert mode — an upstream **wontfix** (issues #49/#75: real-time would require simulating insert mode, which that plugin refuses on correctness grounds). The trade-off accepted here: multiple-cursors.nvim simulates a *whitelist* of commands, so normal-mode commands outside the whitelist affect only the real cursor, and its README warns Backspace/Delete/Enter/Tab "may behave incorrectly, in particular with less common indentation options".
+
+- `<M-S-Up>` / `<M-S-Down>` (n, x, i) duplicate the cursor to the adjacent line at the same column (`:MultipleCursorsAddUp`/`AddDown`).
+- Visual `I` / `A` run `:MultipleCursorsAddVisualArea` (which puts a cursor at **column 1 of every selected line** in linewise mode) and then feed `I`/`A` *with remapping* so the plugin's whitelist handler enters insert at first non-blank / line end for every cursor, typing live. Single-line selections fall back to a plain `<Esc>I`/`<Esc>A` (AddVisualArea is a no-op on one line).
+- `<C-LeftMouse>`, `<C-RightMouse>`, and plain `<RightMouse>` (n, i) all toggle a cursor at the click (`:MultipleCursorsMouseAddDelete`). Three bindings because macOS trackpads synthesize a right-click from Ctrl+click and some terminals (Warp) strip the Ctrl modifier from mouse reports, so the same physical gesture can arrive as any of the three; `mousemodel = "extend"` in `options.lua` keeps Neovim's popup menu from swallowing it (see `config.md`'s mouse/terminal caveat).
+- **Reset**: `<Esc>` in normal mode is the plugin's built-in exit (clears all virtual cursors). Plain `<LeftMouse>` reset is hand-rolled: `pre_hook` (fires when the first cursor is added) sets buffer-local `<LeftMouse>` maps — normal mode calls `require("multiple-cursors").deinit(true)` then re-feeds the click noremap (Neovim retains the mouse event's coordinates); insert/visual mode feeds `<Esc>` *with remapping* first so the plugin finalizes the mode at every cursor, then the click hits the normal-mode map. `post_hook` deletes the maps on exit — they have zero footprint otherwise.
+- Deliberately `keys`-lazy (no drag/release event triples to lose, unlike the old plugin): all entry points — the maps above — live in the `keys` spec, and `setup()` creates the user commands on first use.
+- Smoke coverage: `scripts/verify-config.lua` force-loads the plugin, asserts every map's `desc` and the user commands, and functionally runs `:MultipleCursorsAddDown`, checks `virtual_cursors.get_num_virtual_cursors()` and the presence of the buffer-local click-reset maps, then `deinit(true)` and checks both are gone. Real-time insert mirroring is autocmd-driven and **cannot be asserted headlessly** (synthetic `feedkeys` ordering differs from real UI input — see `dev-workflow.md`); verify it interactively.
 
 ### `lua/plugins/picker.lua` — `folke/snacks.nvim` (picker module only)
 

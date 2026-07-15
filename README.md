@@ -57,7 +57,8 @@ Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
 | [akinsho/bufferline.nvim](https://github.com/akinsho/bufferline.nvim) | Buffer tabs at the top |
 | [nvim-lualine/lualine.nvim](https://github.com/nvim-lualine/lualine.nvim) | Status line |
 | [folke/zen-mode.nvim](https://github.com/folke/zen-mode.nvim) | Distraction-free writing mode |
-| [lcoram/laserwave.nvim](https://github.com/lcoram/laserwave.nvim) | Colorscheme (transparent background) |
+| [brenton-leighton/multiple-cursors.nvim](https://github.com/brenton-leighton/multiple-cursors.nvim) | Multiple cursors with real-time editing (see [Multiple Cursors](#multiple-cursors)) |
+| [projekt0n/github-nvim-theme](https://github.com/projekt0n/github-nvim-theme) | Colorscheme (GitHub Dark) |
 
 All plugins are managed by [folke/lazy.nvim](https://github.com/folke/lazy.nvim), which bootstraps itself automatically.
 
@@ -75,6 +76,7 @@ The leader key is `Space`.
 | `Shift+H` / `Shift+L` | Previous / next buffer tab |
 | `Ctrl+Z` | Toggle Zen Mode |
 | `Alt+Up` / `Alt+Down` | Move current line or selection up / down |
+| `Alt+Shift+Up` / `Alt+Shift+Down` | Add a cursor on the line above / below (see [Multiple Cursors](#multiple-cursors)) |
 
 ## Buffers
 
@@ -91,6 +93,25 @@ Open files show as tabs along the top. They behave like tabs, so **closing a buf
 | `Space` `b` `n` / `Space` `b` `p` | Next / previous buffer tab |
 
 To close a split **window** (rather than a buffer), use `Ctrl+W` `c` or `:close`. Closing the last buffer leaves an empty buffer with Neovim still open; use `:qa` to quit for real.
+
+## Multiple Cursors
+
+Edit in several places at once, VS Code-style. Everything you type is mirrored at every cursor **in real time**.
+
+| Action | Result |
+|---|---|
+| `Alt+Shift+Up` / `Alt+Shift+Down` | Add a cursor on the line above / below, same column (works in normal, visual, and insert mode) |
+| Select lines with `V`, then `I` | A cursor at the **start** of every selected line, in insert mode |
+| Select lines with `V`, then `A` | A cursor at the **end** of every selected line, in insert mode |
+| `Ctrl+Click` (or right-click / two-finger tap) | Add a cursor where you click — click an existing cursor to remove it |
+| Plain click anywhere | Back to a single cursor, placed where you clicked |
+| `Esc` (in normal mode) | Back to a single cursor |
+
+Notes:
+
+- The cursor commands simulate the common editing commands (`i`, `a`, `I`, `A`, `o`, `x`, `dd`, …) at every cursor. Exotic normal-mode commands may apply only to the real cursor.
+- **Why right-click adds a cursor:** on a Mac trackpad, `Ctrl+Click` *is* a right-click by the time it reaches the terminal, and some terminals (Warp) drop the `Ctrl` modifier entirely — so the right button is bound too. Neovim's right-click popup menu is disabled to make room for this (`mousemodel=extend`).
+- If a binding seems dead, check what your terminal actually delivers: `:luafile scripts/debug-keys.lua`, then press the key — each received event is shown as a notification. Run it again to stop.
 
 ## Daily Notes
 

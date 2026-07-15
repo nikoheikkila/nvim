@@ -4,6 +4,14 @@
 
 Create a new file under `lua/plugins/`, e.g. `lua/plugins/lsp.lua`, and return a standard lazy.nvim spec table. It will be picked up automatically on next start.
 
+### Vet the plugin against the actual requirement first
+
+A README feature list is not enough when a requirement is behavioral. Before installing, (1) search the plugin's issue tracker for the core requirement — a closed issue can be a **wontfix** stating a deliberate design limit (multicursor.nvim was chosen, shipped, and then replaced because "real-time insert at all cursors" turned out to be wontfixed in issues #49/#75 — ten minutes of issue reading would have prevented a full plugin swap); (2) check `pushed_at` for maintenance (vim-visual-multi was rejected partly for ~2 years of inactivity); (3) once installed, read the plugin's source under `~/.local/share/nvim/lazy/<name>/lua/` instead of guessing at behavior — that's how AddVisualArea's cursor placement, the `pre_hook`/`post_hook` timing, and `deinit()` semantics were confirmed here.
+
+### Key and mouse bindings must survive the terminal
+
+Neovim never sees what the OS or terminal swallows. On this setup (macOS + Warp + trackpad): Mission Control eats `<C-Up>`/`<C-Down>`; macOS turns Ctrl+click into a right-click before any app sees it; Warp strips the Ctrl modifier from mouse reports, so a "Ctrl+click" arrives as bare `<RightMouse>` (see `config.md`'s Mouse/terminal caveat and the `user-terminal-warp` memory). When a binding "doesn't work" but `:map` shows it registered, diagnose what actually arrives with `:luafile scripts/debug-keys.lua` before touching the config.
+
 ### Fetch with `install`, not `sync`
 
 Fetch the new plugin with:
@@ -15,13 +23,16 @@ scripts/lazy-install.sh
 
 **Do not run `:Lazy sync`** to fetch a single new plugin. `sync` is `install` + `clean` + `update` — it also bumps every *already-installed* plugin to the latest commit on its tracked branch, silently expanding `lazy-lock.json` far beyond the plugin you meant to add. `install` only fetches plugins that are in the spec but missing on disk; it leaves already-installed plugins untouched.
 
-If `sync` was already run by mistake:
+If the lockfile picked up unintended version bumps (from `sync`, or from any headless Lazy operation — a spurious `markdown-plus.nvim` bump has appeared after an innocent `install` + `clean` cycle, likely via `checker.enabled`):
 
 ```sh
-git diff lazy-lock.json                              # see everything that changed
-# hand-revert any entries you didn't intend to touch, then:
-nvim --headless "+Lazy! restore" +qa                  # re-checkout plugin dirs to match the lockfile
+git diff lazy-lock.json                               # see everything that changed
+git checkout -- lazy-lock.json                        # back to the committed lockfile
+nvim --headless "+Lazy! restore <plugin>" +qa         # re-checkout the bumped plugin(s) to the locked commit
+scripts/lazy-install.sh                               # re-record only the genuinely new plugin
 ```
+
+Prefer this git-checkout + targeted-restore flow over hand-editing commit hashes in `lazy-lock.json` — hand-edits are error-prone and (for agents) can trip security review, since editing a pinned hash is indistinguishable from pointing a dependency at unvetted code.
 
 Always `git diff lazy-lock.json` before committing a plugin addition — the diff should contain exactly one new entry (or the version bump you intended), nothing else.
 
@@ -81,6 +92,8 @@ Patterns that proved reliable for verifying plugin behavior headlessly:
 
 - **User commands and command-line abbreviations**: `vim.api.nvim_get_commands({})` returns a table keyed by command name (`cmds.BufClose ~= nil` proves registration); `vim.fn.execute("cabbrev q")` returns the abbreviation listing as a string to `:find` the expected RHS in. Both are reliable where feedkeys into `:` is not — this is how `config/commands.lua` was verified.
 - **A `keys`/`cmd`/`event`-lazy plugin's resolved config**: force it to load first with `require("lazy").load({ plugins = { "bufferline.nvim" } })`, then read `require("bufferline.config").options` to assert e.g. `close_command` is the function you set. Before the load its `setup()` hasn't run, so the config holds defaults.
+- **`event = "VeryLazy"` plugins never load in `--headless`**: lazy.nvim fires `VeryLazy` from a once-only `UIEnter` autocmd, and no UI ever attaches in headless mode — so the plugin's `config()` (keymaps, layers, autocmds) never runs no matter how long the script waits. `require("lazy").load({ plugins = { "<name>" } })` first, then assert. Related hang: a script that leaves a **modified** scratch buffer behind makes a plain `-c qa` block indefinitely (no UI to answer the save prompt) — `headless-lua.sh` quits with `qa!` for exactly this reason; keep `vim.bo.modified = false` in scripts anyway so they survive hand-rolled runners.
+- **Mouse events cannot be simulated in `--headless`**: `nvim_input_mouse()` needs a UI grid to resolve the click, so synthesized clicks are silently inert — key-routing through mouse mappings can't be tested headlessly. Autocmd-driven input mirroring (e.g. multi-cursor `InsertCharPre` handlers) is likewise unreliable under synthetic `feedkeys` — event ordering differs from real typed input, and keys can leak into the wrong mode. Assert the *wiring* (maps, commands) and call the underlying Lua functions directly; leave click/typing behavior to interactive verification.
 - **Buffer-local keymaps**: focus the plugin window (e.g. `:Neotree focus`), then check `vim.fn.maparg(key, mode, false, true)` — `.buffer == 1` proves the mapping registered, `.desc` usually names the plugin command it's bound to. Works for visual-mode maps too (`mode = "x"`).
 - **Global `<leader>` keymaps**: `maparg()` needs the **literal** leader character in the lhs — `vim.fn.maparg(vim.g.mapleader .. "nd", "n")`, not `"<leader>nd"`. And assert against the *expected* leader: a `<leader>` map created before `vim.g.mapleader` is set silently binds under the default `\` and `maparg(" nd", ...)` returns `""` — exactly how the `<leader>nd` load-order bug was caught (leaders now live in `config/options.lua`, the first module `init.lua` loads; never create `<leader>` maps before it).
 - **Env-var-driven commands** (e.g. `:Daily` reading `NVIM_NOTES_DIR`): read the variable **at call time** inside the command, not at module load — then a headless script can just set `vim.env.NVIM_NOTES_DIR = dir` in-process before invoking, no shell wrapper needed. Compare resulting buffer names through `vim.fn.resolve()` — on macOS `tempname()` returns `/var/...` while buffer names resolve through the `/var -> /private/var` symlink.

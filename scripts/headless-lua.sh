@@ -10,6 +10,11 @@
 # The script's failures must be signalled explicitly: call vim.cmd("cquit 1")
 # on assertion failure so callers see a non-zero exit code.
 #
+# Quits with `qa!` (not `qa`): a script that leaves any modified scratch
+# buffer behind would make plain `qa` prompt-and-hang forever in headless mode
+# (no UI to answer the prompt) — this wedged CI-style runs twice before the
+# bang was added. Headless verification scripts never have real unsaved work.
+#
 # Usage: scripts/headless-lua.sh <script.lua> [working-dir]
 set -euo pipefail
 
@@ -23,4 +28,4 @@ script="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 dir="${2:-.}"
 
 cd "$dir"
-exec nvim --headless -c "luafile ${script}" -c "qa"
+exec nvim --headless -c "luafile ${script}" -c "qa!"
