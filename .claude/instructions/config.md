@@ -1,6 +1,6 @@
 # Config Layer (`lua/config/`)
 
-Covers `lazy.lua`, `options.lua`, `keymaps.lua`, `commands.lua` — the non-plugin core of this config.
+Covers `lazy.lua`, `options.lua`, `autocmds.lua`, `keymaps.lua`, `commands.lua` — the non-plugin core of this config.
 
 ## Plugin Manager
 
@@ -27,6 +27,27 @@ Sets `mapleader` (`<Space>`) and `maplocalleader` (`\`) — they must precede bo
 | `colorcolumn` | `"120"` | Visual ruler at column 120 |
 | `mouse` | `"nvi"` | Mouse in normal/visual/insert — pins the Neovim default because Ctrl+Click multi-cursor (`plugins/multicursor.lua`) depends on it |
 | `mousemodel` | `"extend"` | No right-click popup menu — macOS synthesizes right-clicks from Ctrl+click (trackpad), and the default `popup_setpos` menu would swallow them before the multi-cursor mappings fire |
+
+## Autocommands (`lua/config/autocmds.lua`)
+
+Two augroups, both created with `{ clear = true }` so reloads stay idempotent:
+
+**`auto_create_dir`** — on `BufWritePre`, creates the target file's missing parent directories so `:e /new/nested/path/file` + `:w` succeeds without a manual `mkdir`. Skips URI-scheme buffer names (`oil://`, `term://`, …) via `lib/path_utils.has_uri_scheme`.
+
+**`auto_save`** — writes the buffer automatically:
+
+- `InsertLeave` → saves immediately (and cancels any pending debounced save for that buffer).
+- `TextChanged` / `TextChangedI` → (re)arms a 1s per-buffer debounce, then saves. `TextChangedI` covers `<C-c>` (which skips `InsertLeave`) and pauses mid-typing.
+
+Which buffers are eligible is decided by `lib/save_utils.should_autosave` — a pure-Lua predicate (Busted-tested in `tests/save_utils_spec.lua`) that skips unmodified, non-modifiable, readonly, special-`buftype`, unnamed, and URI-scheme buffers. The wiring re-runs the predicate when the timer fires (the buffer may have been saved, wiped, or reverted during the window).
+
+Mechanics worth knowing before editing:
+
+- Debounce is `vim.defer_fn` + a per-buffer **generation counter** (`pending[bufnr]`). Cancel by *bumping* the counter, never by resetting it to `nil` — a nil-reset lets a stale closure match a restarted count and fire early. (`defer_fn` is schedule-wrapped, so the timer callback may safely run ex commands.)
+- Saves run `silent update` inside `nvim_buf_call` — `:update` is the write-if-modified idiom (same as `BufWriteClose`), `nvim_buf_call` targets the changed buffer even if focus moved, and `silent` (not `silent!`) hides the "written" message while keeping real errors, which are surfaced via `pcall` + `vim.notify(..., WARN)`.
+- **No `noautocmd`**: auto-save writes must keep firing `BufWritePre` so `auto_create_dir` works for brand-new paths.
+
+Both save paths are smoke-tested in `scripts/verify-config.lua` by firing events with `nvim_exec_autocmds(..., { group = "auto_save" })` — extend those checks when changing the behavior.
 
 ## Core Keymaps (`lua/config/keymaps.lua`)
 

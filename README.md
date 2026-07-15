@@ -4,13 +4,13 @@ A minimal Neovim setup built around a comprehensive Markdown editing experience.
 
 ## Requirements
 
-| Requirement | Notes |
-|---|---|
-| Neovim ≥ 0.10 | Required by render-markdown.nvim and markdown-plus.nvim |
-| Git | Used by lazy.nvim to clone and update plugins |
-| A [Nerd Font](https://www.nerdfonts.com/) | Used by render-markdown.nvim for heading and list icons |
-| `prettier` | Optional — needed for auto-format on save |
-| A terminal with the [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) | Optional — needed for `Ctrl+Shift+I` (insert image) |
+| Requirement                                                                                       | Notes                                                   |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Neovim ≥ 0.10                                                                                     | Required by render-markdown.nvim and markdown-plus.nvim |
+| Git                                                                                               | Used by lazy.nvim to clone and update plugins           |
+| A [Nerd Font](https://www.nerdfonts.com/)                                                         | Used by render-markdown.nvim for heading and list icons |
+| `prettier`                                                                                        | Optional — needed for auto-format on save               |
+| A terminal with the [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) | Optional — needed for `Ctrl+Shift+I` (insert image)     |
 
 Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
 
@@ -46,19 +46,19 @@ Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
 
 ## Plugins
 
-| Plugin | Purpose |
-|---|---|
-| [yousefhadder/markdown-plus.nvim](https://github.com/yousefhadder/markdown-plus.nvim) | Core Markdown editing: bold, italic, links, images, checklists, list management |
-| [MeanderingProgrammer/render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | In-buffer rendering of headings, code blocks, tables, and checkboxes |
-| [stevearc/conform.nvim](https://github.com/stevearc/conform.nvim) | Auto-format on save via `prettier` |
-| [nvim-neo-tree/neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) | File tree sidebar with mouse support and bulk file operations |
-| [folke/snacks.nvim](https://github.com/folke/snacks.nvim) | Fuzzy file picker and project-wide text search (picker module only) |
-| [kdheepak/lazygit.nvim](https://github.com/kdheepak/lazygit.nvim) | Lazygit in a floating window |
-| [akinsho/bufferline.nvim](https://github.com/akinsho/bufferline.nvim) | Buffer tabs at the top |
-| [nvim-lualine/lualine.nvim](https://github.com/nvim-lualine/lualine.nvim) | Status line |
-| [folke/zen-mode.nvim](https://github.com/folke/zen-mode.nvim) | Distraction-free writing mode |
-| [brenton-leighton/multiple-cursors.nvim](https://github.com/brenton-leighton/multiple-cursors.nvim) | Multiple cursors with real-time editing (see [Multiple Cursors](#multiple-cursors)) |
-| [projekt0n/github-nvim-theme](https://github.com/projekt0n/github-nvim-theme) | Colorscheme (GitHub Dark) |
+| Plugin                                                                                                    | Purpose                                                                             |
+| --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [yousefhadder/markdown-plus.nvim](https://github.com/yousefhadder/markdown-plus.nvim)                     | Core Markdown editing: bold, italic, links, images, checklists, list management     |
+| [MeanderingProgrammer/render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | In-buffer rendering of headings, code blocks, tables, and checkboxes                |
+| [stevearc/conform.nvim](https://github.com/stevearc/conform.nvim)                                         | Auto-format on save via `prettier`                                                  |
+| [nvim-neo-tree/neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim)                             | File tree sidebar with mouse support and bulk file operations                       |
+| [folke/snacks.nvim](https://github.com/folke/snacks.nvim)                                                 | Fuzzy file picker and project-wide text search (picker module only)                 |
+| [kdheepak/lazygit.nvim](https://github.com/kdheepak/lazygit.nvim)                                         | Lazygit in a floating window                                                        |
+| [akinsho/bufferline.nvim](https://github.com/akinsho/bufferline.nvim)                                     | Buffer tabs at the top                                                              |
+| [nvim-lualine/lualine.nvim](https://github.com/nvim-lualine/lualine.nvim)                                 | Status line                                                                         |
+| [folke/zen-mode.nvim](https://github.com/folke/zen-mode.nvim)                                             | Distraction-free writing mode                                                       |
+| [brenton-leighton/multiple-cursors.nvim](https://github.com/brenton-leighton/multiple-cursors.nvim)       | Multiple cursors with real-time editing (see [Multiple Cursors](#multiple-cursors)) |
+| [projekt0n/github-nvim-theme](https://github.com/projekt0n/github-nvim-theme)                             | Colorscheme (GitHub Dark)                                                           |
 
 All plugins are managed by [folke/lazy.nvim](https://github.com/folke/lazy.nvim), which bootstraps itself automatically.
 
@@ -66,31 +66,31 @@ All plugins are managed by [folke/lazy.nvim](https://github.com/folke/lazy.nvim)
 
 The leader key is `Space`.
 
-| Key | Action |
-|---|---|
-| `Space` `Space` | Fuzzy file picker (project-scoped) |
-| `Space` `.` | Live grep across the project |
-| `Space` `e` | Toggle the file tree sidebar |
-| `Space` `g` | Open Lazygit for the current file's repository (quit with `q`) |
-| `Space` `n` `d` | Open today's daily note (see [Daily Notes](#daily-notes)) |
-| `Shift+H` / `Shift+L` | Previous / next buffer tab |
-| `Ctrl+Z` | Toggle Zen Mode |
-| `Alt+Up` / `Alt+Down` | Move current line or selection up / down |
+| Key                               | Action                                                                             |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `Space` `Space`                   | Fuzzy file picker (project-scoped)                                                 |
+| `Space` `.`                       | Live grep across the project                                                       |
+| `Space` `e`                       | Toggle the file tree sidebar                                                       |
+| `Space` `g`                       | Open Lazygit for the current file's repository (quit with `q`)                     |
+| `Space` `n` `d`                   | Open today's daily note (see [Daily Notes](#daily-notes))                          |
+| `Shift+H` / `Shift+L`             | Previous / next buffer tab                                                         |
+| `Ctrl+Z`                          | Toggle Zen Mode                                                                    |
+| `Alt+Up` / `Alt+Down`             | Move current line or selection up / down                                           |
 | `Alt+Shift+Up` / `Alt+Shift+Down` | Add a cursor on the line above / below (see [Multiple Cursors](#multiple-cursors)) |
 
 ## Buffers
 
 Open files show as tabs along the top. They behave like tabs, so **closing a buffer does not quit Neovim** — the editor stays open with your other files.
 
-| Action | Result |
-|---|---|
+| Action                                   | Result                                                             |
+| ---------------------------------------- | ------------------------------------------------------------------ |
 | Click a tab's `✗` (or right-click a tab) | Close only that buffer (prompts to save if it has unsaved changes) |
-| `:q` | Close the current buffer |
-| `:q!` | Close the current buffer, discarding unsaved changes |
-| `:x` / `:wq` | Save the current buffer, then close it |
-| `:qa` / `:xa` | Quit Neovim (all buffers) — `:xa` saves first |
-| `Shift+H` / `Shift+L` | Previous / next buffer tab |
-| `Space` `b` `n` / `Space` `b` `p` | Next / previous buffer tab |
+| `:q`                                     | Close the current buffer                                           |
+| `:q!`                                    | Close the current buffer, discarding unsaved changes               |
+| `:x` / `:wq`                             | Save the current buffer, then close it                             |
+| `:qa` / `:xa`                            | Quit Neovim (all buffers) — `:xa` saves first                      |
+| `Shift+H` / `Shift+L`                    | Previous / next buffer tab                                         |
+| `Space` `b` `n` / `Space` `b` `p`        | Next / previous buffer tab                                         |
 
 To close a split **window** (rather than a buffer), use `Ctrl+W` `c` or `:close`. Closing the last buffer leaves an empty buffer with Neovim still open; use `:qa` to quit for real.
 
@@ -98,19 +98,19 @@ To close a split **window** (rather than a buffer), use `Ctrl+W` `c` or `:close`
 
 Edit in several places at once, VS Code-style. Everything you type is mirrored at every cursor **in real time**.
 
-| Action | Result |
-|---|---|
-| `Alt+Shift+Up` / `Alt+Shift+Down` | Add a cursor on the line above / below, same column (works in normal, visual, and insert mode) |
-| Select lines with `V`, then `I` | A cursor at the **start** of every selected line, in insert mode |
-| Select lines with `V`, then `A` | A cursor at the **end** of every selected line, in insert mode |
-| `Ctrl+Click` (or right-click / two-finger tap) | Add a cursor where you click — click an existing cursor to remove it |
-| Plain click anywhere | Back to a single cursor, placed where you clicked |
-| `Esc` (in normal mode) | Back to a single cursor |
+| Action                                         | Result                                                                                         |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `Alt+Shift+Up` / `Alt+Shift+Down`              | Add a cursor on the line above / below, same column (works in normal, visual, and insert mode) |
+| Select lines with `V`, then `I`                | A cursor at the **start** of every selected line, in insert mode                               |
+| Select lines with `V`, then `A`                | A cursor at the **end** of every selected line, in insert mode                                 |
+| `Ctrl+Click` (or right-click / two-finger tap) | Add a cursor where you click — click an existing cursor to remove it                           |
+| Plain click anywhere                           | Back to a single cursor, placed where you clicked                                              |
+| `Esc` (in normal mode)                         | Back to a single cursor                                                                        |
 
 Notes:
 
 - The cursor commands simulate the common editing commands (`i`, `a`, `I`, `A`, `o`, `x`, `dd`, …) at every cursor. Exotic normal-mode commands may apply only to the real cursor.
-- **Why right-click adds a cursor:** on a Mac trackpad, `Ctrl+Click` *is* a right-click by the time it reaches the terminal, and some terminals (Warp) drop the `Ctrl` modifier entirely — so the right button is bound too. Neovim's right-click popup menu is disabled to make room for this (`mousemodel=extend`).
+- **Why right-click adds a cursor:** on a Mac trackpad, `Ctrl+Click` _is_ a right-click by the time it reaches the terminal, and some terminals (Warp) drop the `Ctrl` modifier entirely — so the right button is bound too. Neovim's right-click popup menu is disabled to make room for this (`mousemodel=extend`).
 - If a binding seems dead, check what your terminal actually delivers: `:luafile scripts/debug-keys.lua`, then press the key — each received event is shown as a notification. Run it again to stop.
 
 ## Daily Notes
@@ -130,20 +130,20 @@ export NVIM_NOTES_DIR="$HOME/Documents/notes"    # bash/zsh
 
 Inside the tree:
 
-| Key | Action |
-|---|---|
-| `j`/`k`, `Up`/`Down` | Move between entries |
-| `Enter` | Open file / expand or collapse directory |
-| `l`, `Right` | Open file / expand directory |
-| `h`, `Left` | Collapse directory |
-| `d` | Delete — press `y` to confirm, `n` or `Esc` to abort |
-| `r` | Rename (prompt pre-filled with the current name) |
-| `n` | New file at a typed path (`sub/dir/file.md` creates the parents; a trailing `/` creates a directory) |
-| `N` | New directory |
-| `m` | Move to another path |
-| `v` or `V` | Visual mode — select multiple entries with `j`/`k` or mouse drag |
-| `/` | Fuzzy filter within the tree |
-| `?` | Show all mappings |
+| Key                  | Action                                                                                               |
+| -------------------- | ---------------------------------------------------------------------------------------------------- |
+| `j`/`k`, `Up`/`Down` | Move between entries                                                                                 |
+| `Enter`              | Open file / expand or collapse directory                                                             |
+| `l`, `Right`         | Open file / expand directory                                                                         |
+| `h`, `Left`          | Collapse directory                                                                                   |
+| `d`                  | Delete — press `y` to confirm, `n` or `Esc` to abort                                                 |
+| `r`                  | Rename (prompt pre-filled with the current name)                                                     |
+| `n`                  | New file at a typed path (`sub/dir/file.md` creates the parents; a trailing `/` creates a directory) |
+| `N`                  | New directory                                                                                        |
+| `m`                  | Move to another path                                                                                 |
+| `v` or `V`           | Visual mode — select multiple entries with `j`/`k` or mouse drag                                     |
+| `/`                  | Fuzzy filter within the tree                                                                         |
+| `?`                  | Show all mappings                                                                                    |
 
 With a visual selection active: `d` deletes all selected entries after a single confirmation, `x` cuts and `p` pastes them into a target directory (bulk move), `y` + `p` copies them.
 
@@ -157,30 +157,30 @@ These shortcuts are active only in Markdown buffers.
 
 #### Formatting
 
-| Key | Mode | Action |
-|---|---|---|
+| Key      | Mode           | Action                                            |
+| -------- | -------------- | ------------------------------------------------- |
 | `Ctrl+B` | Normal, Visual | Toggle **bold** (`**text**`) on word or selection |
-| `Ctrl+I` | Normal, Visual | Toggle _italic_ (`_text_`) on word or selection |
+| `Ctrl+I` | Normal, Visual | Toggle _italic_ (`_text_`) on word or selection   |
 
 In Normal mode, formatting applies to the word under the cursor. In Visual mode, it applies to the selected text. Pressing the key again on already-formatted text removes the markers.
 
 #### Links and Images
 
-| Key | Mode | Action |
-|---|---|---|
-| `Ctrl+K` | Normal | Insert a new link — prompts for text and URL |
-| `Ctrl+K` | Visual | Wrap selected text as a link — prompts for URL |
-| `Ctrl+Shift+I` | Normal | Insert a new image tag — prompts for alt text and URL |
+| Key            | Mode   | Action                                                 |
+| -------------- | ------ | ------------------------------------------------------ |
+| `Ctrl+K`       | Normal | Insert a new link — prompts for text and URL           |
+| `Ctrl+K`       | Visual | Wrap selected text as a link — prompts for URL         |
+| `Ctrl+Shift+I` | Normal | Insert a new image tag — prompts for alt text and URL  |
 | `Ctrl+Shift+I` | Visual | Wrap selected text as image alt text — prompts for URL |
 
 `Ctrl+Shift+I` requires a terminal supporting the Kitty keyboard protocol.
 
 #### Checklists
 
-| Key | Mode | Action |
-|---|---|---|
+| Key      | Mode           | Action                                                  |
+| -------- | -------------- | ------------------------------------------------------- |
 | `Ctrl+L` | Normal, Insert | Cycle the current line through three states (see below) |
-| `Ctrl+L` | Visual | Toggle checkbox on all selected lines |
+| `Ctrl+L` | Visual         | Toggle checkbox on all selected lines                   |
 
 The three states on repeated `Ctrl+L` presses:
 
@@ -194,12 +194,12 @@ If the line is already an unordered list item (`- text`) the `- ` prefix is pres
 
 #### List Continuation (Insert Mode)
 
-| Key | Behavior |
-|---|---|
-| `Enter` | On a list line, creates a new item with the same marker (`-`, `*`, `1.`, etc.) |
-| `Tab` | Indents the current list item |
-| `Shift+Tab` | Outdents the current list item |
-| `Backspace` | On an empty list marker line, removes the marker |
+| Key         | Behavior                                                                       |
+| ----------- | ------------------------------------------------------------------------------ |
+| `Enter`     | On a list line, creates a new item with the same marker (`-`, `*`, `1.`, etc.) |
+| `Tab`       | Indents the current list item                                                  |
+| `Shift+Tab` | Outdents the current list item                                                 |
+| `Backspace` | On an empty list marker line, removes the marker                               |
 
 ### Auto-Format on Save
 
@@ -223,13 +223,13 @@ The rendering is active in all modes. Raw syntax is revealed on the cursor line 
 
 These `<localleader>` bindings (`\` by default) are always available in Markdown buffers alongside the Ctrl shortcuts:
 
-| Key | Action |
-|---|---|
-| `\ms` | Toggle heading style (ATX `#` / setext underline) |
-| `\mS` | Toggle ~~strikethrough~~ |
-| `\m\`` | Toggle `inline code` |
-| `\mr` | Renumber ordered list items |
-| `\mh` | Insert horizontal rule |
+| Key    | Action                                            |
+| ------ | ------------------------------------------------- |
+| `\ms`  | Toggle heading style (ATX `#` / setext underline) |
+| `\mS`  | Toggle ~~strikethrough~~                          |
+| `\m\`` | Toggle `inline code`                              |
+| `\mr`  | Renumber ordered list items                       |
+| `\mh`  | Insert horizontal rule                            |
 
 ## Updating Plugins
 

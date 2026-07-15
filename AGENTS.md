@@ -22,7 +22,7 @@
 │   └── verify-config.lua      # The checks smoke-test.sh runs — extend when adding commands/keymaps
 └── lua/
     ├── config/
-    │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save)
+    │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save; auto-save on InsertLeave + debounced text changes)
     │   ├── commands.lua       # Command-line overrides (:q/:x/:wq close current buffer) + :Daily note command
     │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line, <leader>nd daily note)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
@@ -30,6 +30,7 @@
     ├── lib/
     │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
     │   ├── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
+    │   ├── save_utils.lua     # Pure-Lua auto-save predicate (which buffers are safe to write)
     │   └── search_utils.lua   # Pure-Lua case-insensitive substring matcher (grep fallback)
     └── plugins/
         ├── explorer.lua       # File-tree sidebar (neo-tree.nvim)
@@ -43,6 +44,7 @@
 └── tests/
     ├── markdown_utils_spec.lua  # Busted unit tests for lib/markdown_utils.lua
     ├── path_utils_spec.lua      # Busted unit tests for lib/path_utils.lua
+    ├── save_utils_spec.lua      # Busted unit tests for lib/save_utils.lua
     └── search_utils_spec.lua    # Busted unit tests for lib/search_utils.lua
 ```
 
@@ -56,7 +58,7 @@ Detailed guidance lives under `.claude/instructions/` — read the relevant file
 
 | File | Covers |
 |---|---|
-| [`config.md`](.claude/instructions/config.md) | lazy.nvim bootstrap, plugin globals vs `require`, editor options, core keymaps, `:q`/`:x`/`:wq` overrides, `:Daily` note command, the global keymap registry |
+| [`config.md`](.claude/instructions/config.md) | lazy.nvim bootstrap, plugin globals vs `require`, editor options, core keymaps, `:q`/`:x`/`:wq` overrides, `:Daily` note command, autocommands (auto-create dirs, auto-save), the global keymap registry |
 | [`markdown.md`](.claude/instructions/markdown.md) | `lib/markdown_utils.lua`, `plugins/markdown.lua` (markdown-plus, render-markdown, conform), `<C-S-I>` terminal caveat |
 | [`plugins.md`](.claude/instructions/plugins.md) | theme, bufferline/lualine, zen-mode, lazygit, snacks.nvim picker |
 | [`explorer.md`](.claude/instructions/explorer.md) | neo-tree file-tree sidebar |
