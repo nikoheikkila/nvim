@@ -101,8 +101,14 @@ Loaded for `ft = { "markdown" }`. Renders headings, bold, italic, code blocks, t
 **Why `render_modes = true`**
 The default is `{ 'n', 'c', 't' }` — insert and visual modes are excluded. Without this override, switching to insert or visual mode strips all rendering and changes the visual appearance of the buffer dramatically. `true` activates rendering in every mode. The `anti_conceal` feature (enabled by default) still reveals raw syntax on the cursor line regardless of `render_modes`.
 
-**Code block background**
-`render-markdown` sets opaque `RenderMarkdownCode` and `RenderMarkdownCodeBorder` highlights that block terminal transparency. Both are cleared to `bg = "NONE"` on startup and re-cleared on every `ColorScheme` event.
+**Highlight overrides (`fix_highlights`)**
+A single function applies all highlight overrides on startup and re-applies them on every `ColorScheme` event:
+
+- `RenderMarkdownCode` / `RenderMarkdownCodeBorder` are cleared to `bg = "NONE"` — the plugin's opaque code-block backgrounds block terminal transparency.
+- H1 renders in magenta: `RenderMarkdownH1` (fg `#ff00ff`, bold) and `RenderMarkdownH1Bg` (bg `#3a0d3a`). The shades differ deliberately — the `# ` marker is drawn with the fg group *over* the bg band, so identical values would make it invisible. The plugin's fg group only covers the marker and sign; the heading text is highlighted by treesitter, so `@markup.heading.1.markdown` is set to the same magenta.
+
+**Icon overrides**
+Headings render their literal ATX markers (`# `–`###### `) instead of nerd-font icons. With the default `heading.position = 'overlay'` each icon string is laid *over* the raw markers, so every entry must be exactly as wide as the markers it covers (level N = N hashes + 1 space) or the overlay clips/leaks. Checkboxes render as `○` (unchecked, `DiagnosticError` red) and `●` (checked, `DiagnosticOk` green) — Diagnostic groups are used so the colors track any theme without custom highlight management. Plain list bullets render as `•` at every indent level with the `Normal` foreground.
 
 ### 3. `stevearc/conform.nvim`
 

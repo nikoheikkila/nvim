@@ -141,17 +141,38 @@ return {
     -- Render in all modes so the appearance never changes on mode switch
     opts = {
       render_modes = true,
+      heading = {
+        -- position = 'overlay' (default) lays each icon over the raw `#` markers,
+        -- so every icon must be exactly as wide as the markers it covers
+        icons = { "# ", "## ", "### ", "#### ", "##### ", "###### " },
+      },
+      checkbox = {
+        -- Diagnostic groups give theme-consistent red/green without custom highlights
+        unchecked = { icon = "○ ", highlight = "DiagnosticError" },
+        checked = { icon = "● ", highlight = "DiagnosticOk" },
+      },
+      bullet = {
+        icons = { "•" },
+        highlight = "Normal",
+      },
     },
     config = function(_, opts)
       require("render-markdown").setup(opts)
       -- render-markdown sets its own opaque code block backgrounds that don't
       -- inherit theme transparency. Clear them so the terminal bg shows through.
-      local function fix_code_hl()
+      local function fix_highlights()
         vim.api.nvim_set_hl(0, "RenderMarkdownCode", { bg = "NONE" })
         vim.api.nvim_set_hl(0, "RenderMarkdownCodeBorder", { bg = "NONE" })
+        -- H1 in magenta: bright text on a dark magenta band — identical shades
+        -- would make the overlaid `# ` marker invisible against the background.
+        -- The plugin's fg group only covers the marker + sign; the heading text
+        -- itself is highlighted by treesitter (@markup.heading.1.markdown).
+        vim.api.nvim_set_hl(0, "RenderMarkdownH1", { fg = "#ff00ff", bold = true })
+        vim.api.nvim_set_hl(0, "RenderMarkdownH1Bg", { bg = "#3a0d3a" })
+        vim.api.nvim_set_hl(0, "@markup.heading.1.markdown", { fg = "#ff00ff", bold = true })
       end
-      fix_code_hl()
-      vim.api.nvim_create_autocmd("ColorScheme", { callback = fix_code_hl })
+      fix_highlights()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = fix_highlights })
     end,
   },
 
