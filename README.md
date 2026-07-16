@@ -10,6 +10,7 @@ A minimal Neovim setup built around a comprehensive Markdown editing experience.
 | Git                                                                                               | Used by lazy.nvim to clone and update plugins           |
 | A [Nerd Font](https://www.nerdfonts.com/)                                                         | Used by render-markdown.nvim for heading and list icons |
 | `prettier`                                                                                        | Optional — needed for auto-format on save               |
+| `markdownlint-cli2`                                                                               | Optional — needed for live Markdown linting             |
 | A terminal with the [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) | Optional — needed for `Ctrl+Shift+I` (insert image)     |
 
 Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
@@ -44,6 +45,16 @@ Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
    brew install prettier
    ```
 
+5. **Install `markdownlint-cli2`** (optional, for live linting while writing):
+
+   ```sh
+   # via npm
+   npm install -g markdownlint-cli2
+
+   # via Homebrew
+   brew install markdownlint-cli2
+   ```
+
 ## Plugins
 
 | Plugin                                                                                                    | Purpose                                                                             |
@@ -51,6 +62,7 @@ Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
 | [yousefhadder/markdown-plus.nvim](https://github.com/yousefhadder/markdown-plus.nvim)                     | Core Markdown editing: bold, italic, links, images, checklists, list management     |
 | [MeanderingProgrammer/render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | In-buffer rendering of headings, code blocks, tables, and checkboxes                |
 | [stevearc/conform.nvim](https://github.com/stevearc/conform.nvim)                                         | Auto-format on save via `prettier`                                                  |
+| [mfussenegger/nvim-lint](https://github.com/mfussenegger/nvim-lint)                                       | Live Markdown linting via `markdownlint-cli2`                                       |
 | [nvim-neo-tree/neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim)                             | File tree sidebar with mouse support and bulk file operations                       |
 | [folke/snacks.nvim](https://github.com/folke/snacks.nvim)                                                 | Fuzzy file picker and project-wide text search (picker module only)                 |
 | [kdheepak/lazygit.nvim](https://github.com/kdheepak/lazygit.nvim)                                         | Lazygit in a floating window                                                        |
@@ -207,6 +219,19 @@ When a Markdown file is saved, `prettier` reformats it automatically. This norma
 
 If `prettier` is not installed, saving works normally and a one-time warning is logged.
 
+### Live Linting
+
+While you write, `markdownlint-cli2` checks the buffer — including unsaved changes — and marks every
+offending line with a dark yellow background and the exact warning at the end of the line, for example
+`MD022/blanks-around-headings Headings should be surrounded by blank lines`. Warnings appear about 300 ms
+after you stop typing and disappear as soon as the issue is fixed.
+
+Rule defaults live in `.markdownlint.jsonc` in this repository; the line-length limit (MD013) is aligned
+with `textwidth` at 120 characters. A `.markdownlint.jsonc` (or `.json`/`.yaml`) file in the project you
+are editing overrides these defaults.
+
+If `markdownlint-cli2` is not installed, editing works normally and a one-time warning is logged.
+
 ### In-Buffer Rendering
 
 `render-markdown.nvim` renders the Markdown visually inside the buffer without opening a separate preview window:
@@ -257,4 +282,5 @@ Run `:checkhealth` inside Neovim to verify that all plugins are set up correctly
 :checkhealth markdown-plus
 :checkhealth render-markdown
 :checkhealth conform
+:checkhealth lint
 ```

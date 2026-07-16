@@ -10,6 +10,7 @@
 ├── AGENTS.md                  # This file — project instructions (single source of truth)
 ├── CLAUDE.md                  # Symlink -> AGENTS.md
 ├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
+├── .markdownlint.jsonc        # Base markdownlint config for live linting (MD013 aligned to textwidth=120)
 ├── selene.toml                # Lua linter config (std = "lua51+vim")
 ├── vim.yml                    # Vendored selene std: declares the `vim` global
 ├── scripts/
@@ -60,7 +61,7 @@ Detailed guidance lives under `.claude/instructions/` — read the relevant file
 | File | Covers |
 |---|---|
 | [`config.md`](.claude/instructions/config.md) | lazy.nvim bootstrap, plugin globals vs `require`, editor options, core keymaps, `:q`/`:x`/`:wq` overrides, `:Daily` note command, autocommands (auto-create dirs, auto-save), the global keymap registry |
-| [`markdown.md`](.claude/instructions/markdown.md) | `lib/markdown_utils.lua`, `plugins/markdown.lua` (markdown-plus, render-markdown, conform), `<C-S-I>` terminal caveat |
+| [`markdown.md`](.claude/instructions/markdown.md) | `lib/markdown_utils.lua`, `plugins/markdown.lua` (markdown-plus, render-markdown, conform, nvim-lint live linting), `<C-S-I>` terminal caveat |
 | [`plugins.md`](.claude/instructions/plugins.md) | theme, bufferline/lualine, zen-mode, lazygit, snacks.nvim picker |
 | [`explorer.md`](.claude/instructions/explorer.md) | neo-tree file-tree sidebar |
 | [`dev-workflow.md`](.claude/instructions/dev-workflow.md) | Adding/fetching plugins, running tests, headless Lua verification |

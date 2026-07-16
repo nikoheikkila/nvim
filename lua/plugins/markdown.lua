@@ -201,4 +201,93 @@ return {
       },
     },
   },
+
+  {
+    "mfussenegger/nvim-lint",
+    ft = "markdown",
+    config = function()
+      local lint = require("lint")
+      lint.linters_by_ft = { markdown = { "markdownlint-cli2" } }
+      -- Base config aligning MD013 with textwidth=120; per-project
+      -- .markdownlint* files still override it (cli2 --config is a base, not
+      -- a replacement). "-" (the stdin glob) must stay last.
+      lint.linters["markdownlint-cli2"].args =
+        { "--config", vim.fn.stdpath("config") .. "/.markdownlint.jsonc", "-" }
+      -- cli2 >= 0.18 prefixes findings with a severity word
+      -- ("stdin:3:121 error MD013/... message"); nvim-lint's bundled
+      -- errorformat predates that and would leak "error " into every
+      -- message. Strip it, with fallbacks for the old format.
+      lint.linters["markdownlint-cli2"].parser = require("lint.parser").from_errorformat(
+        "stdin:%l:%c error %m,stdin:%l error %m,stdin:%l:%c warning %m,stdin:%l warning %m,stdin:%l:%c %m,stdin:%l %m",
+        { source = "markdownlint", severity = vim.diagnostic.severity.WARN }
+      )
+
+      -- Dark-yellow band on offending lines; re-applied on ColorScheme like
+      -- render-markdown's fix_highlights above.
+      local function set_highlight()
+        vim.api.nvim_set_hl(0, "MarkdownLintLine", { bg = "#3a2f1a" })
+      end
+      set_highlight()
+
+      -- Empty sign text on purpose: the runtime signs handler defaults it to
+      -- "W", which opens/shifts the auto signcolumn on every appearing
+      -- warning; "" keeps the linehl band without touching the signcolumn.
+      local warn = vim.diagnostic.severity.WARN
+      vim.diagnostic.config({
+        underline = false,
+        virtual_text = true,
+        signs = { text = { [warn] = "" }, linehl = { [warn] = "MarkdownLintLine" } },
+      }, lint.get_namespace("markdownlint-cli2"))
+
+      local warned = false
+      local function lint_buf(buf)
+        if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].filetype ~= "markdown" then
+          return
+        end
+        if vim.fn.executable("markdownlint-cli2") == 0 then
+          if not warned then
+            warned = true
+            vim.notify(
+              "markdownlint-cli2 not found on PATH (brew install markdownlint-cli2) — live markdown linting disabled",
+              vim.log.levels.WARN
+            )
+          end
+          return
+        end
+        vim.api.nvim_buf_call(buf, function()
+          lint.try_lint("markdownlint-cli2")
+        end)
+      end
+
+      -- nvim-lint has no debounce and each run spawns a node process;
+      -- restarting an active uv timer coalesces event bursts
+      -- (InsertLeave -> auto-save -> prettier -> BufWritePost) into one run.
+      local timer = assert(vim.uv.new_timer())
+      local group = vim.api.nvim_create_augroup("markdown_lint", { clear = true })
+      vim.api.nvim_create_autocmd(
+        { "TextChanged", "TextChangedI", "InsertLeave", "BufWritePost", "BufReadPost" },
+        {
+          group = group,
+          callback = function(ev)
+            if vim.bo[ev.buf].filetype ~= "markdown" then
+              return
+            end
+            timer:start(300, 0, vim.schedule_wrap(function()
+              lint_buf(ev.buf)
+            end))
+          end,
+        }
+      )
+      vim.api.nvim_create_autocmd("ColorScheme", { group = group, callback = set_highlight })
+
+      -- ft-lazy loading: this config() runs during the FIRST markdown
+      -- buffer's FileType event, whose BufReadPost has already fired — catch
+      -- up on every markdown buffer already open (markdown-plus pattern).
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "markdown" then
+          lint_buf(buf)
+        end
+      end
+    end,
+  },
 }

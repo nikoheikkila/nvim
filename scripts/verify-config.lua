@@ -18,6 +18,17 @@ local function check(cond, label)
   end
 end
 
+-- Record vim.notify calls for the markdown-lint section's guard assertions.
+-- Installed up here because nvim-lint ft-loads during the :Daily check below
+-- (it opens a markdown buffer) — a missing-binary notification fires there,
+-- long before the lint section runs.
+local notifications = {}
+local orig_notify = vim.notify
+vim.notify = function(msg, ...)
+  table.insert(notifications, tostring(msg))
+  return orig_notify(msg, ...)
+end
+
 -- Leader keys: must be set by config/options.lua BEFORE keymaps.lua runs.
 -- A <leader> map created before vim.g.mapleader is set silently binds to the
 -- default backslash — this check exists because exactly that regression shipped.
@@ -158,6 +169,81 @@ if ok_mc then
   -- buffer with no UI to answer the prompt).
   vim.bo.modified = false
 end
+
+-- Live markdown linting (plugins/markdown.lua, nvim-lint + markdownlint-cli2).
+-- Wiring checks run unconditionally; the functional path needs the binary,
+-- the guard path is exercised via:
+--   scripts/test-without-binary.sh markdownlint-cli2 -- scripts/smoke-test.sh
+vim.cmd("enew")
+local md_buf = vim.api.nvim_get_current_buf()
+vim.api.nvim_buf_set_lines(md_buf, 0, -1, false, { "not a heading" }) -- violates MD041
+vim.bo.filetype = "markdown" -- ft-loads nvim-lint (if :Daily hasn't already)
+
+local ok_lint, lint = pcall(require, "lint")
+check(ok_lint, "nvim-lint loads for markdown buffers")
+if ok_lint then
+  for _, ev in ipairs({ "TextChanged", "TextChangedI", "InsertLeave", "BufWritePost", "BufReadPost" }) do
+    local lint_aus = vim.api.nvim_get_autocmds({ group = "markdown_lint", event = ev })
+    check(#lint_aus == 1, "markdown_lint has a " .. ev .. " autocmd")
+  end
+  check(vim.api.nvim_get_hl(0, { name = "MarkdownLintLine" }).bg ~= nil, "MarkdownLintLine highlight defines a bg")
+  check(
+    vim.fn.filereadable(vim.fn.stdpath("config") .. "/.markdownlint.jsonc") == 1,
+    ".markdownlint.jsonc base config exists"
+  )
+
+  local warn = vim.diagnostic.severity.WARN
+  local lint_ns = lint.get_namespace("markdownlint-cli2")
+  local dcfg = vim.diagnostic.config(nil, lint_ns)
+  check(dcfg.underline == false, "markdownlint ns: underline is off")
+  check(dcfg.virtual_text == true, "markdownlint ns: virtual_text is on")
+  check(dcfg.signs.linehl[warn] == "MarkdownLintLine", "markdownlint ns: linehl is MarkdownLintLine")
+  check(dcfg.signs.text[warn] == "", "markdownlint ns: sign text is empty (no signcolumn shift)")
+
+  if vim.fn.executable("markdownlint-cli2") == 1 then
+    -- Functional: fire the debounced event path, wait out timer + async spawn.
+    vim.api.nvim_exec_autocmds("TextChanged", { group = "markdown_lint" })
+    local got = vim.wait(10000, function()
+      return #vim.diagnostic.get(md_buf, { namespace = lint_ns }) > 0
+    end, 50)
+    check(got, "markdownlint produces diagnostics for a known violation")
+    if got then
+      local d = vim.diagnostic.get(md_buf, { namespace = lint_ns })[1]
+      check(d.severity == warn, "markdownlint diagnostics are WARN")
+      check(d.message:find("MD%d%d%d") ~= nil, "diagnostic message carries the MDxxx rule id")
+      check(d.message:find("^error ") == nil, "severity word is stripped from the message")
+      local sign_ns
+      for name, id in pairs(vim.api.nvim_get_namespaces()) do
+        if name:find("markdownlint%-cli2") and name:find("signs") then
+          sign_ns = id
+        end
+      end
+      local marks = sign_ns and vim.api.nvim_buf_get_extmarks(md_buf, sign_ns, 0, -1, { details = true }) or {}
+      check(
+        #marks > 0 and marks[1][4].line_hl_group == "MarkdownLintLine",
+        "offending line carries the linehl extmark"
+      )
+      check(vim.fn.getwininfo()[1].textoff == 0, "warning does not open the signcolumn")
+    end
+  else
+    -- Guard path: the catch-up lint during :Daily already notified once;
+    -- further events must not notify again, and nothing may be spawned.
+    vim.api.nvim_exec_autocmds("TextChanged", { group = "markdown_lint" })
+    vim.wait(600)
+    vim.api.nvim_exec_autocmds("InsertLeave", { group = "markdown_lint" })
+    vim.wait(600)
+    local guard_notes = 0
+    for _, msg in ipairs(notifications) do
+      if msg:find("markdownlint%-cli2 not found") then
+        guard_notes = guard_notes + 1
+      end
+    end
+    check(guard_notes == 1, "missing-binary guard notifies exactly once per session")
+    check(#vim.diagnostic.get(md_buf, { namespace = lint_ns }) == 0, "no diagnostics attempted without the binary")
+  end
+end
+vim.notify = orig_notify
+vim.bo.modified = false -- keep hand-rolled `-c qa` runners from hanging
 
 if failures > 0 then
   print(failures .. " smoke check(s) FAILED\n")

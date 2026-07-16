@@ -1,0 +1,9 @@
+{
+  // Align MD013 with textwidth/colorcolumn = 120 (lua/config/options.lua)
+  "default": true,
+  "MD013": {
+    "line_length": 120,
+    "heading_line_length": 120,
+    "code_block_line_length": 120
+  }
+}

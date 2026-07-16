@@ -119,3 +119,58 @@ Headings render their literal ATX markers (`# `–`###### `) instead of nerd-fon
 Loaded on `BufWritePre`. Runs `prettier` on markdown files before every save. If `prettier` is not found, conform logs a one-time warning and skips formatting silently — it does not block saving.
 
 The formatter is set only for `markdown`. Adding formatters for other filetypes should extend `formatters_by_ft`, not replace it.
+
+### 4. `mfussenegger/nvim-lint` (live markdownlint)
+
+Loaded for `ft = "markdown"`. Runs `markdownlint-cli2` over the **unsaved buffer content** (stdin) and publishes
+the findings as diagnostics: offending lines get a dark-yellow background (`MarkdownLintLine`, `#3a2f1a`,
+re-applied on `ColorScheme` like render-markdown's `fix_highlights`) and the exact warning message — MDxxx rule
+id included — as end-of-line virtual text. This is the repo's first and only `vim.diagnostic.config()` call, and
+it is **namespace-scoped** to `require("lint").get_namespace("markdownlint-cli2")` so any future LSP/linter
+diagnostics keep Neovim's default styling.
+
+**Why markdownlint-cli2 (not markdownlint-cli v1):** same engine (David Anson's `markdownlint` library), but
+cli2's `--config` is applied as a *base* configuration that per-directory `.markdownlint*` files still override,
+it's maintained by the markdownlint author (same engine as vscode-markdownlint), and it's what the wider
+nvim-lint ecosystem configures today.
+
+**Config layering:** `.markdownlint.jsonc` at the repo root (the filename is constrained by cli2's `--config`,
+which requires a recognized config name) is passed as the base config on every run — it aligns MD013
+`line_length` with `textwidth = 120` from `options.lua`. Project-local `.markdownlint*` files override it, but
+note stdin linting resolves them against **Neovim's cwd**, not the buffer's directory. Tune global rules in that
+file; never in the Lua spec.
+
+**Parser override:** cli2 ≥ 0.18 prefixes findings with a severity word (`stdin:3:121 error MD013/... message`);
+nvim-lint's bundled errorformat predates that and would leak the word `error` into every message (and
+`%t`-style parsing would misfile them as ERROR, escaping the WARN-keyed `linehl`). The spec overrides the parser
+with an errorformat that strips `error`/`warning` and keeps old-format fallbacks, forcing severity WARN.
+
+**Debounce (the `timer` upvalue):** nvim-lint has no internal debounce and every run spawns a node process
+(~100–300ms startup). Restarting an active `vim.uv` timer on each event coalesces bursts — an `InsertLeave`
+triggers auto-save → prettier → `BufWritePost` (plus `TextChanged` from the reformat), and all of it collapses
+into **one** lint of the post-prettier content 300ms later.
+
+**Events live in the `markdown_lint` augroup, never `auto_save`:** the smoke test asserts `auto_save` has no
+`TextChanged` autocmds (that debounced-save regression is not allowed back). Lint-on-`TextChanged` is fine — it
+only reads the buffer.
+
+**Empty sign text (`signs.text = { [WARN] = "" }`):** the whole-line background rides on diagnostic *sign*
+extmarks. If `signs.text` is unset, the runtime defaults it to `"W"` (`runtime/lua/vim/diagnostic.lua`, signs
+handler), and a visible sign opens/shifts the auto signcolumn on every appearing/disappearing warning. An
+explicitly empty string keeps `line_hl_group` working with `textoff == 0` (verified on 0.12.4 and asserted in
+the smoke test).
+
+**Missing-binary guard:** checked inside `lint_buf()` before any spawn, notifying once per session (`warned`
+upvalue) — the house idiom from `git.lua`/`picker.lua`. Wiring (augroup, highlight, namespace config) is set up
+unconditionally so the smoke test asserts it with or without the binary; the guard branch is exercised via
+`scripts/test-without-binary.sh markdownlint-cli2 -- scripts/smoke-test.sh`. If the binary appears mid-session,
+linting starts working without a restart (only the notification is one-shot).
+
+**ft-lazy catch-up loop:** `config()` runs during the first markdown buffer's `FileType` event — after that
+buffer's `BufReadPost` — so already-open markdown buffers are linted directly at setup (same pattern as
+markdown-plus's keymap catch-up). Buffers created via `BufNewFile` (a fresh `:Daily` note) get their first lint
+on the first edit.
+
+Known cosmetic caveat: render-markdown's heading background bands use a higher extmark priority (4096) than
+diagnostic signs (10), so on a *heading* line the band wins over the dark-yellow background — the virtual-text
+message still shows. If that ever matters, add `signs.priority` to the namespace config; don't pre-fix it.
