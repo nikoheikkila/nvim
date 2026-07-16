@@ -1,10 +1,20 @@
 # Smaller Plugins
 
-Covers `theme.lua`, `ui.lua`, `zen.lua`, `git.lua`, `multicursor.lua`, `picker.lua`. See `explorer.md` for neo-tree (kept standalone — the longest single-plugin section) and `markdown.md` for the markdown plugin stack.
+Covers `theme.lua`, `treesitter.lua`, `ui.lua`, `zen.lua`, `git.lua`, `multicursor.lua`, `picker.lua`. See `explorer.md` for neo-tree (kept standalone — the longest single-plugin section) and `markdown.md` for the markdown plugin stack.
 
-### `lua/plugins/theme.lua` — `ribru17/bamboo.nvim` (via `lcoram/laserwave.nvim`)
+### `lua/plugins/theme.lua` — `projekt0n/github-nvim-theme`
 
-Loads the laserwave colorscheme with `transparent = true` so the terminal background shows through.
+Loads the `github_dark_default` colorscheme. `setup()` is called with `styles = { comments = "italic" }` — the theme's default is `'NONE'`, and italic comments are wanted both in regular code and inside markdown fences (injected `@comment` captures merge italic over the non-italic fence-content group set in `markdown.lua`'s `fix_highlights`). `setup()` must run *before* the `colorscheme` command or the style options don't apply.
+
+### `lua/plugins/treesitter.lua` — `nvim-treesitter/nvim-treesitter` (branch `main`)
+
+Supplies the treesitter highlight queries that make syntax highlighting inside markdown code fences work. Neovim's bundled ftplugin already starts treesitter for markdown buffers and the injection query parses fence content with the matching language parser — but without this plugin's query files, injected code gets **zero highlight captures** (the symptom: fences render as uniform theme-colored text).
+
+- `branch = "main"` — `master` is frozen upstream; `main` requires Neovim 0.11+ and the `tree-sitter` CLI ≥ 0.25 (`brew install tree-sitter-cli` — note the plain `tree-sitter` formula now installs only the library).
+- `lazy = false` — upstream states the main branch does not support lazy-loading.
+- `build = ":TSUpdate"` keeps compiled parsers in sync with the plugin's queries. The build is async; to run it synchronously (e.g. after a headless install): `nvim --headless -c "lua require('nvim-treesitter').update():wait(300000)" -c "qa!"`.
+- **Fragile coupling**: the entries in `~/.local/share/nvim/site/queries/` are *symlinks into this plugin's* `runtime/queries/` directory, and compiled parsers live in `~/.local/share/nvim/site/parser/`. Removing the plugin (e.g. via `:Lazy clean` after deleting the spec) leaves the parsers behind but breaks every query symlink — fence highlighting dies silently while `vim.treesitter.language.add()` still succeeds. Diagnose with `:lua =vim.treesitter.query.get("javascript", "highlights")` (nil = queries missing).
+- No `setup()` call and no per-filetype `vim.treesitter.start()` autocmd — markdown injection only needs parsers + queries on disk. Auto-starting treesitter highlighting for standalone code buffers would be a deliberate, separate addition here.
 
 ### `lua/plugins/ui.lua`
 
@@ -22,7 +32,7 @@ Opens Lazygit in a floating window ("modal") over the current buffer. Lazy-loade
 
 - `<leader>g` (global keymap) runs `:LazyGitCurrentFile`, scoping Lazygit to the **current file's Git repository** (falling back to the project/cwd Git root). Quit Lazygit with `q` to return to the buffer.
 - A **PATH guard** checks `vim.fn.executable("lazygit")` first and emits a clean `vim.notify` error instead of a raw stack trace when the binary is missing.
-- Floating-window options are set in `init` (`winblend = 0`, `scaling_factor = 0.9`) to stay consistent with the transparent laserwave theme.
+- Floating-window options are set in `init` (`winblend = 0`, `scaling_factor = 0.9`) to stay consistent with the transparent theme background.
 
 ### `lua/plugins/multicursor.lua` — `brenton-leighton/multiple-cursors.nvim`
 

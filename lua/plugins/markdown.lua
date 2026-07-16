@@ -155,6 +155,11 @@ return {
         icons = { "•" },
         highlight = "Normal",
       },
+      code = {
+        -- sign + inline language label rendered the marker twice; keep only
+        -- the inline icon+name label
+        sign = false,
+      },
     },
     config = function(_, opts)
       require("render-markdown").setup(opts)
@@ -170,6 +175,13 @@ return {
         vim.api.nvim_set_hl(0, "RenderMarkdownH1", { fg = "#ff00ff", bold = true })
         vim.api.nvim_set_hl(0, "RenderMarkdownH1Bg", { bg = "#3a0d3a" })
         vim.api.nvim_set_hl(0, "@markup.heading.1.markdown", { fg = "#ff00ff", bold = true })
+        -- github-theme styles @markup.raw italic and leaves @markup.raw.block
+        -- undefined, so fence content falls back to italic — and injected language
+        -- captures set fg but not italic, so italic bleeds through. Define the most
+        -- specific group non-italic, keeping the theme's fg; inline code
+        -- (@markup.raw on markdown_inline) stays as the theme styles it.
+        local raw = vim.api.nvim_get_hl(0, { name = "@markup.raw", link = false })
+        vim.api.nvim_set_hl(0, "@markup.raw.block.markdown", { fg = raw.fg })
       end
       fix_highlights()
       vim.api.nvim_create_autocmd("ColorScheme", { callback = fix_highlights })

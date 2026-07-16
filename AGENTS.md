@@ -38,7 +38,8 @@
         ├── markdown.lua       # All markdown plugin specs
         ├── multicursor.lua    # Real-time multiple cursors (multiple-cursors.nvim)
         ├── picker.lua         # Fuzzy file picker + project grep (snacks.nvim, picker module only)
-        ├── theme.lua          # Colorscheme (github-nvim-theme, github_dark_default)
+        ├── theme.lua          # Colorscheme (github-nvim-theme, github_dark_default, italic comments)
+        ├── treesitter.lua     # nvim-treesitter (main branch) — highlight queries for code-fence syntax highlighting
         ├── ui.lua             # UI plugins (bufferline.nvim, lualine.nvim)
         └── zen.lua            # Distraction-free writing (zen-mode.nvim)
 └── tests/

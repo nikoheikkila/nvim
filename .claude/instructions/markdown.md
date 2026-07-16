@@ -96,7 +96,10 @@ These exist alongside the Ctrl bindings and do not conflict:
 
 ### 2. `MeanderingProgrammer/render-markdown.nvim`
 
-Loaded for `ft = { "markdown" }`. Renders headings, bold, italic, code blocks, tables, and checkboxes as styled virtual text in the buffer. No external binaries required.
+Loaded for `ft = { "markdown" }`. Renders headings, bold, italic, code blocks, tables, and checkboxes as styled virtual text in the buffer. No external binaries required — but syntax highlighting *inside* code fences depends on `plugins/treesitter.lua` supplying treesitter queries for the fence languages (see `plugins.md`); render-markdown only draws the block chrome.
+
+**Code blocks: `code.sign = false`**
+render-markdown's defaults render the fence language twice: an icon in the sign column (`sign = true`) *and* an inline icon+name label overlaying the delimiter line. `sign = false` keeps only the inline label.
 
 **Why `render_modes = true`**
 The default is `{ 'n', 'c', 't' }` — insert and visual modes are excluded. Without this override, switching to insert or visual mode strips all rendering and changes the visual appearance of the buffer dramatically. `true` activates rendering in every mode. The `anti_conceal` feature (enabled by default) still reveals raw syntax on the cursor line regardless of `render_modes`.
@@ -105,6 +108,7 @@ The default is `{ 'n', 'c', 't' }` — insert and visual modes are excluded. Wit
 A single function applies all highlight overrides on startup and re-applies them on every `ColorScheme` event:
 
 - `RenderMarkdownCode` / `RenderMarkdownCodeBorder` are cleared to `bg = "NONE"` — the plugin's opaque code-block backgrounds block terminal transparency.
+- `@markup.raw.block.markdown` is redefined non-italic (keeping the theme's `@markup.raw` fg, read via `nvim_get_hl`). github-theme styles `@markup.raw` italic and leaves `@markup.raw.block` undefined, so fence content falls back to italic — and injected language captures set fg but not italic in extmark attribute merging, so the italic bleeds through highlighted code. Only the block group is overridden; inline code (`@markup.raw` on `markdown_inline`) keeps the theme's italic styling.
 - H1 renders in magenta: `RenderMarkdownH1` (fg `#ff00ff`, bold) and `RenderMarkdownH1Bg` (bg `#3a0d3a`). The shades differ deliberately — the `# ` marker is drawn with the fg group *over* the bg band, so identical values would make it invisible. The plugin's fg group only covers the marker and sign; the heading text is highlighted by treesitter, so `@markup.heading.1.markdown` is set to the same magenta.
 
 **Icon overrides**
