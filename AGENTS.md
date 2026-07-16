@@ -22,7 +22,7 @@
 │   └── verify-config.lua      # The checks smoke-test.sh runs — extend when adding commands/keymaps
 └── lua/
     ├── config/
-    │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save; auto-save on InsertLeave + debounced text changes)
+    │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save; auto-save on InsertLeave)
     │   ├── commands.lua       # Command-line overrides (:q/:x/:wq close current buffer) + :Daily note command
     │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line, <leader>nd daily note)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup

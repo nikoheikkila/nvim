@@ -56,33 +56,36 @@ check(vim.fn.maparg(leader .. "nd", "n"):find("Daily") ~= nil, "<leader>nd is bo
 check(vim.fn.maparg(leader .. "bn", "n", false, true).desc == "Next Buffer", "<leader>bn cycles to next buffer")
 check(vim.fn.maparg(leader .. "bp", "n", false, true).desc == "Prev Buffer", "<leader>bp cycles to prev buffer")
 
--- Auto-save (config/autocmds.lua): InsertLeave saves immediately,
--- TextChanged/TextChangedI save after a ~1s debounce. Events are fired
--- explicitly (feedkeys-driven autocmds are unreliable headlessly) and scoped
--- to the auto_save group so other plugins' handlers stay out of the test.
-for _, ev in ipairs({ "InsertLeave", "TextChanged", "TextChangedI" }) do
-  local aus = vim.api.nvim_get_autocmds({ group = "auto_save", event = ev })
-  check(#aus == 1, "auto_save has a " .. ev .. " autocmd")
+-- Auto-save (config/autocmds.lua): InsertLeave saves immediately and is the
+-- ONLY trigger — no TextChanged debounce, so format-on-save never fires
+-- mid-edit. Events are fired explicitly (feedkeys-driven autocmds are
+-- unreliable headlessly) and scoped to the auto_save group so other plugins'
+-- handlers stay out of the test.
+local aus = vim.api.nvim_get_autocmds({ group = "auto_save", event = "InsertLeave" })
+check(#aus == 1, "auto_save has an InsertLeave autocmd")
+for _, ev in ipairs({ "TextChanged", "TextChangedI" }) do
+  local debounced = vim.api.nvim_get_autocmds({ group = "auto_save", event = ev })
+  check(#debounced == 0, "auto_save has no " .. ev .. " autocmd (debounce stays removed)")
 end
 
 local save_file = vim.fn.tempname() .. ".txt"
 vim.cmd.edit(save_file)
 vim.api.nvim_buf_set_lines(0, 0, -1, false, { "autosaved" })
 check(vim.bo.modified, "buffer is modified before InsertLeave")
+-- The InsertLeave autocmd must be `nested` — otherwise its `:update` fires no
+-- write autocmds and conform/auto_create_dir are silently skipped.
+local write_autocmds_fired = false
+vim.api.nvim_create_autocmd("BufWritePre", {
+  group = vim.api.nvim_create_augroup("verify_nested_save", { clear = true }),
+  callback = function()
+    write_autocmds_fired = true
+  end,
+})
 vim.api.nvim_exec_autocmds("InsertLeave", { group = "auto_save" })
 check(vim.fn.filereadable(save_file) == 1, "InsertLeave writes the buffer to disk")
 check(not vim.bo.modified, "InsertLeave clears 'modified'")
-
-vim.api.nvim_buf_set_lines(0, 0, -1, false, { "autosaved twice" })
-vim.api.nvim_exec_autocmds("TextChanged", { group = "auto_save" })
-check(vim.bo.modified, "debounced save does not write synchronously")
-check(
-  vim.wait(3000, function()
-    return not vim.bo.modified
-  end, 50),
-  "TextChanged saves ~1s after the change"
-)
-check(vim.fn.readfile(save_file)[1] == "autosaved twice", "debounced save wrote the latest content")
+check(write_autocmds_fired, "InsertLeave save fires BufWritePre (nested autocmd)")
+vim.api.nvim_del_augroup_by_name("verify_nested_save")
 vim.fn.delete(save_file)
 vim.cmd("bwipeout!")
 

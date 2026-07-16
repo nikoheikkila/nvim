@@ -36,18 +36,18 @@ Two augroups, both created with `{ clear = true }` so reloads stay idempotent:
 
 **`auto_save`** — writes the buffer automatically:
 
-- `InsertLeave` → saves immediately (and cancels any pending debounced save for that buffer).
-- `TextChanged` / `TextChangedI` → (re)arms a 1s per-buffer debounce, then saves. `TextChangedI` covers `<C-c>` (which skips `InsertLeave`) and pauses mid-typing.
+- `InsertLeave` → saves immediately. This is deliberately the **only** trigger: a debounced `TextChanged`/`TextChangedI` save existed once but was removed because it ran format-on-save (prettier) mid-edit, constantly stripping the buffer's leading/trailing blank lines. Don't reintroduce it.
 
-Which buffers are eligible is decided by `lib/save_utils.should_autosave` — a pure-Lua predicate (Busted-tested in `tests/save_utils_spec.lua`) that skips unmodified, non-modifiable, readonly, special-`buftype`, unnamed, and URI-scheme buffers. The wiring re-runs the predicate when the timer fires (the buffer may have been saved, wiped, or reverted during the window).
+Accepted caveats of InsertLeave-only saving: `<C-c>` exits insert without firing `InsertLeave`, so it doesn't save, and normal-mode edits (`dd`, `p`, …) wait for the next insert-leave or a manual `:w`.
+
+Which buffers are eligible is decided by `lib/save_utils.should_autosave` — a pure-Lua predicate (Busted-tested in `tests/save_utils_spec.lua`) that skips unmodified, non-modifiable, readonly, special-`buftype`, unnamed, and URI-scheme buffers.
 
 Mechanics worth knowing before editing:
 
-- Debounce is `vim.defer_fn` + a per-buffer **generation counter** (`pending[bufnr]`). Cancel by *bumping* the counter, never by resetting it to `nil` — a nil-reset lets a stale closure match a restarted count and fire early. (`defer_fn` is schedule-wrapped, so the timer callback may safely run ex commands.)
 - Saves run `silent update` inside `nvim_buf_call` — `:update` is the write-if-modified idiom (same as `BufWriteClose`), `nvim_buf_call` targets the changed buffer even if focus moved, and `silent` (not `silent!`) hides the "written" message while keeping real errors, which are surfaced via `pcall` + `vim.notify(..., WARN)`.
-- **No `noautocmd`**: auto-save writes must keep firing `BufWritePre` so `auto_create_dir` works for brand-new paths.
+- **The `InsertLeave` autocmd is `nested = true`, and must stay that way**: autocmds don't nest by default, so without the flag the `:update` inside the callback fires no `BufWritePre`/`BufWritePost` — conform's format-on-save and `auto_create_dir` are then silently skipped (this bug shipped once; the old debounced save masked it because `defer_fn` timers run outside autocmd context). For the same reason, never wrap the save in `noautocmd`.
 
-Both save paths are smoke-tested in `scripts/verify-config.lua` by firing events with `nvim_exec_autocmds(..., { group = "auto_save" })` — extend those checks when changing the behavior.
+The save path is smoke-tested in `scripts/verify-config.lua` by firing events with `nvim_exec_autocmds(..., { group = "auto_save" })` — it also asserts no `TextChanged`/`TextChangedI` autocmds exist in the group. Extend those checks when changing the behavior.
 
 ## Core Keymaps (`lua/config/keymaps.lua`)
 

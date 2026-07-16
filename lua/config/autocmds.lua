@@ -13,18 +13,12 @@ vim.api.nvim_create_autocmd("BufWritePre", {
   end,
 })
 
--- Auto-save: write the buffer on leaving insert mode, and ~1s (debounced)
--- after any text change. `:update` only writes when modified; auto_create_dir
--- above still fires, so saves into new directories work. Buffer guards live
--- in lib/save_utils so Busted can cover them.
+-- Auto-save: write the buffer on leaving insert mode. Deliberately no
+-- TextChanged debounce — format-on-save (prettier) must not fire mid-edit.
+-- `:update` only writes when modified; auto_create_dir above still fires, so
+-- saves into new directories work. Buffer guards live in lib/save_utils so
+-- Busted can cover them.
 local save_utils = require("lib.save_utils")
-
-local DEBOUNCE_MS = 1000
-
--- bufnr -> generation of the most recent change. A deferred save fires only
--- if its generation is still current. Cancel by BUMPING the counter, never by
--- resetting to nil — a nil-reset lets a stale closure match a restarted count.
-local pending = {}
 
 local function save(buf)
   if not vim.api.nvim_buf_is_valid(buf) then
@@ -54,23 +48,11 @@ local group = vim.api.nvim_create_augroup("auto_save", { clear = true })
 
 vim.api.nvim_create_autocmd("InsertLeave", {
   group = group,
+  -- Autocmds don't nest by default: without `nested` the `:update` below
+  -- would fire no BufWritePre/BufWritePost, silently skipping conform's
+  -- format-on-save and auto_create_dir.
+  nested = true,
   callback = function(event)
-    pending[event.buf] = (pending[event.buf] or 0) + 1
     save(event.buf)
-  end,
-})
-
-vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
-  group = group,
-  callback = function(event)
-    local buf = event.buf
-    pending[buf] = (pending[buf] or 0) + 1
-    local gen = pending[buf]
-    -- defer_fn is schedule-wrapped: safe to run ex commands from the timer.
-    vim.defer_fn(function()
-      if pending[buf] == gen then
-        save(buf)
-      end
-    end, DEBOUNCE_MS)
   end,
 })
