@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# Headless smoke test for config-level wiring: leader keys, user commands
-# (:Daily, :BufClose/:BufWriteClose + their :q/:x/:wq abbreviations), and
-# global keymaps. Complements `busted` (pure-Lua lib/ only) and `selene`
-# (static lint) — this is the only check that exercises a fully-loaded config.
+# Config-level integration tests: leader keys, user commands (:Daily,
+# :BufClose/:BufWriteClose + their :q/:x/:wq abbreviations), global keymaps,
+# auto-save, and plugin wiring (multicursor, markdown lint).
+#
+# Runs the tests/integration/ Busted suite inside a fully-loaded headless
+# Neovim (see the `integration` task in .busted and scripts/busted-nvim.sh).
+# Complements plain `busted` (pure-Lua tests/unit) and `selene` (static lint).
 #
 # Usage: scripts/smoke-test.sh
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-exec scripts/headless-lua.sh scripts/verify-config.lua
+exec busted --run=integration

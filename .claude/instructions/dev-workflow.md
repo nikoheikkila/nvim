@@ -48,13 +48,35 @@ or call the plugin's health module directly: `require("plugin_name.health").chec
 
 ## Testing
 
-Tests live in `tests/*_spec.lua` (one Busted spec per `lua/lib/` module) and use [Busted](https://lunarmodules.github.io/busted/) with Lua 5.5. Busted covers **only pure-Lua `lib/` code** — user commands, keymaps, and anything touching `vim.*` is covered by the headless smoke test instead (`scripts/smoke-test.sh`, below).
+Two [Busted](https://lunarmodules.github.io/busted/) suites, configured by `.busted` at the project root:
+
+- **Unit** — `tests/unit/*_spec.lua`, one spec per `lua/lib/` module. Pure Lua, runs under the plain
+  `busted` binary (homebrew Lua, no Neovim). The `package.path` preamble in each spec makes `lib.*`
+  importable without Neovim.
+- **Integration** — `tests/integration/*_spec.lua`, the config-level contract: leader keys, `:Daily`
+  end-to-end, the `:q`/`:x`/`:wq` abbreviations, global keymaps, auto-save, and plugin wiring
+  (multicursor, markdown lint). `busted --run=integration` re-executes busted under
+  `scripts/busted-nvim.sh`, an interpreter shim that boots a **fully-loaded headless Neovim**
+  (`nvim -u init.lua -l`), so specs assert against the real `vim` API. **Extend these specs when
+  adding a user command or global keymap.**
+
+Integration-suite mechanics worth knowing before writing specs:
+
+- `tests/integration/helper.lua` hooks `vim.notify` at session start and exposes the log as
+  `_G.__notify_log` — needed because once-per-session guards (e.g. the markdownlint missing-binary
+  notification) can fire in whichever spec file first ft-loads the plugin, not the one asserting.
+- File insulation is off (`["auto-insulate"] = false` in `.busted`): the editor process is shared
+  global state, and restoring `package.loaded` between files would detach plugin modules from the
+  autocmds that captured them. Clean up buffers in `teardown` instead.
+- Files run sorted; tests within a file run in declaration order — several specs are ordered
+  functional sequences, so never run this suite with `--shuffle`.
 
 ### Install
 
 ```sh
 brew install luarocks
-luarocks install busted
+luarocks install busted                    # unit suite (default homebrew Lua tree)
+luarocks --lua-version=5.1 install busted  # integration suite: Neovim's LuaJIT is 5.1-ABI (installs to ~/.luarocks)
 brew install selene   # or: cargo install selene
 ```
 
@@ -62,17 +84,21 @@ Verify: `busted --version` and `selene --version`
 
 `selene` is a standalone Rust binary with no Lua/LuaRocks dependency — unlike a Lua-based linter, it can never break due to a local Lua-version mismatch.
 
+Do **not** set `lua = "luajit"` on the *default* `.busted` task — the default rocks tree is not 5.1 and
+`busted.runner` won't resolve. The integration task instead points `lua` at `scripts/busted-nvim.sh`,
+which wires `LUA_PATH`/`LUA_CPATH` to the `~/.luarocks` 5.1 tree before exec'ing `nvim -l`.
+
 ### Run
 
 ```sh
-busted
-scripts/lint.sh        # or: selene lua/
-scripts/smoke-test.sh  # headless config-level checks (commands, keymaps, leaders)
+busted                    # unit tests (tests/unit)
+busted --run=integration  # integration tests inside a fully-loaded headless Neovim (tests/integration)
+scripts/smoke-test.sh     # same as busted --run=integration
+scripts/lint.sh           # or: selene lua/
 ```
 
-Reads `.busted` at the project root (`ROOT = { "tests" }`). The `package.path` preamble in the spec file makes `lib.markdown_utils` importable without Neovim. `selene lua/` is the same command CI runs (`.github/workflows/ci.yml`).
-
-`scripts/smoke-test.sh` runs `scripts/verify-config.lua` in a fully-loaded headless Neovim and asserts the config-level contract: leader keys, `:Daily` end-to-end, the `:q`/`:x`/`:wq` abbreviations, and the global keymaps. **Extend `verify-config.lua` when adding a user command or global keymap** — it is the only regression net for wiring that Busted can't see.
+`selene lua/` is the same command CI runs (`.github/workflows/ci.yml`). CI runs only the unit suite —
+there is no Neovim (or plugin checkout) in CI.
 
 ### Verifying interactive/headless picker behavior
 

@@ -1,5 +1,23 @@
 return {
+  -- Pure-Lua unit tests for lua/lib/ — run with the plain `busted` binary.
   default = {
-    ROOT = { "tests" },
+    ROOT = { "tests/unit" },
+  },
+  -- Config-level integration tests — `busted --run=integration` re-executes
+  -- busted under scripts/busted-nvim.sh, i.e. inside a fully-loaded headless
+  -- Neovim, so specs assert against the real vim API (leaders, user commands,
+  -- keymaps, autocmds, plugin wiring).
+  --
+  -- File insulation is off: the editor process is shared global state anyway,
+  -- and restoring package.loaded between files would detach plugin modules
+  -- from the autocmds that captured them. Files run sorted (deterministic
+  -- order); tests within a file run in declaration order — several specs are
+  -- ordered functional sequences.
+  integration = {
+    ROOT = { "tests/integration" },
+    lua = "scripts/busted-nvim.sh",
+    helper = "tests/integration/helper.lua",
+    ["auto-insulate"] = false,
+    ["sort-files"] = true,
   },
 }

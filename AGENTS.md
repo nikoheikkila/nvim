@@ -10,17 +10,19 @@
 ├── AGENTS.md                  # This file — project instructions (single source of truth)
 ├── CLAUDE.md                  # Symlink -> AGENTS.md
 ├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
+├── .busted                    # Busted config: `default` task (tests/unit) + `integration` task (tests/integration)
 ├── .markdownlint.jsonc        # Base markdownlint config for live linting (MD013 aligned to textwidth=120)
-├── selene.toml                # Lua linter config (std = "lua51+vim")
+├── selene.toml                # Lua linter config (std = "busted+lua51+vim")
 ├── vim.yml                    # Vendored selene std: declares the `vim` global
+├── busted.yml                 # Vendored selene std: busted test globals (describe/it/luassert)
 ├── scripts/
+│   ├── busted-nvim.sh         # Busted interpreter shim: runs integration specs inside a fully-loaded headless nvim
 │   ├── debug-keys.lua         # :luafile it to log which key/mouse events actually reach Neovim
 │   ├── headless-lua.sh        # Run a Lua script in a fully-loaded headless nvim (`nvim -l` skips user config)
 │   ├── lazy-install.sh        # Safe plugin fetch: `:Lazy install`, not `:Lazy sync`
 │   ├── lint.sh                # Runs `selene lua/` (same command CI runs)
-│   ├── smoke-test.sh          # Headless config-level checks: leaders, user commands, global keymaps
-│   ├── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
-│   └── verify-config.lua      # The checks smoke-test.sh runs — extend when adding commands/keymaps
+│   ├── smoke-test.sh          # Runs the integration suite: `busted --run=integration`
+│   └── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
 └── lua/
     ├── config/
     │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save; auto-save on InsertLeave)
@@ -44,15 +46,24 @@
         ├── ui.lua             # UI plugins (bufferline.nvim, lualine.nvim)
         └── zen.lua            # Distraction-free writing (zen-mode.nvim)
 └── tests/
-    ├── markdown_utils_spec.lua  # Busted unit tests for lib/markdown_utils.lua
-    ├── path_utils_spec.lua      # Busted unit tests for lib/path_utils.lua
-    ├── save_utils_spec.lua      # Busted unit tests for lib/save_utils.lua
-    └── search_utils_spec.lua    # Busted unit tests for lib/search_utils.lua
+    ├── integration/               # Busted specs run INSIDE a fully-loaded headless Neovim (real vim API)
+    │   ├── helper.lua             # Busted helper: records vim.notify from session start (guard assertions)
+    │   ├── autosave_spec.lua      # auto_save contract (InsertLeave-only trigger, nested write autocmds)
+    │   ├── commands_spec.lua      # :BufClose/:BufWriteClose + :q/:x/:wq abbreviations, :Daily end-to-end
+    │   ├── keymaps_spec.lua       # Global keymaps (<leader>nd, <leader>bn/bp)
+    │   ├── markdown_lint_spec.lua # nvim-lint wiring + functional/missing-binary guard paths
+    │   ├── multicursor_spec.lua   # multiple-cursors.nvim maps, commands, virtual-cursor core loop
+    │   └── options_spec.lua       # Leader keys (load-order regression guard)
+    └── unit/                      # Pure-Lua Busted specs for lua/lib/ (no Neovim involved)
+        ├── markdown_utils_spec.lua
+        ├── path_utils_spec.lua
+        ├── save_utils_spec.lua
+        └── search_utils_spec.lua
 ```
 
 `init.lua` calls `require("config.options")`, then `require("config.autocmds")`, then `require("config.keymaps")`, then `require("config.commands")`, then `require("config.lazy")`. All plugin specs live under `lua/plugins/` and are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new file to `lua/plugins/` is enough to activate new plugins.
 
-**This load order is a contract.** Leader keys are set in `options.lua` precisely because it loads first — a `<leader>` mapping created before `vim.g.mapleader` is set silently binds under the default `\` with no error (this bug has shipped once). Don't reorder the `require`s, and don't set `<leader>` maps anywhere that loads before `options.lua`. After touching commands or keymaps, run `scripts/smoke-test.sh` — it asserts the leaders, user commands, and global keymaps in a fully-loaded headless Neovim (Busted can't see any of this; it only covers pure-Lua `lua/lib/`).
+**This load order is a contract.** Leader keys are set in `options.lua` precisely because it loads first — a `<leader>` mapping created before `vim.g.mapleader` is set silently binds under the default `\` with no error (this bug has shipped once). Don't reorder the `require`s, and don't set `<leader>` maps anywhere that loads before `options.lua`. After touching commands or keymaps, run `scripts/smoke-test.sh` (= `busted --run=integration`) — the `tests/integration/` specs assert the leaders, user commands, and global keymaps inside a fully-loaded headless Neovim with the real `vim` API (plain `busted` runs only the pure-Lua `tests/unit/` specs).
 
 ## Instructions
 
