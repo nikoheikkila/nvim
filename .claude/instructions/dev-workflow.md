@@ -101,7 +101,8 @@ which wires `LUA_PATH`/`LUA_CPATH` to the `~/.luarocks` 5.1 tree before exec'ing
 busted                    # unit tests (tests/unit)
 busted --run=integration  # integration tests inside a fully-loaded headless Neovim (tests/integration)
 scripts/smoke-test.sh     # same as busted --run=integration
-scripts/lint.sh           # or: selene lua/
+scripts/lint.sh           # or: selene lua/ tests/
+scripts/check.sh          # everything CI runs, in CI's order: lint, unit, integration, guard path
 ```
 
 CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS as two parallel jobs:

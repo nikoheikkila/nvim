@@ -17,10 +17,11 @@
 ├── busted.yml                 # Vendored selene std: busted test globals (describe/it/luassert)
 ├── scripts/
 │   ├── busted-nvim.sh         # Busted interpreter shim: runs integration specs inside a fully-loaded headless nvim
+│   ├── check.sh               # Everything CI runs, in order: lint, unit, integration, guard path
 │   ├── debug-keys.lua         # :luafile it to log which key/mouse events actually reach Neovim
 │   ├── headless-lua.sh        # Run a Lua script in a fully-loaded headless nvim (`nvim -l` skips user config)
 │   ├── lazy-install.sh        # Safe plugin fetch: `:Lazy install`, not `:Lazy sync`
-│   ├── lint.sh                # Runs `selene lua/` (same command CI runs)
+│   ├── lint.sh                # Runs `selene lua/ tests/` (same command CI runs)
 │   ├── smoke-test.sh          # Runs the integration suite: `busted --run=integration`
 │   └── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
 └── lua/
@@ -47,7 +48,7 @@
         └── zen.lua            # Distraction-free writing (zen-mode.nvim)
 └── tests/
     ├── integration/               # Busted specs run INSIDE a fully-loaded headless Neovim (real vim API)
-    │   ├── helper.lua             # Busted helper: records vim.notify from session start (guard assertions)
+    │   ├── helper.lua             # Busted helper: records vim.notify from session start (require("notify_log"))
     │   ├── autosave_spec.lua      # auto_save contract (InsertLeave-only trigger, nested write autocmds)
     │   ├── commands_spec.lua      # :BufClose/:BufWriteClose + :q/:x/:wq abbreviations, :Daily end-to-end
     │   ├── keymaps_spec.lua       # Global keymaps (<leader>nd, <leader>bn/bp)
