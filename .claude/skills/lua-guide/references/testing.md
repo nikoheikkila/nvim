@@ -27,7 +27,27 @@ end)
 
 ## Headless Neovim Verification
 
-- **`nvim -l script.lua` does NOT load the user config** — it runs in script mode, so the plugin manager never bootstraps and `require("<plugin>")` fails with `module not found`. To run a script against the full config, use `nvim --headless -c "luafile script.lua" -c qa` instead.
+- **`nvim -l script.lua` does NOT load the user config** *unless `-u` is given* (`:h -l`). Two working
+  recipes against the full config: `nvim --headless -c "luafile script.lua" -c qa` (no script argv), or
+  `nvim --cmd 'set loadplugins' -u <config>/init.lua -l script.lua [args...]` (argv lands in `_G.arg`;
+  `-l` disables plugin loading unless 'loadplugins' is set first).
+
+## Running Busted Inside Neovim (integration tests)
+
+- Busted itself can run inside a fully-loaded headless Neovim: point a `.busted` task's `lua` option at
+  a shim that execs `nvim -u init.lua -l` — busted re-executes its bootstrap under the shim, and specs
+  get the real `vim` API. See `scripts/busted-nvim.sh` and the `integration` task in `.busted`.
+- The rocks tree must be **Lua 5.1** (Neovim's LuaJIT ABI). Two traps, both hit in practice: the default
+  homebrew tree (Lua 5.5) has C modules that cannot load into LuaJIT, and luarocks itself cannot parse
+  the luarocks.org manifest *under LuaJIT* (luarocks/luarocks#1797) — install with
+  `luarocks --lua-version=5.1 install busted` (PUC 5.1 builds are LuaJIT-ABI-compatible).
+- **Never verify async behavior with a blind `vim.wait(ms)` sleep.** Prefer, in order: (1) synchronous
+  seams — linter parsers are pure functions, `vim.diagnostic.set` renders immediately,
+  `vim.system():wait()` blocks on real process exit; (2) `vim.wait` latched on a precise completion
+  event (`DiagnosticChanged`, a `User` sync-point autocmd, `#lint.get_running() == 0`) so the timeout is
+  only a failure bound; (3) a one-line `User` autocmd emitted from production code is an acceptable seam
+  to make an otherwise-unobservable path latchable. Condition-*polled* waits (below) are fine;
+  fixed-duration sleeps are not.
 - **Force a lazy-loaded plugin to load before asserting on its resolved config.** A plugin gated on `event`/`keys`/`cmd` won't have run `setup()` yet in a headless script, so its config module holds defaults (or errors). Trigger it first with `require("lazy").load({ plugins = { "plugin.nvim" } })`, then read e.g. `require("bufferline.config").options` to assert a `close_command` is the function you set.
 - **`nvim --cd <dir>` is not a real CLI flag** ("Unknown option argument") — `cd` in the shell before invoking, or pass `--cmd "cd <dir>"`.
 - **Signal failures explicitly**: a Lua error inside `-c` does not reliably produce a non-zero exit. Call `vim.cmd("cquit 1")` from the script on assertion failure.

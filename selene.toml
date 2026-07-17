@@ -1,4 +1,7 @@
-std = "lua51+vim"
+# std order matters: when stds define the same global, the FIRST wins — busted
+# must precede lua51 so luassert's `assert.*` table overrides the base `assert`
+# function (learned empirically; reversing the order breaks every spec).
+std = "busted+lua51+vim"
 
 [rules]
 mixed_table = "allow"

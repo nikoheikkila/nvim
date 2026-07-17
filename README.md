@@ -274,6 +274,27 @@ scripts/lazy-install.sh
 
 If `sync` ran by mistake, `git diff lazy-lock.json`, revert the unintended entries, and run `nvim --headless "+Lazy! restore" +qa` to re-checkout plugins to match the lockfile.
 
+## Development
+
+The configuration is tested by two [Busted](https://lunarmodules.github.io/busted/) suites under `tests/`:
+unit specs for the pure-Lua `lua/lib/` modules, and integration specs that run inside a fully-loaded
+headless Neovim against the real `vim` API. CI runs both on Ubuntu and macOS, plus a re-run of the lint
+spec with `markdownlint-cli2` hidden so the missing-binary guard path stays covered.
+
+```sh
+# One-time setup
+brew install luarocks selene
+luarocks install busted                    # unit suite
+luarocks --lua-version=5.1 install busted  # integration suite (Neovim's LuaJIT is 5.1-ABI)
+
+# Everything CI runs: lint, unit, integration, guard path
+scripts/check.sh
+```
+
+Individual checks: `busted` (unit), `scripts/smoke-test.sh` (integration), `scripts/lint.sh` (selene).
+The integration harness and the rules for writing new specs are documented in
+[`dev-workflow.md`](.claude/instructions/dev-workflow.md).
+
 ## Health Check
 
 Run `:checkhealth` inside Neovim to verify that all plugins are set up correctly:

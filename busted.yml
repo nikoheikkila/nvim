@@ -1,0 +1,36 @@
+---
+# Vendored selene std: busted test globals (describe/it/luassert & co.), used
+# by tests/. Combined with the base std in selene.toml (std = "lua51+vim+busted").
+globals:
+  describe:
+    any: true
+  insulate:
+    any: true
+  expose:
+    any: true
+  it:
+    any: true
+  pending:
+    any: true
+  before_each:
+    any: true
+  after_each:
+    any: true
+  setup:
+    any: true
+  teardown:
+    any: true
+  lazy_setup:
+    any: true
+  lazy_teardown:
+    any: true
+  finally:
+    any: true
+  spy:
+    any: true
+  stub:
+    any: true
+  mock:
+    any: true
+  assert:
+    any: true

@@ -164,7 +164,9 @@ the smoke test).
 upvalue) — the house idiom from `git.lua`/`picker.lua`. Wiring (augroup, highlight, namespace config) is set up
 unconditionally so the smoke test asserts it with or without the binary; the guard branch is exercised via
 `scripts/test-without-binary.sh markdownlint-cli2 -- scripts/smoke-test.sh`. If the binary appears mid-session,
-linting starts working without a restart (only the notification is one-shot).
+linting starts working without a restart (only the notification is one-shot). `lint_buf()` ends by firing
+`User MarkdownLintRun` — a no-op with no listeners — as the deterministic sync point
+`tests/integration/markdown_lint_spec.lua` latches on instead of sleeping out the debounce.
 
 **ft-lazy catch-up loop:** `config()` runs during the first markdown buffer's `FileType` event — after that
 buffer's `BufReadPost` — so already-open markdown buffers are linted directly at setup (same pattern as

@@ -36,11 +36,71 @@ jobs:
           chmod +x "$RUNNER_TEMP/selene/selene"
           echo "$RUNNER_TEMP/selene" >> "$GITHUB_PATH"
 
-      - name: Install dependencies
+      - name: Install busted
         run: luarocks install busted
 
       - name: Lint
-        run: selene lua/
+        run: selene lua/ tests/
 
-      - name: Test
+      - name: Unit tests
         run: busted
+
+  # tests/integration/ runs real Busted inside a fully-loaded headless Neovim
+  # (see .busted's `integration` task and scripts/busted-nvim.sh). Lua 5.1 on
+  # purpose: Neovim's LuaJIT speaks the 5.1 ABI, and 5.1-built C modules load
+  # into it — while luarocks itself cannot parse the luarocks.org manifest
+  # under LuaJIT (luarocks/luarocks#1797).
+  integration-test:
+    name: Integration Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    env:
+      NVIM_VERSION: "v0.12.4"
+      BUSTED_ROCKS_TREE: ${{ github.workspace }}/.luarocks
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Neovim
+        run: |
+          os=$([ "$RUNNER_OS" = "macOS" ] && echo "macos" || echo "linux")
+          arch=$([ "$RUNNER_ARCH" = "ARM64" ] && echo "arm64" || echo "x86_64")
+          curl -sSLO "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-${os}-${arch}.tar.gz"
+          tar -xzf "nvim-${os}-${arch}.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/nvim-${os}-${arch}/bin" >> "$GITHUB_PATH"
+
+      - name: Set up Lua 5.1
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.1"
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install busted
+        run: luarocks install busted
+
+      # Exercises the functional lint path; without it the suite would fall
+      # back to the missing-binary guard path.
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      # The suite loads the real config: stdpath("config") must resolve to
+      # this checkout, and the lazy-lock.json plugins must exist on disk.
+      - name: Link repo as Neovim config and install plugins
+        run: |
+          mkdir -p "$HOME/.config"
+          ln -sfn "$GITHUB_WORKSPACE" "$HOME/.config/nvim"
+          scripts/lazy-install.sh
+
+      - name: Integration tests
+        run: scripts/smoke-test.sh
+
+      # The guard path only compiles when the binary is missing — hide it and
+      # re-run the lint spec so both branches stay covered (one OS is enough).
+      - name: Integration tests (missing-binary guard path)
+        if: runner.os == 'Linux'
+        run: scripts/test-without-binary.sh markdownlint-cli2 -- busted --run=integration tests/integration/markdown_lint_spec.lua

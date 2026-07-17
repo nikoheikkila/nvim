@@ -47,7 +47,7 @@ Mechanics worth knowing before editing:
 - Saves run `silent update` inside `nvim_buf_call` — `:update` is the write-if-modified idiom (same as `BufWriteClose`), `nvim_buf_call` targets the changed buffer even if focus moved, and `silent` (not `silent!`) hides the "written" message while keeping real errors, which are surfaced via `pcall` + `vim.notify(..., WARN)`.
 - **The `InsertLeave` autocmd is `nested = true`, and must stay that way**: autocmds don't nest by default, so without the flag the `:update` inside the callback fires no `BufWritePre`/`BufWritePost` — conform's format-on-save and `auto_create_dir` are then silently skipped (this bug shipped once; the old debounced save masked it because `defer_fn` timers run outside autocmd context). For the same reason, never wrap the save in `noautocmd`.
 
-The save path is smoke-tested in `scripts/verify-config.lua` by firing events with `nvim_exec_autocmds(..., { group = "auto_save" })` — it also asserts no `TextChanged`/`TextChangedI` autocmds exist in the group. Extend those checks when changing the behavior.
+The save path is integration-tested in `tests/integration/autosave_spec.lua` by firing events with `nvim_exec_autocmds(..., { group = "auto_save" })` — it also asserts no `TextChanged`/`TextChangedI` autocmds exist in the group. Extend those specs when changing the behavior.
 
 ## Core Keymaps (`lua/config/keymaps.lua`)
 
