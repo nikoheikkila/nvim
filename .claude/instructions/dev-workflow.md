@@ -70,6 +70,12 @@ Integration-suite mechanics worth knowing before writing specs:
   autocmds that captured them. Clean up buffers in `teardown` instead.
 - Files run sorted; tests within a file run in declaration order — several specs are ordered
   functional sequences, so never run this suite with `--shuffle`.
+- Never verify async behavior with a blind `vim.wait(ms)` sleep. Latch on a completion signal
+  (`DiagnosticChanged`, the `User MarkdownLintRun` sync point from `lint_buf()`,
+  `#lint.get_running() == 0`) so the wait returns the moment the work finishes and the timeout is
+  only a failure bound — or better, test the synchronous seams directly: linter parsers are pure
+  functions, `vim.diagnostic.set` renders immediately, and `vim.system():wait()` blocks on real
+  process exit. See `tests/integration/markdown_lint_spec.lua` for all of these in use.
 
 ### Install
 
