@@ -36,11 +36,65 @@ jobs:
           chmod +x "$RUNNER_TEMP/selene/selene"
           echo "$RUNNER_TEMP/selene" >> "$GITHUB_PATH"
 
-      - name: Install dependencies
+      - name: Install busted
         run: luarocks install busted
 
       - name: Lint
         run: selene lua/
 
-      - name: Test
+      - name: Unit tests
         run: busted
+
+  # tests/integration/ runs real Busted inside a fully-loaded headless Neovim
+  # (see .busted's `integration` task and scripts/busted-nvim.sh), which needs
+  # a Neovim binary, a LuaJIT-ABI busted tree, the locked plugins, and
+  # markdownlint-cli2 — heavier setup, so it lives in its own job.
+  integration-test:
+    name: Integration Test (${{ matrix.os }})
+    needs: lint-and-test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Neovim
+        env:
+          NVIM_VERSION: "v0.12.4"
+        run: |
+          artifact=$([ "$RUNNER_OS" = "macOS" ] && echo "nvim-macos-arm64" || echo "nvim-linux-x86_64")
+          curl -sSLO "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/${artifact}.tar.gz"
+          tar -xzf "${artifact}.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/${artifact}/bin" >> "$GITHUB_PATH"
+
+      # Neovim's LuaJIT speaks the Lua 5.1 ABI, so busted (and its C-module
+      # deps) must come from a 5.1 rocks tree — hererocks builds LuaJIT +
+      # luarocks into a prefix with the layout scripts/busted-nvim.sh expects.
+      # The same tree's `busted` binary drives the suite.
+      - name: Install busted for Neovim (LuaJIT rocks tree)
+        run: |
+          pipx install hererocks
+          hererocks "$RUNNER_TEMP/luajit-rocks" --luajit 2.1 --luarocks latest
+          "$RUNNER_TEMP/luajit-rocks/bin/luarocks" install busted
+          echo "$RUNNER_TEMP/luajit-rocks/bin" >> "$GITHUB_PATH"
+
+      # Exercises the functional lint path; without it the suite would still
+      # pass via the missing-binary guard path, silently losing coverage.
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      # The suite loads the real config: stdpath("config") must resolve to
+      # this checkout, and the lazy-lock.json plugins must exist on disk.
+      - name: Link repo as Neovim config and install plugins
+        run: |
+          mkdir -p "$HOME/.config"
+          ln -sfn "$GITHUB_WORKSPACE" "$HOME/.config/nvim"
+          scripts/lazy-install.sh
+
+      - name: Integration tests
+        env:
+          BUSTED_ROCKS_TREE: ${{ runner.temp }}/luajit-rocks
+        run: busted --run=integration

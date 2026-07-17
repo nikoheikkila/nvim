@@ -103,8 +103,11 @@ scripts/smoke-test.sh     # same as busted --run=integration
 scripts/lint.sh           # or: selene lua/
 ```
 
-`selene lua/` is the same command CI runs (`.github/workflows/ci.yml`). CI runs only the unit suite —
-there is no Neovim (or plugin checkout) in CI.
+CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS: the `lint-and-test` job mirrors
+`selene lua/` + `busted`, and a separate `integration-test` job (gated on it via `needs:`) installs a
+pinned Neovim release binary, a LuaJIT-ABI busted tree via hererocks (exported to the shim as
+`BUSTED_ROCKS_TREE`), markdownlint-cli2, and the locked plugins (`scripts/lazy-install.sh` against a
+`~/.config/nvim` symlink to the checkout) before `busted --run=integration`.
 
 ### Verifying interactive/headless picker behavior
 
