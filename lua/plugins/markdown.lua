@@ -244,19 +244,22 @@ return {
         if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].filetype ~= "markdown" then
           return
         end
-        if vim.fn.executable("markdownlint-cli2") == 0 then
-          if not warned then
-            warned = true
-            vim.notify(
-              "markdownlint-cli2 not found on PATH (brew install markdownlint-cli2) — live markdown linting disabled",
-              vim.log.levels.WARN
-            )
-          end
-          return
+        if vim.fn.executable("markdownlint-cli2") == 1 then
+          vim.api.nvim_buf_call(buf, function()
+            lint.try_lint("markdownlint-cli2")
+          end)
+        elseif not warned then
+          warned = true
+          vim.notify(
+            "markdownlint-cli2 not found on PATH (brew install markdownlint-cli2) — live markdown linting disabled",
+            vim.log.levels.WARN
+          )
         end
-        vim.api.nvim_buf_call(buf, function()
-          lint.try_lint("markdownlint-cli2")
-        end)
+        -- Deterministic sync point for tests: signals that a debounced run
+        -- finished deciding (spawned or guarded). The integration spec latches
+        -- on this instead of sleeping out the timer; with no listeners,
+        -- exec_autocmds is a no-op.
+        vim.api.nvim_exec_autocmds("User", { pattern = "MarkdownLintRun" })
       end
 
       -- nvim-lint has no debounce and each run spawns a node process;
