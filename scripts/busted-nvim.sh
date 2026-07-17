@@ -11,7 +11,7 @@
 # speaks the 5.1 ABI, so busted must be installed with
 # `luarocks --lua-version=5.1 install busted` (the default homebrew tree is
 # Lua 5.5 — its C modules cannot load into LuaJIT). Defaults to ~/.luarocks;
-# CI overrides via $BUSTED_ROCKS_TREE (a hererocks LuaJIT prefix has the
+# CI overrides via $BUSTED_ROCKS_TREE (a hererocks Lua 5.1 prefix has the
 # same share/lua/5.1 + lib/lua/5.1 layout).
 #
 # `-u init.lua` matters: plain `nvim -l` skips the user config entirely

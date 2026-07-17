@@ -71,15 +71,19 @@ jobs:
           echo "$RUNNER_TEMP/${artifact}/bin" >> "$GITHUB_PATH"
 
       # Neovim's LuaJIT speaks the Lua 5.1 ABI, so busted (and its C-module
-      # deps) must come from a 5.1 rocks tree — hererocks builds LuaJIT +
-      # luarocks into a prefix with the layout scripts/busted-nvim.sh expects.
-      # The same tree's `busted` binary drives the suite.
-      - name: Install busted for Neovim (LuaJIT rocks tree)
+      # deps) must come from a 5.1 rocks tree — hererocks builds PUC Lua 5.1 +
+      # luarocks into a prefix with the layout scripts/busted-nvim.sh expects,
+      # and 5.1-built C modules load fine into LuaJIT (same C API). PUC, not
+      # LuaJIT, on purpose: luarocks cannot parse the luarocks.org manifest
+      # under LuaJIT ("main function has more than 65536 constants",
+      # luarocks/luarocks#1797). The same tree's `busted` binary drives the
+      # suite.
+      - name: Install busted for Neovim (Lua 5.1 rocks tree)
         run: |
           pipx install hererocks
-          hererocks "$RUNNER_TEMP/luajit-rocks" --luajit 2.1 --luarocks latest
-          "$RUNNER_TEMP/luajit-rocks/bin/luarocks" install busted
-          echo "$RUNNER_TEMP/luajit-rocks/bin" >> "$GITHUB_PATH"
+          hererocks "$RUNNER_TEMP/rocks-51" --lua 5.1 --luarocks latest
+          "$RUNNER_TEMP/rocks-51/bin/luarocks" install busted
+          echo "$RUNNER_TEMP/rocks-51/bin" >> "$GITHUB_PATH"
 
       # Exercises the functional lint path; without it the suite would still
       # pass via the missing-binary guard path, silently losing coverage.
@@ -96,5 +100,5 @@ jobs:
 
       - name: Integration tests
         env:
-          BUSTED_ROCKS_TREE: ${{ runner.temp }}/luajit-rocks
+          BUSTED_ROCKS_TREE: ${{ runner.temp }}/rocks-51
         run: busted --run=integration
