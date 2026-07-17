@@ -11,8 +11,8 @@ return {
   -- File insulation is off: the editor process is shared global state anyway,
   -- and restoring package.loaded between files would detach plugin modules
   -- from the autocmds that captured them. Files run sorted (deterministic
-  -- order); tests within a file run in declaration order — several specs are
-  -- ordered functional sequences.
+  -- order); tests within a file run in declaration order — some specs assert
+  -- state their file's setup() created, so don't shuffle.
   integration = {
     ROOT = { "tests/integration" },
     lua = "scripts/busted-nvim.sh",

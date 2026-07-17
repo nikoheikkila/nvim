@@ -62,14 +62,15 @@ Two [Busted](https://lunarmodules.github.io/busted/) suites, configured by `.bus
 
 Integration-suite mechanics worth knowing before writing specs:
 
-- `tests/integration/helper.lua` hooks `vim.notify` at session start and exposes the log as
-  `_G.__notify_log` — needed because once-per-session guards (e.g. the markdownlint missing-binary
-  notification) can fire in whichever spec file first ft-loads the plugin, not the one asserting.
+- `tests/integration/helper.lua` hooks `vim.notify` at session start and exposes the log as a
+  module (`require("notify_log")`) — needed because once-per-session guards (e.g. the markdownlint
+  missing-binary notification) can fire in whichever spec file first ft-loads the plugin, not the
+  one asserting.
 - File insulation is off (`["auto-insulate"] = false` in `.busted`): the editor process is shared
   global state, and restoring `package.loaded` between files would detach plugin modules from the
   autocmds that captured them. Clean up buffers in `teardown` instead.
-- Files run sorted; tests within a file run in declaration order — several specs are ordered
-  functional sequences, so never run this suite with `--shuffle`.
+- Files run sorted; tests within a file run in declaration order — some specs assert state their
+  file's `setup()` created, so never run this suite with `--shuffle`.
 - Never verify async behavior with a blind `vim.wait(ms)` sleep. Latch on a completion signal
   (`DiagnosticChanged`, the `User MarkdownLintRun` sync point from `lint_buf()`,
   `#lint.get_running() == 0`) so the wait returns the moment the work finishes and the timeout is
@@ -103,11 +104,13 @@ scripts/smoke-test.sh     # same as busted --run=integration
 scripts/lint.sh           # or: selene lua/
 ```
 
-CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS: the `lint-and-test` job mirrors
-`selene lua/` + `busted`, and a separate `integration-test` job (gated on it via `needs:`) installs a
-pinned Neovim release binary, a LuaJIT-ABI busted tree via hererocks (exported to the shim as
-`BUSTED_ROCKS_TREE`), markdownlint-cli2, and the locked plugins (`scripts/lazy-install.sh` against a
-`~/.config/nvim` symlink to the checkout) before `busted --run=integration`.
+CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS as two parallel jobs:
+`lint-and-test` mirrors `scripts/lint.sh` + `busted`, and `integration-test` installs a pinned
+Neovim release binary, a Lua 5.1 busted tree via the same leafo actions (exported to the shim as
+`BUSTED_ROCKS_TREE`), markdownlint-cli2, and the locked plugins (`scripts/lazy-install.sh` against
+a `~/.config/nvim` symlink to the checkout) before `scripts/smoke-test.sh` — plus a Linux-only
+rerun of the lint spec through `test-without-binary.sh` so the missing-binary guard path stays
+covered.
 
 ### Verifying interactive/headless picker behavior
 

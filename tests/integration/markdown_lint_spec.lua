@@ -25,12 +25,7 @@ describe("live markdown linting", function()
   end)
 
   teardown(function()
-    vim.bo[md_buf].modified = false
     vim.cmd("bwipeout! " .. md_buf)
-  end)
-
-  it("loads nvim-lint for markdown buffers", function()
-    assert.is_not_nil(lint)
   end)
 
   for _, ev in ipairs({ "TextChanged", "TextChangedI", "InsertLeave", "BufWritePost", "BufReadPost" }) do
@@ -98,18 +93,14 @@ describe("live markdown linting", function()
   if vim.fn.executable("markdownlint-cli2") == 1 then
     describe("functional path (binary installed)", function()
       -- Binary/args/config contract: vim.system():wait() blocks on real
-      -- process exit — a completion event, not a guessed timeout. Proves the
-      -- binary, the configured args, and the .markdownlint.jsonc base config
-      -- produce the MD041 finding the parser test consumes.
+      -- process exit — a completion event, not a guessed timeout. The argv
+      -- comes from the configured linter table, so this tracks config changes
+      -- and proves the exact command nvim-lint will spawn produces the MD041
+      -- finding the parser test consumes.
       it("real cli2 run over stdin reports MD041 on stderr with exit code 1", function()
-        local res = vim
-          .system({
-            "markdownlint-cli2",
-            "--config",
-            vim.fn.stdpath("config") .. "/.markdownlint.jsonc",
-            "-",
-          }, { stdin = "not a heading\n" })
-          :wait()
+        local linter = lint.linters["markdownlint-cli2"]
+        local cmd = vim.list_extend({ linter.cmd }, linter.args)
+        local res = vim.system(cmd, { stdin = "not a heading\n" }):wait()
         assert.equal(1, res.code) -- 1 = findings; 2+ would mean a config/usage error
         assert.truthy(res.stderr:find("stdin:1")) -- cli2 reports findings on stderr
         assert.truthy(res.stderr:find("MD041"))
@@ -156,7 +147,7 @@ describe("live markdown linting", function()
         })
         -- The catch-up lint when nvim-lint first ft-loaded already notified
         -- once (recorded from session start by tests/integration/helper.lua,
-        -- possibly during another spec's :Daily); these two runs must not
+        -- possibly during another spec's :Daily); this second run must not
         -- notify again, and nothing may be spawned.
         vim.api.nvim_exec_autocmds("TextChanged", { group = "markdown_lint" })
         assert.is_true(
@@ -165,18 +156,10 @@ describe("live markdown linting", function()
           end, 10),
           "debounced run never fired after TextChanged"
         )
-        vim.api.nvim_exec_autocmds("InsertLeave", { group = "markdown_lint" })
-        assert.is_true(
-          vim.wait(2000, function()
-            return runs >= 2
-          end, 10),
-          "debounced run never fired after InsertLeave"
-        )
         vim.api.nvim_del_augroup_by_id(group)
 
         local guard_notes = 0
-        -- selene: allow(global_usage) -- written by tests/integration/helper.lua
-        for _, msg in ipairs(_G.__notify_log) do
+        for _, msg in ipairs(require("notify_log")) do
           if msg:find("markdownlint%-cli2 not found") then
             guard_notes = guard_notes + 1
           end

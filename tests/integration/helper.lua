@@ -5,11 +5,10 @@
 -- missing-binary guard in plugins/markdown.lua notifies when nvim-lint first
 -- ft-loads, which happens in whichever spec file first opens a markdown
 -- buffer (e.g. :Daily in commands_spec) — not necessarily the spec that
--- asserts on it (markdown_lint_spec).
+-- asserts on it (markdown_lint_spec). Specs read the log with
+-- require("notify_log").
 local log = {}
-
--- selene: allow(global_usage) -- _G is the only channel shared between the helper and specs
-_G.__notify_log = log
+package.loaded["notify_log"] = log
 
 local orig_notify = vim.notify
 vim.notify = function(msg, ...)

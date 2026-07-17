@@ -44,19 +44,9 @@ describe("config.commands", function()
       vim.env.NVIM_NOTES_DIR = nil
     end)
 
-    it("is defined", function()
-      assert.is_not_nil(cmds.Daily)
-    end)
-
-    it("opens today's note in $NVIM_NOTES_DIR", function()
+    it("opens today's markdown note in $NVIM_NOTES_DIR, creating the directory", function()
       assert.equal(expected, vim.fn.resolve(vim.api.nvim_buf_get_name(0)))
-    end)
-
-    it("gives the note buffer a markdown filetype", function()
       assert.equal("markdown", vim.bo.filetype)
-    end)
-
-    it("creates the notes directory", function()
       assert.equal(1, vim.fn.isdirectory(scratch))
     end)
 

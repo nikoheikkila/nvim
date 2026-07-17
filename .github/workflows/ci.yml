@@ -40,53 +40,51 @@ jobs:
         run: luarocks install busted
 
       - name: Lint
-        run: selene lua/
+        run: selene lua/ tests/
 
       - name: Unit tests
         run: busted
 
   # tests/integration/ runs real Busted inside a fully-loaded headless Neovim
-  # (see .busted's `integration` task and scripts/busted-nvim.sh), which needs
-  # a Neovim binary, a LuaJIT-ABI busted tree, the locked plugins, and
-  # markdownlint-cli2 — heavier setup, so it lives in its own job.
+  # (see .busted's `integration` task and scripts/busted-nvim.sh). Lua 5.1 on
+  # purpose: Neovim's LuaJIT speaks the 5.1 ABI, and 5.1-built C modules load
+  # into it — while luarocks itself cannot parse the luarocks.org manifest
+  # under LuaJIT (luarocks/luarocks#1797).
   integration-test:
     name: Integration Test (${{ matrix.os }})
-    needs: lint-and-test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+    env:
+      NVIM_VERSION: "v0.12.4"
+      BUSTED_ROCKS_TREE: ${{ github.workspace }}/.luarocks
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Neovim
-        env:
-          NVIM_VERSION: "v0.12.4"
         run: |
-          artifact=$([ "$RUNNER_OS" = "macOS" ] && echo "nvim-macos-arm64" || echo "nvim-linux-x86_64")
-          curl -sSLO "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/${artifact}.tar.gz"
-          tar -xzf "${artifact}.tar.gz" -C "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP/${artifact}/bin" >> "$GITHUB_PATH"
+          os=$([ "$RUNNER_OS" = "macOS" ] && echo "macos" || echo "linux")
+          arch=$([ "$RUNNER_ARCH" = "ARM64" ] && echo "arm64" || echo "x86_64")
+          curl -sSLO "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-${os}-${arch}.tar.gz"
+          tar -xzf "nvim-${os}-${arch}.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/nvim-${os}-${arch}/bin" >> "$GITHUB_PATH"
 
-      # Neovim's LuaJIT speaks the Lua 5.1 ABI, so busted (and its C-module
-      # deps) must come from a 5.1 rocks tree — hererocks builds PUC Lua 5.1 +
-      # luarocks into a prefix with the layout scripts/busted-nvim.sh expects,
-      # and 5.1-built C modules load fine into LuaJIT (same C API). PUC, not
-      # LuaJIT, on purpose: luarocks cannot parse the luarocks.org manifest
-      # under LuaJIT ("main function has more than 65536 constants",
-      # luarocks/luarocks#1797). The same tree's `busted` binary drives the
-      # suite.
-      - name: Install busted for Neovim (Lua 5.1 rocks tree)
-        run: |
-          pipx install hererocks
-          hererocks "$RUNNER_TEMP/rocks-51" --lua 5.1 --luarocks latest --no-readline
-          "$RUNNER_TEMP/rocks-51/bin/luarocks" install busted
-          echo "$RUNNER_TEMP/rocks-51/bin" >> "$GITHUB_PATH"
+      - name: Set up Lua 5.1
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.1"
 
-      # Exercises the functional lint path; without it the suite would still
-      # pass via the missing-binary guard path, silently losing coverage.
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install busted
+        run: luarocks install busted
+
+      # Exercises the functional lint path; without it the suite would fall
+      # back to the missing-binary guard path.
       - name: Install markdownlint-cli2
         run: npm install -g markdownlint-cli2
 
@@ -99,6 +97,10 @@ jobs:
           scripts/lazy-install.sh
 
       - name: Integration tests
-        env:
-          BUSTED_ROCKS_TREE: ${{ runner.temp }}/rocks-51
-        run: busted --run=integration
+        run: scripts/smoke-test.sh
+
+      # The guard path only compiles when the binary is missing — hide it and
+      # re-run the lint spec so both branches stay covered (one OS is enough).
+      - name: Integration tests (missing-binary guard path)
+        if: runner.os == 'Linux'
+        run: scripts/test-without-binary.sh markdownlint-cli2 -- busted --run=integration tests/integration/markdown_lint_spec.lua

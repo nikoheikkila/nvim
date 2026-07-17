@@ -53,45 +53,24 @@ describe("multiple-cursors.nvim", function()
   -- Functional check of the core loop: add a virtual cursor below, confirm the
   -- plain-click reset maps appear while cursors are active, then reset.
   -- Real-time insert mirroring is autocmd-driven and can't be asserted
-  -- headlessly (see dev-workflow.md) — verify it interactively. The tests in
-  -- this block are an ordered sequence.
-  describe("virtual-cursor core loop", function()
-    local vcs
+  -- headlessly (see dev-workflow.md) — verify it interactively.
+  it("AddDown spawns a virtual cursor with reset maps, deinit clears both", function()
+    local vcs = require("multiple-cursors.virtual_cursors")
+    vim.cmd("enew")
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, { "alpha", "beta", "gamma" })
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+    assert.equal(0, vcs.get_num_virtual_cursors())
 
-    setup(function()
-      vcs = require("multiple-cursors.virtual_cursors")
-      vim.cmd("enew")
-      vim.api.nvim_buf_set_lines(0, 0, -1, false, { "alpha", "beta", "gamma" })
-      vim.api.nvim_win_set_cursor(0, { 1, 0 })
-    end)
+    vim.cmd("MultipleCursorsAddDown")
+    assert.equal(1, vcs.get_num_virtual_cursors())
+    assert.equal(2, vim.api.nvim_win_get_cursor(0)[1])
+    assert.equal(1, vim.fn.maparg("<LeftMouse>", "n", false, true).buffer)
+    assert.equal(1, vim.fn.maparg("<LeftMouse>", "i", false, true).buffer)
 
-    teardown(function()
-      vim.bo.modified = false
-      vim.cmd("bwipeout!")
-    end)
+    require("multiple-cursors").deinit(true)
+    assert.equal(0, vcs.get_num_virtual_cursors())
+    assert.equal("", vim.fn.maparg("<LeftMouse>", "n"))
 
-    it("starts with no virtual cursors", function()
-      assert.equal(0, vcs.get_num_virtual_cursors())
-    end)
-
-    it(":MultipleCursorsAddDown spawns a virtual cursor", function()
-      vim.cmd("MultipleCursorsAddDown")
-      assert.equal(1, vcs.get_num_virtual_cursors())
-    end)
-
-    it("moves the real cursor to the next line", function()
-      assert.equal(2, vim.api.nvim_win_get_cursor(0)[1])
-    end)
-
-    it("activates the plain-click reset maps while cursors are active", function()
-      assert.equal(1, vim.fn.maparg("<LeftMouse>", "n", false, true).buffer)
-      assert.equal(1, vim.fn.maparg("<LeftMouse>", "i", false, true).buffer)
-    end)
-
-    it("deinit resets to a single cursor and removes the reset maps", function()
-      require("multiple-cursors").deinit(true)
-      assert.equal(0, vcs.get_num_virtual_cursors())
-      assert.equal("", vim.fn.maparg("<LeftMouse>", "n"))
-    end)
+    vim.cmd("bwipeout!")
   end)
 end)
