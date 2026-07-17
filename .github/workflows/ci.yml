@@ -81,7 +81,7 @@ jobs:
       - name: Install busted for Neovim (Lua 5.1 rocks tree)
         run: |
           pipx install hererocks
-          hererocks "$RUNNER_TEMP/rocks-51" --lua 5.1 --luarocks latest
+          hererocks "$RUNNER_TEMP/rocks-51" --lua 5.1 --luarocks latest --no-readline
           "$RUNNER_TEMP/rocks-51/bin/luarocks" install busted
           echo "$RUNNER_TEMP/rocks-51/bin" >> "$GITHUB_PATH"
 
