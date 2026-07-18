@@ -286,7 +286,7 @@ changes far more than intended when you only meant to fetch one new plugin. To f
 without touching existing ones, use:
 
 ```sh
-scripts/lazy-install.sh
+task install
 ```
 
 If `sync` ran by mistake, `git diff lazy-lock.json`, revert the unintended entries, and run

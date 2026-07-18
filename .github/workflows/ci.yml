@@ -117,7 +117,7 @@ jobs:
         run: |
           mkdir -p "$HOME/.config"
           ln -sfn "$GITHUB_WORKSPACE" "$HOME/.config/nvim"
-          scripts/lazy-install.sh
+          task install
 
       - name: Integration tests
         run: task test:integration

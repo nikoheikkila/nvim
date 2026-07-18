@@ -5,6 +5,18 @@ version: '3'
 
 tasks:
 
+  install:
+    desc: Install LazyVim plugins
+    sources:
+      - lazy-lock.json
+    cmd: nvim --headless "+Lazy! install" +qa
+
+  update:
+    desc: Update LazyVim plugins
+    generates:
+      - lazy-lock.json
+    cmd:  nvim --headless "+Lazy! update" +qa
+
   lint:
     desc: Lint codebase
     cmds:

@@ -28,7 +28,7 @@ arrives with `:luafile scripts/debug-keys.lua` before touching the config.
 Fetch the new plugin with:
 
 ```sh
-scripts/lazy-install.sh
+task install
 # or directly: nvim --headless "+Lazy! install" +qa
 ```
 
@@ -44,7 +44,7 @@ If the lockfile picked up unintended version bumps (from `sync`, or from any hea
 git diff lazy-lock.json                               # see everything that changed
 git checkout -- lazy-lock.json                        # back to the committed lockfile
 nvim --headless "+Lazy! restore <plugin>" +qa         # re-checkout the bumped plugin(s) to the locked commit
-scripts/lazy-install.sh                               # re-record only the genuinely new plugin
+task install                                          # re-record only the genuinely new plugin
 ```
 
 Prefer this git-checkout + targeted-restore flow over hand-editing commit hashes in `lazy-lock.json` — hand-edits are
@@ -135,7 +135,7 @@ installed — but `task test*` is the documented entry point and what CI and `sc
 CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS as three jobs: `lint` runs
 `task lint`; `test` runs `task test:unit`; and `integration-test` installs a pinned Neovim release
 binary, a Lua 5.1 busted tree via the same leafo actions (exported to the shim as
-`BUSTED_ROCKS_TREE`), markdownlint-cli2, and the locked plugins (`scripts/lazy-install.sh` against
+`BUSTED_ROCKS_TREE`), markdownlint-cli2, and the locked plugins (`task install` against
 a `~/.config/nvim` symlink to the checkout) before running `task test:integration` — plus a
 Linux-only rerun of the lint spec through `test-without-binary.sh` so the missing-binary guard path
 stays covered.
