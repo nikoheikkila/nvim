@@ -2,11 +2,14 @@
 
 version: '3'
 
+vars:
+  CI:
+    sh: "[[ -n $CI ]] && echo true || echo false"
 
 tasks:
 
   hooks:
-    internal: true
+    if: '{{ eq .CI "false" }}'
     sources:
       - lefthook.yml
     generates:
