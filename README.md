@@ -1,17 +1,18 @@
 # Neovim Configuration
 
 A minimal Neovim setup built around a comprehensive Markdown editing experience.
+Includes a full agentic harness for using with Claude Code.
 
 ## Requirements
 
-| Requirement | Notes |
-| --- | --- |
-| Neovim ≥ 0.10 | Required by render-markdown.nvim and markdown-plus.nvim |
-| Git | Used by lazy.nvim to clone and update plugins |
-| A [Nerd Font](https://www.nerdfonts.com/) | Used by render-markdown.nvim for heading and list icons |
-| `prettier` | Optional — needed for auto-format on save |
-| `markdownlint-cli2` | Optional — needed for live Markdown linting |
-| A terminal with the [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) | Optional — needed for `Ctrl+Shift+I` (insert image) |
+| Requirement                                                                                       | Notes                                                   |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Neovim ≥ 0.10                                                                                     | Required by render-markdown.nvim and markdown-plus.nvim |
+| Git                                                                                               | Used by lazy.nvim to clone and update plugins           |
+| A [Nerd Font](https://www.nerdfonts.com/)                                                         | Used by render-markdown.nvim for heading and list icons |
+| `prettier`                                                                                        | Optional — needed for auto-format on save               |
+| `markdownlint-cli2`                                                                               | Optional — needed for live Markdown linting             |
+| A terminal with the [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) | Optional — needed for `Ctrl+Shift+I` (insert image)     |
 
 Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
 
@@ -57,20 +58,20 @@ Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
 
 ## Plugins
 
-| Plugin | Purpose |
-| --- | --- |
-| [yousefhadder/markdown-plus.nvim](https://github.com/yousefhadder/markdown-plus.nvim) | Core Markdown editing: bold, italic, links, images, checklists, list management |
-| [MeanderingProgrammer/render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | In-buffer rendering of headings, code blocks, tables, and checkboxes |
-| [stevearc/conform.nvim](https://github.com/stevearc/conform.nvim) | Auto-format on save via `prettier` |
-| [mfussenegger/nvim-lint](https://github.com/mfussenegger/nvim-lint) | Live Markdown linting via `markdownlint-cli2` |
-| [nvim-neo-tree/neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) | File tree sidebar with mouse support and bulk file operations |
-| [folke/snacks.nvim](https://github.com/folke/snacks.nvim) | Fuzzy file picker and project-wide text search (picker module only) |
-| [kdheepak/lazygit.nvim](https://github.com/kdheepak/lazygit.nvim) | Lazygit in a floating window |
-| [akinsho/bufferline.nvim](https://github.com/akinsho/bufferline.nvim) | Buffer tabs at the top |
-| [nvim-lualine/lualine.nvim](https://github.com/nvim-lualine/lualine.nvim) | Status line |
-| [folke/zen-mode.nvim](https://github.com/folke/zen-mode.nvim) | Distraction-free writing mode |
-| [brenton-leighton/multiple-cursors.nvim](https://github.com/brenton-leighton/multiple-cursors.nvim) | Multiple cursors with real-time editing (see [Multiple Cursors](#multiple-cursors)) |
-| [projekt0n/github-nvim-theme](https://github.com/projekt0n/github-nvim-theme) | Colorscheme (GitHub Dark) |
+| Plugin                                                                                                    | Purpose                                                                             |
+| --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [yousefhadder/markdown-plus.nvim](https://github.com/yousefhadder/markdown-plus.nvim)                     | Core Markdown editing: bold, italic, links, images, checklists, list management     |
+| [MeanderingProgrammer/render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | In-buffer rendering of headings, code blocks, tables, and checkboxes                |
+| [stevearc/conform.nvim](https://github.com/stevearc/conform.nvim)                                         | Auto-format on save via `prettier`                                                  |
+| [mfussenegger/nvim-lint](https://github.com/mfussenegger/nvim-lint)                                       | Live Markdown linting via `markdownlint-cli2`                                       |
+| [nvim-neo-tree/neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim)                             | File tree sidebar with mouse support and bulk file operations                       |
+| [folke/snacks.nvim](https://github.com/folke/snacks.nvim)                                                 | Fuzzy file picker and project-wide text search (picker module only)                 |
+| [kdheepak/lazygit.nvim](https://github.com/kdheepak/lazygit.nvim)                                         | Lazygit in a floating window                                                        |
+| [akinsho/bufferline.nvim](https://github.com/akinsho/bufferline.nvim)                                     | Buffer tabs at the top                                                              |
+| [nvim-lualine/lualine.nvim](https://github.com/nvim-lualine/lualine.nvim)                                 | Status line                                                                         |
+| [folke/zen-mode.nvim](https://github.com/folke/zen-mode.nvim)                                             | Distraction-free writing mode                                                       |
+| [brenton-leighton/multiple-cursors.nvim](https://github.com/brenton-leighton/multiple-cursors.nvim)       | Multiple cursors with real-time editing (see [Multiple Cursors](#multiple-cursors)) |
+| [projekt0n/github-nvim-theme](https://github.com/projekt0n/github-nvim-theme)                             | Colorscheme (GitHub Dark)                                                           |
 
 All plugins are managed by [folke/lazy.nvim](https://github.com/folke/lazy.nvim), which bootstraps itself automatically.
 
@@ -78,16 +79,16 @@ All plugins are managed by [folke/lazy.nvim](https://github.com/folke/lazy.nvim)
 
 The leader key is `Space`.
 
-| Key | Action |
-| --- | --- |
-| `Space` `Space` | Fuzzy file picker (project-scoped) |
-| `Space` `.` | Live grep across the project |
-| `Space` `e` | Toggle the file tree sidebar |
-| `Space` `g` | Open Lazygit for the current file's repository (quit with `q`) |
-| `Space` `n` `d` | Open today's daily note (see [Daily Notes](#daily-notes)) |
-| `Shift+H` / `Shift+L` | Previous / next buffer tab |
-| `Ctrl+Z` | Toggle Zen Mode |
-| `Alt+Up` / `Alt+Down` | Move current line or selection up / down |
+| Key                               | Action                                                                             |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `Space` `Space`                   | Fuzzy file picker (project-scoped)                                                 |
+| `Space` `.`                       | Live grep across the project                                                       |
+| `Space` `e`                       | Toggle the file tree sidebar                                                       |
+| `Space` `g`                       | Open Lazygit for the current file's repository (quit with `q`)                     |
+| `Space` `n` `d`                   | Open today's daily note (see [Daily Notes](#daily-notes))                          |
+| `Shift+H` / `Shift+L`             | Previous / next buffer tab                                                         |
+| `Ctrl+Z`                          | Toggle Zen Mode                                                                    |
+| `Alt+Up` / `Alt+Down`             | Move current line or selection up / down                                           |
 | `Alt+Shift+Up` / `Alt+Shift+Down` | Add a cursor on the line above / below (see [Multiple Cursors](#multiple-cursors)) |
 
 ## Buffers
@@ -95,15 +96,15 @@ The leader key is `Space`.
 Open files show as tabs along the top. They behave like tabs, so **closing a buffer does not quit Neovim** —
 the editor stays open with your other files.
 
-| Action | Result |
-| --- | --- |
+| Action                                   | Result                                                             |
+| ---------------------------------------- | ------------------------------------------------------------------ |
 | Click a tab's `✗` (or right-click a tab) | Close only that buffer (prompts to save if it has unsaved changes) |
-| `:q` | Close the current buffer |
-| `:q!` | Close the current buffer, discarding unsaved changes |
-| `:x` / `:wq` | Save the current buffer, then close it |
-| `:qa` / `:xa` | Quit Neovim (all buffers) — `:xa` saves first |
-| `Shift+H` / `Shift+L` | Previous / next buffer tab |
-| `Space` `b` `n` / `Space` `b` `p` | Next / previous buffer tab |
+| `:q`                                     | Close the current buffer                                           |
+| `:q!`                                    | Close the current buffer, discarding unsaved changes               |
+| `:x` / `:wq`                             | Save the current buffer, then close it                             |
+| `:qa` / `:xa`                            | Quit Neovim (all buffers) — `:xa` saves first                      |
+| `Shift+H` / `Shift+L`                    | Previous / next buffer tab                                         |
+| `Space` `b` `n` / `Space` `b` `p`        | Next / previous buffer tab                                         |
 
 To close a split **window** (rather than a buffer), use `Ctrl+W` `c` or `:close`. Closing the last buffer leaves
 an empty buffer with Neovim still open; use `:qa` to quit for real.
@@ -112,14 +113,14 @@ an empty buffer with Neovim still open; use `:qa` to quit for real.
 
 Edit in several places at once, VS Code-style. Everything you type is mirrored at every cursor **in real time**.
 
-| Action | Result |
-| --- | --- |
-| `Alt+Shift+Up` / `Alt+Shift+Down` | Add a cursor on the line above/below, same column (normal, visual, insert) |
-| Select lines with `V`, then `I` | A cursor at the **start** of every selected line, in insert mode |
-| Select lines with `V`, then `A` | A cursor at the **end** of every selected line, in insert mode |
-| `Ctrl+Click` (right-click / two-finger tap) | Add a cursor where you click — click an existing cursor to remove it |
-| Plain click anywhere | Back to a single cursor, placed where you clicked |
-| `Esc` (in normal mode) | Back to a single cursor |
+| Action                                      | Result                                                                     |
+| ------------------------------------------- | -------------------------------------------------------------------------- |
+| `Alt+Shift+Up` / `Alt+Shift+Down`           | Add a cursor on the line above/below, same column (normal, visual, insert) |
+| Select lines with `V`, then `I`             | A cursor at the **start** of every selected line, in insert mode           |
+| Select lines with `V`, then `A`             | A cursor at the **end** of every selected line, in insert mode             |
+| `Ctrl+Click` (right-click / two-finger tap) | Add a cursor where you click — click an existing cursor to remove it       |
+| Plain click anywhere                        | Back to a single cursor, placed where you clicked                          |
+| `Esc` (in normal mode)                      | Back to a single cursor                                                    |
 
 Notes:
 
@@ -153,20 +154,20 @@ mouse (double-click opens files and expands/collapses directories; the wheel scr
 
 Inside the tree:
 
-| Key | Action |
-| --- | --- |
-| `j`/`k`, `Up`/`Down` | Move between entries |
-| `Enter` | Open file / expand or collapse directory |
-| `l`, `Right` | Open file / expand directory |
-| `h`, `Left` | Collapse directory |
-| `d` | Delete — press `y` to confirm, `n` or `Esc` to abort |
-| `r` | Rename (prompt pre-filled with the current name) |
-| `n` | New file at a typed path (`sub/dir/file.md` creates the parents; a trailing `/` creates a directory) |
-| `N` | New directory |
-| `m` | Move to another path |
-| `v` or `V` | Visual mode — select multiple entries with `j`/`k` or mouse drag |
-| `/` | Fuzzy filter within the tree |
-| `?` | Show all mappings |
+| Key                  | Action                                                                                               |
+| -------------------- | ---------------------------------------------------------------------------------------------------- |
+| `j`/`k`, `Up`/`Down` | Move between entries                                                                                 |
+| `Enter`              | Open file / expand or collapse directory                                                             |
+| `l`, `Right`         | Open file / expand directory                                                                         |
+| `h`, `Left`          | Collapse directory                                                                                   |
+| `d`                  | Delete — press `y` to confirm, `n` or `Esc` to abort                                                 |
+| `r`                  | Rename (prompt pre-filled with the current name)                                                     |
+| `n`                  | New file at a typed path (`sub/dir/file.md` creates the parents; a trailing `/` creates a directory) |
+| `N`                  | New directory                                                                                        |
+| `m`                  | Move to another path                                                                                 |
+| `v` or `V`           | Visual mode — select multiple entries with `j`/`k` or mouse drag                                     |
+| `/`                  | Fuzzy filter within the tree                                                                         |
+| `?`                  | Show all mappings                                                                                    |
 
 With a visual selection active: `d` deletes all selected entries after a single confirmation, `x` cuts and `p`
 pastes them into a target directory (bulk move), `y` + `p` copies them.

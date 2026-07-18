@@ -73,28 +73,28 @@ validates the file exists, prompts for a new name via `vim.ui.input`, renames th
 
 #### `<Plug>` targets used
 
-| `<Plug>` | Normal/Visual | Registered by |
-| --- | --- | --- |
-| `MarkdownPlusBold` | n + x | format module |
-| `MarkdownPlusItalic` | n + x | format module (not used — see italic section above) |
-| `MarkdownPlusInsertLink` | n | links module |
-| `MarkdownPlusSelectionToLink` | x | links module |
-| `MarkdownPlusInsertImage` | n | images module |
-| `MarkdownPlusSelectionToImage` | x | images module |
-| `MarkdownPlusToggleCheckbox` | x | list module (used for visual-range toggle only) |
-| `MarkdownPlusListEnter` | i | list module (bound to `<CR>` by plugin default) |
+| `<Plug>`                       | Normal/Visual | Registered by                                       |
+| ------------------------------ | ------------- | --------------------------------------------------- |
+| `MarkdownPlusBold`             | n + x         | format module                                       |
+| `MarkdownPlusItalic`           | n + x         | format module (not used — see italic section above) |
+| `MarkdownPlusInsertLink`       | n             | links module                                        |
+| `MarkdownPlusSelectionToLink`  | x             | links module                                        |
+| `MarkdownPlusInsertImage`      | n             | images module                                       |
+| `MarkdownPlusSelectionToImage` | x             | images module                                       |
+| `MarkdownPlusToggleCheckbox`   | x             | list module (used for visual-range toggle only)     |
+| `MarkdownPlusListEnter`        | i             | list module (bound to `<CR>` by plugin default)     |
 
 #### Buffer-local keymaps (markdown buffers only)
 
-| Key | Mode | Action |
-| --- | --- | --- |
-| `<C-b>` | n + x | Toggle bold |
-| `<C-i>` | n + x | Toggle italic (`_`) |
-| `<C-k>` | n + x | Insert / wrap link |
-| `<C-l>` | n + i | Toggle checklist item (single line) |
-| `<C-l>` | x | Toggle checklist range |
-| `<C-S-I>` | n + x | Insert / wrap image |
-| `<F2>` | n | Rename image file at cursor |
+| Key       | Mode  | Action                              |
+| --------- | ----- | ----------------------------------- |
+| `<C-b>`   | n + x | Toggle bold                         |
+| `<C-i>`   | n + x | Toggle italic (`_`)                 |
+| `<C-k>`   | n + x | Insert / wrap link                  |
+| `<C-l>`   | n + i | Toggle checklist item (single line) |
+| `<C-l>`   | x     | Toggle checklist range              |
+| `<C-S-I>` | n + x | Insert / wrap image                 |
+| `<F2>`    | n     | Rename image file at cursor         |
 
 **Terminal compatibility:** `<C-S-I>` (Ctrl+Shift+I) requires the Kitty keyboard protocol. Supported terminals:
 kitty, WezTerm, Ghostty, and recent versions of foot. In terminals that do not support it the mapping is
@@ -104,30 +104,30 @@ silently ignored.
 
 These exist alongside the Ctrl bindings and do not conflict:
 
-| Key | Action |
-| --- | --- |
-| `\mb` | Toggle bold |
-| `\mi` | Toggle italic (`*`) |
-| `\mS` | Toggle strikethrough |
-| `` \m` `` | Toggle inline code |
-| `\ml` | Insert / wrap link |
-| `\mL` | Insert / wrap image |
-| `\mx` | Toggle checkbox |
-| `\mr` | Renumber ordered lists |
-| `<CR>` (insert) | Continue list item |
-| `<Tab>` (insert) | Indent list item |
-| `<S-Tab>` (insert) | Outdent list item |
-| `<BS>` (insert) | Smart backspace (removes empty list marker) |
+| Key                | Action                                      |
+| ------------------ | ------------------------------------------- |
+| `\mb`              | Toggle bold                                 |
+| `\mi`              | Toggle italic (`*`)                         |
+| `\mS`              | Toggle strikethrough                        |
+| `` \m` ``          | Toggle inline code                          |
+| `\ml`              | Insert / wrap link                          |
+| `\mL`              | Insert / wrap image                         |
+| `\mx`              | Toggle checkbox                             |
+| `\mr`              | Renumber ordered lists                      |
+| `<CR>` (insert)    | Continue list item                          |
+| `<Tab>` (insert)   | Indent list item                            |
+| `<S-Tab>` (insert) | Outdent list item                           |
+| `<BS>` (insert)    | Smart backspace (removes empty list marker) |
 
 ### 2. `MeanderingProgrammer/render-markdown.nvim`
 
 Loaded for `ft = { "markdown" }`. Renders headings, bold, italic, code blocks, tables, and checkboxes as
-styled virtual text in the buffer. No external binaries required — but syntax highlighting *inside* code
+styled virtual text in the buffer. No external binaries required — but syntax highlighting _inside_ code
 fences depends on `plugins/treesitter.lua` supplying treesitter queries for the fence languages (see
 `plugins.md`); render-markdown only draws the block chrome.
 
 **Code blocks: `code.sign = false`**
-render-markdown's defaults render the fence language twice: an icon in the sign column (`sign = true`) *and*
+render-markdown's defaults render the fence language twice: an icon in the sign column (`sign = true`) _and_
 an inline icon+name label overlaying the delimiter line. `sign = false` keeps only the inline label.
 
 **Why `render_modes = true`**
@@ -147,13 +147,13 @@ A single function applies all highlight overrides on startup and re-applies them
   attribute merging, so the italic bleeds through highlighted code. Only the block group is overridden;
   inline code (`@markup.raw` on `markdown_inline`) keeps the theme's italic styling.
 - H1 renders in magenta: `RenderMarkdownH1` (fg `#ff00ff`, bold) and `RenderMarkdownH1Bg` (bg `#3a0d3a`). The
-  shades differ deliberately — the `#` marker is drawn with the fg group *over* the bg band, so identical
+  shades differ deliberately — the `#` marker is drawn with the fg group _over_ the bg band, so identical
   values would make it invisible. The plugin's fg group only covers the marker and sign; the heading text is
   highlighted by treesitter, so `@markup.heading.1.markdown` is set to the same magenta.
 
 **Icon overrides**
 Headings render their literal ATX markers (`#`–`######`) instead of nerd-font icons. With the default
-`heading.position = 'overlay'` each icon string is laid *over* the raw markers, so every entry must be
+`heading.position = 'overlay'` each icon string is laid _over_ the raw markers, so every entry must be
 exactly as wide as the markers it covers (level N = N hashes + 1 space) or the overlay clips/leaks.
 Checkboxes render as `○` (unchecked, `DiagnosticError` red) and `●` (checked, `DiagnosticOk` green) —
 Diagnostic groups are used so the colors track any theme without custom highlight management. Plain list
@@ -178,14 +178,11 @@ id included — as end-of-line virtual text. This is the repo's first and only `
 it is **namespace-scoped** to `require("lint").get_namespace("markdownlint-cli2")` so any future LSP/linter
 diagnostics keep Neovim's default styling.
 
-**Why markdownlint-cli2 (not markdownlint-cli v1):** same engine (David Anson's `markdownlint` library), but
-cli2's `--config` is applied as a *base* configuration that per-directory `.markdownlint*` files still override,
-it's maintained by the markdownlint author (same engine as vscode-markdownlint), and it's what the wider
-nvim-lint ecosystem configures today.
-
 **Config layering:** `.markdownlint.jsonc` at the repo root (the filename is constrained by cli2's `--config`,
 which requires a recognized config name) is passed as the base config on every run — it aligns MD013
-`line_length` with `textwidth = 120` from `options.lua`. Project-local `.markdownlint*` files override it, but
+`line_length` with `textwidth = 120` from `options.lua`, and sets MD013 `tables: false` because prettier
+(conform.nvim, on save) re-pads table cells to align pipes with no option to disable it, pushing table rows
+past any fixed limit. Project-local `.markdownlint*` files override it, but
 note stdin linting resolves them against **Neovim's cwd**, not the buffer's directory. Tune global rules in that
 file; never in the Lua spec.
 
@@ -194,16 +191,11 @@ nvim-lint's bundled errorformat predates that and would leak the word `error` in
 `%t`-style parsing would misfile them as ERROR, escaping the WARN-keyed `linehl`). The spec overrides the parser
 with an errorformat that strips `error`/`warning` and keeps old-format fallbacks, forcing severity WARN.
 
-**Debounce (the `timer` upvalue):** nvim-lint has no internal debounce and every run spawns a node process
-(~100–300ms startup). Restarting an active `vim.uv` timer on each event coalesces bursts — an `InsertLeave`
-triggers auto-save → prettier → `BufWritePost` (plus `TextChanged` from the reformat), and all of it collapses
-into **one** lint of the post-prettier content 300ms later.
-
 **Events live in the `markdown_lint` augroup, never `auto_save`:** the integration spec asserts `auto_save` has no
 `TextChanged` autocmds (that debounced-save regression is not allowed back). Lint-on-`TextChanged` is fine — it
 only reads the buffer.
 
-**Empty sign text (`signs.text = { [WARN] = "" }`):** the whole-line background rides on diagnostic *sign*
+**Empty sign text (`signs.text = { [WARN] = "" }`):** the whole-line background rides on diagnostic _sign_
 extmarks. If `signs.text` is unset, the runtime defaults it to `"W"` (`runtime/lua/vim/diagnostic.lua`, signs
 handler), and a visible sign opens/shifts the auto signcolumn on every appearing/disappearing warning. An
 explicitly empty string keeps `line_hl_group` working with `textoff == 0` (verified on 0.12.4 and asserted in
@@ -223,5 +215,5 @@ markdown-plus's keymap catch-up). Buffers created via `BufNewFile` (a fresh `:Da
 on the first edit.
 
 Known cosmetic caveat: render-markdown's heading background bands use a higher extmark priority (4096) than
-diagnostic signs (10), so on a *heading* line the band wins over the dark-yellow background — the virtual-text
+diagnostic signs (10), so on a _heading_ line the band wins over the dark-yellow background — the virtual-text
 message still shows. If that ever matters, add `signs.priority` to the namespace config; don't pre-fix it.

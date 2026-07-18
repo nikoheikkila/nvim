@@ -4,6 +4,9 @@
   "MD013": {
     "line_length": 120,
     "heading_line_length": 120,
-    "code_block_line_length": 120
+    "code_block_line_length": 120,
+    // Prettier (conform.nvim, on save) re-pads table cells to align pipes and
+    // offers no way to turn that off — exempt tables from line-length checks.
+    "tables": false
   }
 }

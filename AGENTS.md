@@ -61,18 +61,22 @@
         └── search_utils_spec.lua
 ```
 
-`init.lua` calls `require("config.options")`, then `require("config.autocmds")`, then `require("config.keymaps")`,
-then `require("config.commands")`, then `require("config.lazy")`. All plugin specs live under `lua/plugins/` and
+`init.lua` calls s the entrypoint that calls the following files:
+
+- `config.options`
+- `config.autocmd`
+- `config.keymaps`
+- `config.commands`
+- `config.lazy`
+
+All plugin specs live under `lua/plugins/` and
 are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new
 file to `lua/plugins/` is enough to activate new plugins.
 
-**This load order is a contract.** Leader keys are set in `options.lua` precisely because it loads first — a
-`<leader>` mapping created before `vim.g.mapleader` is set silently binds under the default `\` with no error
-(this bug has shipped once). Don't reorder the `require`s, and don't set `<leader>` maps anywhere that loads
-before `options.lua`. After touching commands or keymaps, run `task test:integration` — the
-`tests/integration/` specs assert the leaders, user commands, and global keymaps inside a fully-loaded
-headless Neovim with the real `vim` API (`task test:unit` runs only the pure-Lua `tests/unit/` specs;
-`task test` runs both).
+eader keys are set in `options.lua` because it loads first — a
+`<leader>` mapping created before `vim.g.mapleader` is set silently and binds under the default.
+Don't reorder the `require`s, and don't set `<leader>` maps anywhere that loads
+before `options.lua`.
 
 Tests are run through the `Taskfile.yml` tasks (`task test`, `task test:unit`, `task test:integration`), not
 by invoking `busted` directly — see [`dev-workflow.md`](.claude/instructions/dev-workflow.md).
@@ -81,13 +85,13 @@ by invoking `busted` directly — see [`dev-workflow.md`](.claude/instructions/d
 
 Detailed guidance lives under `.claude/instructions/` — read the relevant file before touching that area:
 
-| File | Covers |
-| --- | --- |
-| [`config.md`](.claude/instructions/config.md) | lazy.nvim bootstrap, plugin globals vs `require`, editor options, core keymaps, `:q`/`:x`/`:wq` overrides, `:Daily` note command, autocommands (auto-create dirs, auto-save), the global keymap registry |
-| [`markdown.md`](.claude/instructions/markdown.md) | `lib/markdown_utils.lua`, `plugins/markdown.lua` (markdown-plus, render-markdown, conform, nvim-lint live linting), `<C-S-I>` terminal caveat |
-| [`plugins.md`](.claude/instructions/plugins.md) | theme, bufferline/lualine, zen-mode, lazygit, snacks.nvim picker |
-| [`explorer.md`](.claude/instructions/explorer.md) | neo-tree file-tree sidebar |
-| [`dev-workflow.md`](.claude/instructions/dev-workflow.md) | Adding/fetching plugins, running tests, headless Lua verification |
+| File                                                      | Covers                                                                                                                                                                                                   |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`config.md`](.claude/instructions/config.md)             | lazy.nvim bootstrap, plugin globals vs `require`, editor options, core keymaps, `:q`/`:x`/`:wq` overrides, `:Daily` note command, autocommands (auto-create dirs, auto-save), the global keymap registry |
+| [`markdown.md`](.claude/instructions/markdown.md)         | `lib/markdown_utils.lua`, `plugins/markdown.lua` (markdown-plus, render-markdown, conform, nvim-lint live linting), `<C-S-I>` terminal caveat                                                            |
+| [`plugins.md`](.claude/instructions/plugins.md)           | theme, bufferline/lualine, zen-mode, lazygit, snacks.nvim picker                                                                                                                                         |
+| [`explorer.md`](.claude/instructions/explorer.md)         | neo-tree file-tree sidebar                                                                                                                                                                               |
+| [`dev-workflow.md`](.claude/instructions/dev-workflow.md) | Adding/fetching plugins, running tests, headless Lua verification                                                                                                                                        |
 
 Check `config.md`'s Global Keymap Registry before adding any new global keymap — seven files declare keys and
 there's no other index.
