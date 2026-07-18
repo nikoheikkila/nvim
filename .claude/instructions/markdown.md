@@ -197,7 +197,7 @@ with an errorformat that strips `error`/`warning` and keeps old-format fallbacks
 triggers auto-save → prettier → `BufWritePost` (plus `TextChanged` from the reformat), and all of it collapses
 into **one** lint of the post-prettier content 300ms later.
 
-**Events live in the `markdown_lint` augroup, never `auto_save`:** the smoke test asserts `auto_save` has no
+**Events live in the `markdown_lint` augroup, never `auto_save`:** the integration spec asserts `auto_save` has no
 `TextChanged` autocmds (that debounced-save regression is not allowed back). Lint-on-`TextChanged` is fine — it
 only reads the buffer.
 
@@ -205,12 +205,12 @@ only reads the buffer.
 extmarks. If `signs.text` is unset, the runtime defaults it to `"W"` (`runtime/lua/vim/diagnostic.lua`, signs
 handler), and a visible sign opens/shifts the auto signcolumn on every appearing/disappearing warning. An
 explicitly empty string keeps `line_hl_group` working with `textoff == 0` (verified on 0.12.4 and asserted in
-the smoke test).
+the integration spec).
 
 **Missing-binary guard:** checked inside `lint_buf()` before any spawn, notifying once per session (`warned`
 upvalue) — the house idiom from `git.lua`/`picker.lua`. Wiring (augroup, highlight, namespace config) is set up
-unconditionally so the smoke test asserts it with or without the binary; the guard branch is exercised via
-`scripts/test-without-binary.sh markdownlint-cli2 -- scripts/smoke-test.sh`. If the binary appears mid-session,
+unconditionally so the integration spec asserts it with or without the binary; the guard branch is exercised via
+`scripts/test-without-binary.sh markdownlint-cli2 -- task test:integration`. If the binary appears mid-session,
 linting starts working without a restart (only the notification is one-shot). `lint_buf()` ends by firing
 `User MarkdownLintRun` — a no-op with no listeners — as the deterministic sync point
 `tests/integration/markdown_lint_spec.lua` latches on instead of sleeping out the debounce.

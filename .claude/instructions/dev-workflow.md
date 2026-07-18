@@ -129,9 +129,8 @@ task lint                 # selene + markdownlint-cli2 + shellcheck (see Taskfil
 scripts/check.sh          # everything CI runs, in CI's order: lint, unit, integration, guard path
 ```
 
-`scripts/smoke-test.sh` (`exec busted --run=integration`) and a bare `busted --run=unit` /
-`busted --run=integration` still work directly if `task` isn't installed — but `task test*` is the
-documented entry point and what CI and `scripts/check.sh` use.
+A bare `busted --run=unit` / `busted --run=integration` still works directly if `task` isn't
+installed — but `task test*` is the documented entry point and what CI and `scripts/check.sh` use.
 
 CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS as three jobs: `lint` runs
 `task lint`; `test` runs `task test:unit`; and `integration-test` installs a pinned Neovim release

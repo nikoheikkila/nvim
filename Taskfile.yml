@@ -38,8 +38,8 @@ tasks:
 
   test:unit:
     desc: Run unit tests
-    cmd: busted --run=unit
+    cmd: busted --run=unit {{ .CLI_ARGS | default "" }}
 
   test:integration:
     desc: Run integration tests
-    cmd: busted --run=integration
+    cmd: busted --run=integration {{ .CLI_ARGS | default "" }}

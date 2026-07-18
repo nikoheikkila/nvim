@@ -19,6 +19,6 @@ task test:integration
 
 echo "== Integration tests: missing-binary guard path =="
 scripts/test-without-binary.sh markdownlint-cli2 -- \
-  busted --run=integration tests/integration/markdown_lint_spec.lua
+  task test:integration -- tests/integration/markdown_lint_spec.lua
 
 echo "All checks passed"

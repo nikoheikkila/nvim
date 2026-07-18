@@ -10,7 +10,7 @@
 --
 -- Wiring checks run unconditionally; the end-to-end path needs the binary,
 -- the guard path is exercised via:
---   scripts/test-without-binary.sh markdownlint-cli2 -- scripts/smoke-test.sh
+--   scripts/test-without-binary.sh markdownlint-cli2 -- task test:integration
 describe("live markdown linting", function()
   local lint, lint_ns, md_buf
   local warn = vim.diagnostic.severity.WARN
