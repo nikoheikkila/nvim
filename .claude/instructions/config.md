@@ -4,9 +4,9 @@ Covers `lazy.lua`, `options.lua`, `autocmds.lua`, `keymaps.lua`, `commands.lua` 
 
 ## Plugin Manager
 
-**lazy.nvim** is bootstrapped in `lua/config/lazy.lua`. Leader keys are set in `lua/config/options.lua` — the first module loaded
-from `init.lua` — so both the core `<leader>` maps in `keymaps.lua` and all plugin `keys` specs inherit the correct
-leaders.
+**lazy.nvim** is bootstrapped in `lua/config/lazy.lua`. Leader keys are set in `lua/config/options.lua`.
+The first module loaded from `init.lua` — so both the core `<leader>` maps in `keymaps.lua`
+and all plugin `keys` specs inherit the correct leaders.
 
 ### Neovim plugin globals vs `require`
 
