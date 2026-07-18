@@ -35,7 +35,6 @@ tasks:
     desc: Lint codebase
     cmds:
       - task: lint:lua
-      - task: lint:format
       - task: lint:md
       - task: lint:shell
 
@@ -55,13 +54,9 @@ tasks:
     desc: Lint Lua sources and tests
     sources:
       - ./**/*.lua
-    cmd: selene {{ .CLI_ARGS | default "." }}
-
-  lint:format:
-    desc: Check Lua formatting
-    sources:
-      - ./**/*.lua
-    cmd: stylua --check {{ .CLI_ARGS | default "." }}
+    cmds:
+      - selene {{ .CLI_ARGS | default "." }}
+      - stylua --check {{ .CLI_ARGS | default "." }}
 
   lint:md:
     desc: Lint Markdown files
