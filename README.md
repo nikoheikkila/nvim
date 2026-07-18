@@ -309,7 +309,8 @@ luarocks --lua-version=5.1 install busted  # integration suite (Neovim's LuaJIT 
 scripts/check.sh
 ```
 
-Individual checks: `busted` (unit), `scripts/smoke-test.sh` (integration), `task lint` (selene, markdownlint,
+Tests are run through the tasks in `Taskfile.yml`, not by invoking `busted` directly: `task test` runs the full
+pipeline, or individually `task test:unit`, `task test:integration`, `task lint` (selene, markdownlint,
 shellcheck).
 The integration harness and the rules for writing new specs are documented in
 [`dev-workflow.md`](.claude/instructions/dev-workflow.md).

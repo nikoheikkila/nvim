@@ -6,27 +6,40 @@ version: '3'
 tasks:
 
   lint:
-    desc: Lint Lua sources/tests and Markdown files
+    desc: Lint codebase
     cmds:
       - task: lint:lua
       - task: lint:md
       - task: lint:shell
 
+  test:
+    desc: Run full test pipeline
+    cmds:
+      - task: test:unit
+      - task: test:integration
+
   lint:lua:
     desc: Lint Lua sources and tests
     sources:
-      - lua/**/*.lua
-      - tests/**/*.lua
-    cmd: selene .
+      - ./**/*.lua
+    cmd: selene {{ .CLI_ARGS | default "." }}
 
   lint:md:
     desc: Lint Markdown files
     sources:
       - ./**/*.md
-    cmd: markdownlint-cli2 "./**/*.md"
+    cmd: markdownlint-cli2 {{ .CLI_ARGS | default "./**/*.md" }}
 
   lint:shell:
     desc: Lint Shell scripts
     sources:
       - ./**/*.sh
-    cmd: find . -type f -name "*.sh" -exec shellcheck {} \;
+    cmd: '{{if .CLI_ARGS}}shellcheck {{ .CLI_ARGS }}{{else}}find . -type f -name "*.sh" -exec shellcheck {} \;{{end}}'
+
+  test:unit:
+    desc: Run unit tests
+    cmd: busted --run=unit
+
+  test:integration:
+    desc: Run integration tests
+    cmd: busted --run=integration

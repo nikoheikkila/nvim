@@ -26,18 +26,21 @@ run_check() {
 			'{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":$ctx}}'
 	fi
 
-	exit "$rc"
+	# Claude Code only parses stdout JSON on exit 0; PostToolUse can't block
+	# the tool call anyway (it already ran), so a non-zero exit here would
+	# just discard the additionalContext instead of surfacing it to Claude.
+	exit 0
 }
 
 case "$EXT" in
 lua)
-	run_check selene --display-style=json2 "$FILE_PATH"
+	run_check task --force lint:lua -- --display-style=json2 "$FILE_PATH"
 	;;
 md)
-	run_check markdownlint-cli2 "$FILE_PATH"
+	run_check task --force lint:md -- "$FILE_PATH"
 	;;
 sh)
-	run_check shellcheck --format json "$FILE_PATH"
+	run_check task --force lint:shell -- --format json "$FILE_PATH"
 	;;
 esac
 

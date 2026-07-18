@@ -10,8 +10,8 @@
 ├── AGENTS.md                  # This file — project instructions (single source of truth)
 ├── CLAUDE.md                  # Symlink -> AGENTS.md
 ├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
-├── Taskfile.yml                # Task runner: `task lint` runs selene + markdownlint-cli2 + shellcheck
-├── .busted                    # Busted config: `default` task (tests/unit) + `integration` task (tests/integration)
+├── Taskfile.yml                # Task runner: `task lint` (selene, markdownlint, shellcheck), `task test`
+├── .busted                    # Busted config: `unit` task (tests/unit) + `integration` task (tests/integration)
 ├── .markdownlint.jsonc        # Base markdownlint config for live linting (MD013 aligned to textwidth=120)
 ├── selene.toml                # Lua linter config (std = "busted+lua51+vim")
 ├── vim.yml                    # Vendored selene std: declares the `vim` global
@@ -22,7 +22,7 @@
 │   ├── debug-keys.lua         # :luafile it to log which key/mouse events actually reach Neovim
 │   ├── headless-lua.sh        # Run a Lua script in a fully-loaded headless nvim (`nvim -l` skips user config)
 │   ├── lazy-install.sh        # Safe plugin fetch: `:Lazy install`, not `:Lazy sync`
-│   ├── smoke-test.sh          # Runs the integration suite: `busted --run=integration`
+│   ├── smoke-test.sh          # Runs the integration suite (same as `task test:integration`)
 │   └── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
 └── lua/
     ├── config/
@@ -70,10 +70,13 @@ file to `lua/plugins/` is enough to activate new plugins.
 **This load order is a contract.** Leader keys are set in `options.lua` precisely because it loads first — a
 `<leader>` mapping created before `vim.g.mapleader` is set silently binds under the default `\` with no error
 (this bug has shipped once). Don't reorder the `require`s, and don't set `<leader>` maps anywhere that loads
-before `options.lua`. After touching commands or keymaps, run `scripts/smoke-test.sh`
-(= `busted --run=integration`) — the `tests/integration/` specs assert the leaders, user commands, and global
-keymaps inside a fully-loaded headless Neovim with the real `vim` API (plain `busted` runs only the pure-Lua
-`tests/unit/` specs).
+before `options.lua`. After touching commands or keymaps, run `task test:integration` — the
+`tests/integration/` specs assert the leaders, user commands, and global keymaps inside a fully-loaded
+headless Neovim with the real `vim` API (`task test:unit` runs only the pure-Lua `tests/unit/` specs;
+`task test` runs both).
+
+Tests are run through the `Taskfile.yml` tasks (`task test`, `task test:unit`, `task test:integration`), not
+by invoking `busted` directly — see [`dev-workflow.md`](.claude/instructions/dev-workflow.md).
 
 ## Instructions
 

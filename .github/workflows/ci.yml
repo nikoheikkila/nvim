@@ -48,6 +48,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Task
+        uses: go-task/setup-task@v1
+
       - name: Set up Lua
         uses: leafo/gh-actions-lua@v10
         with:
@@ -60,7 +63,7 @@ jobs:
         run: luarocks install busted
 
       - name: Unit tests
-        run: busted
+        run: task test:unit
 
   # tests/integration/ runs real Busted inside a fully-loaded headless Neovim
   # (see .busted's `integration` task and scripts/busted-nvim.sh). Lua 5.1 on
@@ -80,6 +83,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Task
+        uses: go-task/setup-task@v1
 
       - name: Install Neovim
         run: |
@@ -114,7 +120,7 @@ jobs:
           scripts/lazy-install.sh
 
       - name: Integration tests
-        run: scripts/smoke-test.sh
+        run: task test:integration
 
       # The guard path only compiles when the binary is missing — hide it and
       # re-run the lint spec so both branches stay covered (one OS is enough).

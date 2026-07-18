@@ -33,11 +33,14 @@ fi
 
 output=""
 rc=0
-output=$(busted -o plainTerminal 2>&1) || rc=$?
+output=$(task test 2>&1) || rc=$?
 
 if [[ $rc -ne 0 ]]; then
 	jq -cn --arg ctx "$output" \
 		'{"decision":"block","reason":$ctx}'
 fi
 
-exit "$rc"
+# Claude Code only honors decision:block (and parses stdout as JSON at all)
+# on exit 0 — exiting with task test's own rc here would suppress the block
+# instead of surfacing the failure to Claude.
+exit 0

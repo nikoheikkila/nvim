@@ -1,6 +1,6 @@
 return {
   -- Pure-Lua unit tests for lua/lib/ — run with the plain `busted` binary.
-  default = {
+  unit = {
     ROOT = { "tests/unit" },
   },
   -- Config-level integration tests — `busted --run=integration` re-executes

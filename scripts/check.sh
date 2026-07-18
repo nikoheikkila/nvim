@@ -12,10 +12,10 @@ echo "== Lint =="
 task lint
 
 echo "== Unit tests =="
-busted
+task test:unit
 
 echo "== Integration tests =="
-scripts/smoke-test.sh
+task test:integration
 
 echo "== Integration tests: missing-binary guard path =="
 scripts/test-without-binary.sh markdownlint-cli2 -- \

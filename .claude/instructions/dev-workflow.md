@@ -68,15 +68,18 @@ or call the plugin's health module directly: `require("plugin_name.health").chec
 
 ## Testing
 
-Two [Busted](https://lunarmodules.github.io/busted/) suites, configured by `.busted` at the project root:
+Tests are run through the tasks in `Taskfile.yml`, not by invoking `busted` directly: `task test` runs the
+full pipeline (`test:unit` then `test:integration`), and each is runnable individually. Under the hood, both
+tasks wrap two [Busted](https://lunarmodules.github.io/busted/) suites, configured by `.busted` at the
+project root:
 
-- **Unit** — `tests/unit/*_spec.lua`, one spec per `lua/lib/` module. Pure Lua, runs under the plain
-  `busted` binary (homebrew Lua, no Neovim). The `package.path` preamble in each spec makes `lib.*`
-  importable without Neovim.
-- **Integration** — `tests/integration/*_spec.lua`, the config-level contract: leader keys, `:Daily`
-  end-to-end, the `:q`/`:x`/`:wq` abbreviations, global keymaps, auto-save, and plugin wiring
-  (multicursor, markdown lint). `busted --run=integration` re-executes busted under
-  `scripts/busted-nvim.sh`, an interpreter shim that boots a **fully-loaded headless Neovim**
+- **Unit** (`task test:unit` = `busted --run=unit`) — `tests/unit/*_spec.lua`, one spec per `lua/lib/`
+  module. Pure Lua, runs under the plain `busted` binary (homebrew Lua, no Neovim). The `package.path`
+  preamble in each spec makes `lib.*` importable without Neovim.
+- **Integration** (`task test:integration` = `busted --run=integration`) — `tests/integration/*_spec.lua`,
+  the config-level contract: leader keys, `:Daily` end-to-end, the `:q`/`:x`/`:wq` abbreviations, global
+  keymaps, auto-save, and plugin wiring (multicursor, markdown lint). `busted --run=integration` re-executes
+  busted under `scripts/busted-nvim.sh`, an interpreter shim that boots a **fully-loaded headless Neovim**
   (`nvim -u init.lua -l`), so specs assert against the real `vim` API. **Extend these specs when
   adding a user command or global keymap.**
 
@@ -119,20 +122,24 @@ which wires `LUA_PATH`/`LUA_CPATH` to the `~/.luarocks` 5.1 tree before exec'ing
 ### Run
 
 ```sh
-busted                    # unit tests (tests/unit)
-busted --run=integration  # integration tests inside a fully-loaded headless Neovim (tests/integration)
-scripts/smoke-test.sh     # same as busted --run=integration
+task test                 # full pipeline: test:unit then test:integration
+task test:unit            # unit tests (tests/unit)
+task test:integration     # integration tests inside a fully-loaded headless Neovim (tests/integration)
 task lint                 # selene + markdownlint-cli2 + shellcheck (see Taskfile.yml)
 scripts/check.sh          # everything CI runs, in CI's order: lint, unit, integration, guard path
 ```
 
-CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS as two parallel jobs:
-`lint-and-test` mirrors `task lint` + `busted`, and `integration-test` installs a pinned
-Neovim release binary, a Lua 5.1 busted tree via the same leafo actions (exported to the shim as
+`scripts/smoke-test.sh` (`exec busted --run=integration`) and a bare `busted --run=unit` /
+`busted --run=integration` still work directly if `task` isn't installed — but `task test*` is the
+documented entry point and what CI and `scripts/check.sh` use.
+
+CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS as three jobs: `lint` runs
+`task lint`; `test` runs `task test:unit`; and `integration-test` installs a pinned Neovim release
+binary, a Lua 5.1 busted tree via the same leafo actions (exported to the shim as
 `BUSTED_ROCKS_TREE`), markdownlint-cli2, and the locked plugins (`scripts/lazy-install.sh` against
-a `~/.config/nvim` symlink to the checkout) before `scripts/smoke-test.sh` — plus a Linux-only
-rerun of the lint spec through `test-without-binary.sh` so the missing-binary guard path stays
-covered.
+a `~/.config/nvim` symlink to the checkout) before running `task test:integration` — plus a
+Linux-only rerun of the lint spec through `test-without-binary.sh` so the missing-binary guard path
+stays covered.
 
 ### Verifying interactive/headless picker behavior
 
