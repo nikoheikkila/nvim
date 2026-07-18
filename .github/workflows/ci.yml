@@ -7,8 +7,38 @@ on:
     branches: [main]
 
 jobs:
-  lint-and-test:
-    name: Lint & Test (${{ matrix.os }})
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Task
+        uses: go-task/setup-task@v1
+
+      - name: Install selene
+        env:
+          SELENE_VERSION: "0.31.0"
+        run: |
+          curl -sSLO "https://github.com/Kampfkarren/selene/releases/download/${SELENE_VERSION}/selene-${SELENE_VERSION}-linux.zip"
+          unzip -o "selene-${SELENE_VERSION}-linux.zip" -d "$RUNNER_TEMP/selene"
+          chmod +x "$RUNNER_TEMP/selene/selene"
+          echo "$RUNNER_TEMP/selene" >> "$GITHUB_PATH"
+
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Lint
+        run: task lint
+
+  test:
+    name: Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -26,21 +56,8 @@ jobs:
       - name: Set up LuaRocks
         uses: leafo/gh-actions-luarocks@v4
 
-      - name: Install selene
-        env:
-          SELENE_VERSION: "0.31.0"
-        run: |
-          os=$([ "$RUNNER_OS" = "macOS" ] && echo "macos" || echo "linux")
-          curl -sSLO "https://github.com/Kampfkarren/selene/releases/download/${SELENE_VERSION}/selene-${SELENE_VERSION}-${os}.zip"
-          unzip -o "selene-${SELENE_VERSION}-${os}.zip" -d "$RUNNER_TEMP/selene"
-          chmod +x "$RUNNER_TEMP/selene/selene"
-          echo "$RUNNER_TEMP/selene" >> "$GITHUB_PATH"
-
       - name: Install busted
         run: luarocks install busted
-
-      - name: Lint
-        run: selene lua/ tests/
 
       - name: Unit tests
         run: busted
@@ -51,7 +68,7 @@ jobs:
   # into it — while luarocks itself cannot parse the luarocks.org manifest
   # under LuaJIT (luarocks/luarocks#1797).
   integration-test:
-    name: Integration Test (${{ matrix.os }})
+    name: Integration Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
