@@ -8,8 +8,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-echo "== Lint (selene) =="
-scripts/lint.sh
+echo "== Lint =="
+task lint
 
 echo "== Unit tests =="
 busted

@@ -10,6 +10,7 @@
 ├── AGENTS.md                  # This file — project instructions (single source of truth)
 ├── CLAUDE.md                  # Symlink -> AGENTS.md
 ├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
+├── Taskfile.yml                # Task runner: `task lint` runs selene + markdownlint-cli2 + shellcheck
 ├── .busted                    # Busted config: `default` task (tests/unit) + `integration` task (tests/integration)
 ├── .markdownlint.jsonc        # Base markdownlint config for live linting (MD013 aligned to textwidth=120)
 ├── selene.toml                # Lua linter config (std = "busted+lua51+vim")
@@ -21,7 +22,6 @@
 │   ├── debug-keys.lua         # :luafile it to log which key/mouse events actually reach Neovim
 │   ├── headless-lua.sh        # Run a Lua script in a fully-loaded headless nvim (`nvim -l` skips user config)
 │   ├── lazy-install.sh        # Safe plugin fetch: `:Lazy install`, not `:Lazy sync`
-│   ├── lint.sh                # Runs `selene lua/ tests/` (same command CI runs)
 │   ├── smoke-test.sh          # Runs the integration suite: `busted --run=integration`
 │   └── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
 └── lua/

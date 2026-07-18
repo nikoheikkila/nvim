@@ -2,18 +2,31 @@
 
 version: '3'
 
-vars:
-  GREETING: Hello, world!
 
 tasks:
-  default:
-    desc: Print a greeting message
-    cmds:
-      - echo "{{.GREETING}}"
-    silent: true
 
   lint:
     desc: Lint Lua sources/tests and Markdown files
     cmds:
-      - sh scripts/lint.sh
-      - markdownlint-cli2 "./**/*.md"
+      - task: lint:lua
+      - task: lint:md
+      - task: lint:shell
+
+  lint:lua:
+    desc: Lint Lua sources and tests
+    sources:
+      - lua/**/*.lua
+      - tests/**/*.lua
+    cmd: selene .
+
+  lint:md:
+    desc: Lint Markdown files
+    sources:
+      - ./**/*.md
+    cmd: markdownlint-cli2 "./**/*.md"
+
+  lint:shell:
+    desc: Lint Shell scripts
+    sources:
+      - ./**/*.sh
+    cmd: find . -type f -name "*.sh" -exec shellcheck {} \;

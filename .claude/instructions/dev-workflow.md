@@ -122,12 +122,12 @@ which wires `LUA_PATH`/`LUA_CPATH` to the `~/.luarocks` 5.1 tree before exec'ing
 busted                    # unit tests (tests/unit)
 busted --run=integration  # integration tests inside a fully-loaded headless Neovim (tests/integration)
 scripts/smoke-test.sh     # same as busted --run=integration
-scripts/lint.sh           # or: selene lua/ tests/
+task lint                 # selene + markdownlint-cli2 + shellcheck (see Taskfile.yml)
 scripts/check.sh          # everything CI runs, in CI's order: lint, unit, integration, guard path
 ```
 
 CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS as two parallel jobs:
-`lint-and-test` mirrors `scripts/lint.sh` + `busted`, and `integration-test` installs a pinned
+`lint-and-test` mirrors `task lint` + `busted`, and `integration-test` installs a pinned
 Neovim release binary, a Lua 5.1 busted tree via the same leafo actions (exported to the shim as
 `BUSTED_ROCKS_TREE`), markdownlint-cli2, and the locked plugins (`scripts/lazy-install.sh` against
 a `~/.config/nvim` symlink to the checkout) before `scripts/smoke-test.sh` — plus a Linux-only

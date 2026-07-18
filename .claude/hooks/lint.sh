@@ -37,7 +37,7 @@ md)
 	run_check markdownlint-cli2 "$FILE_PATH"
 	;;
 sh)
-	run_check shellcheck "$FILE_PATH"
+	run_check shellcheck --format json "$FILE_PATH"
 	;;
 esac
 
