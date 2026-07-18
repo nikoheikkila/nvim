@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: false
+  jobs:
+    - run: task format
+      stage_fixed: true
+    - run: task lint
+
+pre-push:
+  parallel: true
+  jobs:
+    - run: task test:unit
+    - run: task test:integration

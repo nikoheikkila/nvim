@@ -5,11 +5,22 @@ version: '3'
 
 tasks:
 
+  hooks:
+    internal: true
+    sources:
+      - lefthook.yml
+    generates:
+      - .git/hooks/pre-commit
+      - .git/hooks/pre-push
+    cmd: lefthook install
+
   install:
     desc: Install LazyVim plugins
     sources:
       - lazy-lock.json
-    cmd: nvim --headless "+Lazy! install" +qa
+    cmds:
+      - task: hooks
+      - nvim --headless "+Lazy! install" +qa
 
   update:
     desc: Update LazyVim plugins
