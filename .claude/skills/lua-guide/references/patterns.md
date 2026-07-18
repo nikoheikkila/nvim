@@ -227,7 +227,8 @@ return M
 
 ## Error Handling
 
-Return `nil, err_msg` from functions that can fail (idiomatic two-value return); reserve `error()` for violated preconditions; use `xpcall` with `debug.traceback` to catch programmer errors with a stack trace.
+Return `nil, err_msg` from functions that can fail (idiomatic two-value return); reserve `error()` for violated
+preconditions; use `xpcall` with `debug.traceback` to catch programmer errors with a stack trace.
 
 ```lua
 local function read_config(path)

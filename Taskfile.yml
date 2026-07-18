@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  GREETING: Hello, world!
+
+tasks:
+  default:
+    desc: Print a greeting message
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+
+  lint:
+    desc: Lint Lua sources/tests and Markdown files
+    cmds:
+      - sh scripts/lint.sh
+      - markdownlint-cli2 "./**/*.md"

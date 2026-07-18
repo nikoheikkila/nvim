@@ -69,7 +69,8 @@ metadata:
 
 ## References
 
-- [references/patterns.md](references/patterns.md) — OOP/metatables, mixins, modules, coroutines, custom iterators, Neovim plugin setup, error handling
+- [references/patterns.md](references/patterns.md) — OOP/metatables, mixins, modules, coroutines, custom
+  iterators, Neovim plugin setup, error handling
 - [references/testing.md](references/testing.md) — Busted patterns, testing standards, headless Neovim verification techniques
 - [references/tooling.md](references/tooling.md) — Selene, Luacheck (legacy), StyLua, essential CLI commands
 
