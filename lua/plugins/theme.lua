@@ -11,7 +11,7 @@ return {
       require("github-theme").setup({
         options = { styles = { comments = "italic" } },
       })
-      vim.cmd('colorscheme github_dark_default')
+      vim.cmd("colorscheme github_dark_default")
     end,
-  }
+  },
 }

@@ -21,8 +21,15 @@ tasks:
     desc: Lint codebase
     cmds:
       - task: lint:lua
+      - task: lint:format
       - task: lint:md
       - task: lint:shell
+
+  format:
+    desc: Format codebase
+    cmds:
+      - task: format:lua
+      - task: format:md
 
   test:
     desc: Run full test pipeline
@@ -36,6 +43,12 @@ tasks:
       - ./**/*.lua
     cmd: selene {{ .CLI_ARGS | default "." }}
 
+  lint:format:
+    desc: Check Lua formatting
+    sources:
+      - ./**/*.lua
+    cmd: stylua --check {{ .CLI_ARGS | default "." }}
+
   lint:md:
     desc: Lint Markdown files
     sources:
@@ -48,8 +61,22 @@ tasks:
       - ./**/*.sh
     cmd: '{{if .CLI_ARGS}}shellcheck {{ .CLI_ARGS }}{{else}}find . -type f -name "*.sh" -exec shellcheck {} \;{{end}}'
 
+  format:lua:
+    desc: Format Lua sources and tests
+    sources:
+      - ./**/*.lua
+    cmd: stylua {{ .CLI_ARGS | default "." }}
+
+  format:md:
+    desc: Fix auto-fixable Markdown lint issues
+    sources:
+      - ./**/*.md
+    cmd: markdownlint-cli2 --fix {{ .CLI_ARGS | default "./**/*.md" }}
+
   test:unit:
     desc: Run unit tests
+    sources:
+      - ./
     cmd: busted --run=unit {{ .CLI_ARGS | default "" }}
 
   test:integration:

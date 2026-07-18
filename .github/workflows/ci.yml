@@ -26,6 +26,15 @@ jobs:
           chmod +x "$RUNNER_TEMP/selene/selene"
           echo "$RUNNER_TEMP/selene" >> "$GITHUB_PATH"
 
+      - name: Install StyLua
+        env:
+          STYLUA_VERSION: "v2.5.2"
+        run: |
+          curl -sSLO "https://github.com/JohnnyMorganz/StyLua/releases/download/${STYLUA_VERSION}/stylua-linux-x86_64.zip"
+          unzip -o "stylua-linux-x86_64.zip" -d "$RUNNER_TEMP/stylua"
+          chmod +x "$RUNNER_TEMP/stylua/stylua"
+          echo "$RUNNER_TEMP/stylua" >> "$GITHUB_PATH"
+
       - name: Install markdownlint-cli2
         run: npm install -g markdownlint-cli2
 

@@ -108,12 +108,13 @@ brew install luarocks
 luarocks install busted                    # unit suite (default homebrew Lua tree)
 luarocks --lua-version=5.1 install busted  # integration suite: Neovim's LuaJIT is 5.1-ABI (installs to ~/.luarocks)
 brew install selene   # or: cargo install selene
+brew install stylua   # or: cargo install stylua
 ```
 
-Verify: `busted --version` and `selene --version`
+Verify: `busted --version`, `selene --version`, and `stylua --version`
 
-`selene` is a standalone Rust binary with no Lua/LuaRocks dependency — unlike a Lua-based linter, it can never break due
-to a local Lua-version mismatch.
+`selene` and `stylua` are standalone Rust binaries with no Lua/LuaRocks dependency — unlike a Lua-based linter or
+formatter, they can never break due to a local Lua-version mismatch.
 
 Do **not** set `lua = "luajit"` on the *default* `.busted` task — the default rocks tree is not 5.1 and
 `busted.runner` won't resolve. The integration task instead points `lua` at `scripts/busted-nvim.sh`,
@@ -125,9 +126,14 @@ which wires `LUA_PATH`/`LUA_CPATH` to the `~/.luarocks` 5.1 tree before exec'ing
 task test                 # full pipeline: test:unit then test:integration
 task test:unit            # unit tests (tests/unit)
 task test:integration     # integration tests inside a fully-loaded headless Neovim (tests/integration)
-task lint                 # selene + markdownlint-cli2 + shellcheck (see Taskfile.yml)
+task lint                 # selene + stylua --check + markdownlint-cli2 + shellcheck (see Taskfile.yml)
+task format               # stylua over all Lua + markdownlint-cli2 --fix over all Markdown
 scripts/check.sh          # everything CI runs, in CI's order: lint, unit, integration, guard path
 ```
+
+Lua formatting is StyLua (`stylua.toml`: 2-space indent, 120 columns — matching `textwidth`). It runs three ways:
+`task format` from the CLI, format-on-save in the editor via conform.nvim (see `markdown.md`), and as an enforced
+`stylua --check` inside `task lint`, so CI fails on formatting drift — run `task format` before committing Lua changes.
 
 A bare `busted --run=unit` / `busted --run=integration` still works directly if `task` isn't
 installed — but `task test*` is the documented entry point and what CI and `scripts/check.sh` use.

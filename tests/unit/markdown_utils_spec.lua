@@ -45,10 +45,7 @@ describe("find_image_path_at", function()
   end)
 
   it("remote url returned as is", function()
-    assert.are.equal(
-      M.find_image_path_at("![alt](https://example.com/img.png)", 5),
-      "https://example.com/img.png"
-    )
+    assert.are.equal(M.find_image_path_at("![alt](https://example.com/img.png)", 5), "https://example.com/img.png")
   end)
 
   it("second of two images", function()

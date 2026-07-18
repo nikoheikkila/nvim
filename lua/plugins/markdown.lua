@@ -24,9 +24,7 @@ local function rename_image_at_cursor()
   end
   local buf_dir = vim.fn.fnamemodify(buf_file, ":h")
 
-  local full_path = found_path:sub(1, 1) == "/"
-    and found_path
-    or vim.fn.fnamemodify(buf_dir .. "/" .. found_path, ":p")
+  local full_path = found_path:sub(1, 1) == "/" and found_path or vim.fn.fnamemodify(buf_dir .. "/" .. found_path, ":p")
 
   if vim.fn.filereadable(full_path) == 0 then
     vim.notify("File not found: " .. full_path, vim.log.levels.ERROR)
@@ -41,9 +39,7 @@ local function rename_image_at_cursor()
     end
 
     local new_path = mu.replace_filename(found_path, new_name)
-    local new_full = found_path:sub(1, 1) == "/"
-      and new_path
-      or vim.fn.fnamemodify(buf_dir .. "/" .. new_path, ":p")
+    local new_full = found_path:sub(1, 1) == "/" and new_path or vim.fn.fnamemodify(buf_dir .. "/" .. new_path, ":p")
 
     local ok, err = os.rename(full_path, new_full)
     if not ok then
@@ -96,7 +92,9 @@ local function setup_keymaps(buf)
     local row = vim.api.nvim_win_get_cursor(0)[1]
     local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
     local new_line = mu.toggle_checklist_line(line)
-    if new_line == line then return end
+    if new_line == line then
+      return
+    end
     vim.api.nvim_buf_set_lines(0, row - 1, row, false, { new_line })
   end
   vim.keymap.set({ "n", "i" }, "<C-l>", checklist_toggle, { buffer = buf, desc = "Toggle checklist item" })
@@ -194,6 +192,7 @@ return {
     opts = {
       formatters_by_ft = {
         markdown = { "prettier" },
+        lua = { "stylua" },
       },
       format_on_save = {
         timeout_ms = 500,
@@ -211,8 +210,7 @@ return {
       -- Base config aligning MD013 with textwidth=120; per-project
       -- .markdownlint* files still override it (cli2 --config is a base, not
       -- a replacement). "-" (the stdin glob) must stay last.
-      lint.linters["markdownlint-cli2"].args =
-        { "--config", vim.fn.stdpath("config") .. "/.markdownlint.jsonc", "-" }
+      lint.linters["markdownlint-cli2"].args = { "--config", vim.fn.stdpath("config") .. "/.markdownlint.jsonc", "-" }
       -- cli2 >= 0.18 prefixes findings with a severity word
       -- ("stdin:3:121 error MD013/... message"); nvim-lint's bundled
       -- errorformat predates that and would leak "error " into every
@@ -267,20 +265,21 @@ return {
       -- (InsertLeave -> auto-save -> prettier -> BufWritePost) into one run.
       local timer = assert(vim.uv.new_timer())
       local group = vim.api.nvim_create_augroup("markdown_lint", { clear = true })
-      vim.api.nvim_create_autocmd(
-        { "TextChanged", "TextChangedI", "InsertLeave", "BufWritePost", "BufReadPost" },
-        {
-          group = group,
-          callback = function(ev)
-            if vim.bo[ev.buf].filetype ~= "markdown" then
-              return
-            end
-            timer:start(300, 0, vim.schedule_wrap(function()
+      vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI", "InsertLeave", "BufWritePost", "BufReadPost" }, {
+        group = group,
+        callback = function(ev)
+          if vim.bo[ev.buf].filetype ~= "markdown" then
+            return
+          end
+          timer:start(
+            300,
+            0,
+            vim.schedule_wrap(function()
               lint_buf(ev.buf)
-            end))
-          end,
-        }
-      )
+            end)
+          )
+        end,
+      })
       vim.api.nvim_create_autocmd("ColorScheme", { group = group, callback = set_highlight })
 
       -- ft-lazy loading: this config() runs during the FIRST markdown

@@ -34,10 +34,7 @@ describe("multiple-cursors.nvim", function()
   for _, lhs in ipairs({ "<C-LeftMouse>", "<C-RightMouse>", "<RightMouse>" }) do
     for _, mode in ipairs({ "n", "i" }) do
       it(lhs .. " toggles cursor at mouse click (" .. mode .. ")", function()
-        assert.equal(
-          "Add or remove cursor at mouse click",
-          vim.fn.maparg(lhs, mode, false, true).desc
-        )
+        assert.equal("Add or remove cursor at mouse click", vim.fn.maparg(lhs, mode, false, true).desc)
       end)
     end
   end

@@ -161,10 +161,12 @@ bullets render as `•` at every indent level with the `Normal` foreground.
 
 ### 3. `stevearc/conform.nvim`
 
-Loaded on `BufWritePre`. Runs `prettier` on markdown files before every save. If `prettier` is not found,
-conform logs a one-time warning and skips formatting silently — it does not block saving.
+Loaded on `BufWritePre`. Runs `prettier` on markdown files and `stylua` on Lua files before every save
+(stylua picks up `stylua.toml` at the repo root — the same config `task format` and the `task lint`
+format check use). If a formatter binary is not found, conform logs a one-time warning and skips
+formatting silently — it does not block saving.
 
-The formatter is set only for `markdown`. Adding formatters for other filetypes should extend
+Formatters are set for `markdown` and `lua` only. Adding formatters for other filetypes should extend
 `formatters_by_ft`, not replace it.
 
 ### 4. `mfussenegger/nvim-lint` (live markdownlint)

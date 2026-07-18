@@ -5,13 +5,19 @@ function M.find_image_path_at(line, col)
   local pos = 1
   while pos <= #line do
     local s = line:find("!%[", pos)
-    if not s then break end
+    if not s then
+      break
+    end
 
     local cb = line:find("%]%(", s)
-    if not cb then break end
+    if not cb then
+      break
+    end
 
     local cp = line:find(")", cb + 2, true)
-    if not cp then break end
+    if not cp then
+      break
+    end
 
     if col >= s and col <= cp then
       local raw = line:sub(cb + 2, cp - 1)
@@ -38,12 +44,16 @@ end
 --   plain line      →  prepend "- [ ] " (indentation preserved)
 -- Returns the original line unchanged when it is empty.
 function M.toggle_checklist_line(line)
-  if line == "" then return line end
+  if line == "" then
+    return line
+  end
 
   if line:match("^%s*[%-%+%*]%s+%[.?%]") then
-    return (line:gsub("%[(.?)%]", function(state)
-      return (state == "x" or state == "X") and "[ ]" or "[x]"
-    end, 1))
+    return (
+      line:gsub("%[(.?)%]", function(state)
+        return (state == "x" or state == "X") and "[ ]" or "[x]"
+      end, 1)
+    )
   elseif line:match("^%s*[%-%+%*]%s") then
     return (line:gsub("^(%s*[%-%+%*]%s+)", "%1[ ] ", 1))
   else
