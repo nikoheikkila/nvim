@@ -11,7 +11,7 @@ return {
     },
     keys = {
       {
-        "<leader>g",
+        "<leader>gg",
         function()
           if vim.fn.executable("lazygit") == 0 then
             vim.notify("lazygit not found on PATH", vim.log.levels.ERROR)

@@ -119,7 +119,7 @@ replicate/call the underlying logic directly (e.g. the same `vim.fs.dir` walk + 
 `lua/plugins/picker.lua`) and hand the result straight to the picker function, bypassing the interactive prompt
 entirely.
 
-To exercise an executable-guard fallback (e.g. `<leader>.`'s `rg`-missing path, or `<leader>g`'s `lazygit`-missing path)
+To exercise an executable-guard fallback (e.g. `<leader>.`'s `rg`-missing path, or `<leader>gg`'s `lazygit`-missing path)
 without uninstalling the real binary, use `scripts/test-without-binary.sh <binary> -- <command...>`. It builds a
 temporary `PATH` containing symlinks to everything except the named binary — safer than naively stripping the binary's
 whole directory from `$PATH`, since unrelated tools (including `nvim` itself) often live alongside it (e.g. both under

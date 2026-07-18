@@ -14,4 +14,8 @@ describe("global keymaps", function()
   it("binds <leader>bp to Prev Buffer", function()
     assert.equal("Prev Buffer", vim.fn.maparg(leader .. "bp", "n", false, true).desc)
   end)
+
+  it("binds <leader>gg to Lazygit", function()
+    assert.equal("Lazygit (current file repo)", vim.fn.maparg(leader .. "gg", "n", false, true).desc)
+  end)
 end)

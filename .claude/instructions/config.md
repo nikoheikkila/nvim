@@ -130,14 +130,16 @@ uppercase user command and needs no `cnoreabbrev` machinery. Bound to `<leader>n
 
 ## Global Keymap Registry
 
-Every **global** (non-buffer-local) keymap in this config, in one place.
+Every **global** (non-buffer-local) keymap in this config, in one place — plus the LSP set (rows marked
+"LSP"): those maps are buffer-local via `LspAttach`, but they occupy their keys in effectively every code
+buffer, so they belong in this index rather than an exception paragraph.
 
 **Check the table below before choosing a key for a
 new mapping, and add a row when you create one** — keymaps are otherwise scattered across `keys` tables in six files and
 finding a free key requires a grep sweep.
 
-Buffer-local maps (markdown `<C-*>` keys, the neo-tree tree buffer) are
-documented in their own files (`markdown.md`, `explorer.md`), not here.
+Filetype- and buffer-specific maps (markdown `<C-*>` keys, the neo-tree tree buffer) are documented in their
+own files (`markdown.md`, `explorer.md`), not here; the design details behind the LSP rows live in `lsp.md`.
 
 <!-- markdownlint-disable MD013 -->
 
@@ -152,7 +154,13 @@ documented in their own files (`markdown.md`, `explorer.md`), not here.
 | `<leader>br` / `<leader>bl`       | n                                | Delete buffers to the right / left                                                                                                                     | `plugins/ui.lua`          |
 | `<leader>bj`                      | n                                | Pick buffer                                                                                                                                            | `plugins/ui.lua`          |
 | `<leader>nd`                      | n                                | Open today's note (`:Daily`)                                                                                                                           | `config/keymaps.lua`      |
-| `<leader>g`                       | n                                | Lazygit (current file's repo)                                                                                                                          | `plugins/git.lua`         |
+| `<leader>gg`                      | n                                | Lazygit (current file's repo)                                                                                                                          | `plugins/git.lua`         |
+| `<F2>`                            | n, i                             | Rename symbol (LSP) — markdown's buffer-local image-rename map shadows it there                                                                        | `plugins/lsp.lua`         |
+| `<F12>`                           | n, i                             | Go to definition (LSP)                                                                                                                                 | `plugins/lsp.lua`         |
+| `<S-F12>` / `<F24>`               | n, i                             | List references (LSP; `<F24>` catches terminals that report Shift+F12 as F24)                                                                          | `plugins/lsp.lua`         |
+| `<leader>cr`                      | n                                | Rename symbol (LSP)                                                                                                                                    | `plugins/lsp.lua`         |
+| `<leader>gd` / `<leader>gr`       | n                                | Go to definition / list references (LSP)                                                                                                               | `plugins/lsp.lua`         |
+| `<leader>r`                       | n, x                             | Refactor menu (LSP)                                                                                                                                    | `plugins/lsp.lua`         |
 | `<leader><leader>`                | n                                | Fuzzy file picker (project)                                                                                                                            | `plugins/picker.lua`      |
 | `<leader>.`                       | n                                | Project grep                                                                                                                                           | `plugins/picker.lua`      |
 | `<leader>e`                       | n                                | Toggle file tree sidebar                                                                                                                               | `plugins/explorer.lua`    |
@@ -177,4 +185,6 @@ Option-as-Meta, same as `<M-Up>`/`<M-Down>` above.
 **Prefix caveat:** `<leader>b` (`bn`/`bp`/`bP`/`br`/`bl`/`bj`) and `<leader>n` (`nd`) are chord prefixes. Mapping bare
 `<leader>b` or `<leader>n` would work but every press would pause for `timeoutlen` (~1s) while Neovim disambiguates —
 avoid single-key mappings that prefix an existing chord family. (This is why the old bare `<leader>n`/`<leader>p`
-buffer-cycle maps moved to `<leader>bn`/`<leader>bp` when `<leader>nd` was added.)
+buffer-cycle maps moved to `<leader>bn`/`<leader>bp` when `<leader>nd` was added, and why lazygit moved from
+bare `<leader>g` to `<leader>gg` when the buffer-local LSP goto chords `<leader>gd`/`<leader>gr` arrived.)
+`<leader>g` and `<leader>c` are chord prefixes too (LSP `gd`/`gr`/`gg` and `cr`).

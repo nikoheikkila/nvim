@@ -7,7 +7,7 @@ Includes a full agentic harness for using with Claude Code.
 
 | Requirement                                                                                       | Notes                                                   |
 | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Neovim ≥ 0.10                                                                                     | Required by render-markdown.nvim and markdown-plus.nvim |
+| Neovim ≥ 0.11                                                                                     | Required by nvim-treesitter (main) and the LSP client   |
 | Git                                                                                               | Used by lazy.nvim to clone and update plugins           |
 | A [Nerd Font](https://www.nerdfonts.com/)                                                         | Used by render-markdown.nvim for heading and list icons |
 | `prettier`                                                                                        | Optional — needed for auto-format on save               |
@@ -72,6 +72,10 @@ Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
 | [folke/zen-mode.nvim](https://github.com/folke/zen-mode.nvim)                                             | Distraction-free writing mode                                                       |
 | [brenton-leighton/multiple-cursors.nvim](https://github.com/brenton-leighton/multiple-cursors.nvim)       | Multiple cursors with real-time editing (see [Multiple Cursors](#multiple-cursors)) |
 | [projekt0n/github-nvim-theme](https://github.com/projekt0n/github-nvim-theme)                             | Colorscheme (GitHub Dark)                                                           |
+| [neovim/nvim-lspconfig](https://github.com/neovim/nvim-lspconfig)                                         | Base configurations for language servers                                            |
+| [mason-org/mason.nvim](https://github.com/mason-org/mason.nvim)                                           | Automatic language-server installation                                              |
+| [mason-org/mason-lspconfig.nvim](https://github.com/mason-org/mason-lspconfig.nvim)                       | Bridges mason and lspconfig; auto-enables installed servers                         |
+| [saghen/blink.cmp](https://github.com/saghen/blink.cmp)                                                   | Auto-completion (see [Code Intelligence](#code-intelligence-lsp))                   |
 
 All plugins are managed by [folke/lazy.nvim](https://github.com/folke/lazy.nvim), which bootstraps itself automatically.
 
@@ -84,7 +88,7 @@ The leader key is `Space`.
 | `Space` `Space`                   | Fuzzy file picker (project-scoped)                                                 |
 | `Space` `.`                       | Live grep across the project                                                       |
 | `Space` `e`                       | Toggle the file tree sidebar                                                       |
-| `Space` `g`                       | Open Lazygit for the current file's repository (quit with `q`)                     |
+| `Space` `g` `g`                   | Open Lazygit for the current file's repository (quit with `q`)                     |
 | `Space` `n` `d`                   | Open today's daily note (see [Daily Notes](#daily-notes))                          |
 | `Shift+H` / `Shift+L`             | Previous / next buffer tab                                                         |
 | `Ctrl+Z`                          | Toggle Zen Mode                                                                    |
@@ -131,6 +135,44 @@ Notes:
   Neovim's right-click popup menu is disabled to make room for this (`mousemodel=extend`).
 - If a binding seems dead, check what your terminal actually delivers: `:luafile scripts/debug-keys.lua`, then
   press the key — each received event is shown as a notification. Run it again to stop.
+
+## Code Intelligence (LSP)
+
+Language servers provide auto-completion, live diagnostics, navigation, and refactoring for **JavaScript,
+TypeScript, Python, Bash, YAML, and Lua**. The servers are downloaded automatically by mason.nvim on the first
+interactive launch — run `:Mason` to watch the progress or inspect the installed set.
+
+These shortcuts become active in a buffer once its language server attaches:
+
+| Key                            | Action                                                          |
+| ------------------------------ | --------------------------------------------------------------- |
+| `F2` or `Space` `c` `r`        | Rename the symbol under the cursor across the project           |
+| `F12` or `Space` `g` `d`       | Go to definition (a picker opens when there are several)        |
+| `Shift+F12` or `Space` `g` `r` | List all references in a modal picker                           |
+| `Space` `r`                    | Refactoring menu — rename, extract function/constant, inline, … |
+
+Completion pops up automatically while typing, with the first suggestion preselected: `Enter` accepts it,
+`Ctrl+N` / `Ctrl+P` or the arrow keys pick another candidate, `Ctrl+E` closes the menu (for when you want a
+plain newline instead), and `Ctrl+Space` opens the menu manually. Diagnostics appear as virtual text at the
+end of the line and as counts in the buffer tabs and status line.
+
+Notes:
+
+- The function keys (`F2`, `F12`, `Shift+F12`) also work while typing in insert mode — the prompt or picker
+  opens from normal mode, and you are returned to insert mode once the action finishes (rename confirmed,
+  jump landed, or picker closed).
+- Refactorings beyond rename depend on the server: TypeScript/JavaScript has the richest set (extract
+  function/constant, inline); most others support rename only. When nothing applies, Neovim reports
+  "No code actions available".
+- In Markdown buffers completion stays off and `F2` keeps its Markdown meaning (rename image).
+- If `F12`/`Shift+F12` appear dead, the terminal or macOS may be capturing them (enable "Use F1, F2, etc. keys
+  as standard function keys" in macOS keyboard settings); the `Space`-based alternatives always work. Diagnose
+  with `:luafile scripts/debug-keys.lua`.
+- Formatting is intentionally **not** done via LSP — conform.nvim owns it (`prettier` for Markdown, `stylua`
+  for Lua).
+
+To add a language, add one entry to the `servers` table in `lua/plugins/lsp.lua` — the process is documented
+in [`lsp.md`](.claude/instructions/lsp.md).
 
 ## Daily Notes
 
@@ -325,4 +367,6 @@ Run `:checkhealth` inside Neovim to verify that all plugins are set up correctly
 :checkhealth render-markdown
 :checkhealth conform
 :checkhealth lint
+:checkhealth vim.lsp
+:checkhealth mason
 ```

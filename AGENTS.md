@@ -29,6 +29,7 @@
     │   ├── commands.lua       # Command-line overrides (:q/:x/:wq close current buffer) + :Daily note command
     │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line, <leader>nd daily note)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
+    │   ├── lsp_servers.lua    # Language-server table (single source; read by plugins/lsp.lua + lsp_spec)
     │   └── options.lua        # Leader keys + core editor options (wrap, textwidth, mouse, mousemodel)
     ├── lib/
     │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
@@ -38,6 +39,7 @@
     └── plugins/
         ├── explorer.lua       # File-tree sidebar (neo-tree.nvim)
         ├── git.lua            # Lazygit integration (lazygit.nvim)
+        ├── lsp.lua            # Language servers (nvim-lspconfig + mason) + completion (blink.cmp)
         ├── markdown.lua       # All markdown plugin specs
         ├── multicursor.lua    # Real-time multiple cursors (multiple-cursors.nvim)
         ├── picker.lua         # Fuzzy file picker + project grep (snacks.nvim, picker module only)
@@ -50,7 +52,8 @@
     │   ├── helper.lua             # Busted helper: records vim.notify from session start (require("notify_log"))
     │   ├── autosave_spec.lua      # auto_save contract (InsertLeave-only trigger, nested write autocmds)
     │   ├── commands_spec.lua      # :BufClose/:BufWriteClose + :q/:x/:wq abbreviations, :Daily end-to-end
-    │   ├── keymaps_spec.lua       # Global keymaps (<leader>nd, <leader>bn/bp)
+    │   ├── keymaps_spec.lua       # Global keymaps (<leader>nd, <leader>bn/bp, <leader>gg)
+    │   ├── lsp_spec.lua           # LSP wiring (LspAttach keymaps, server configs) + guarded attach path
     │   ├── markdown_lint_spec.lua # nvim-lint wiring + functional/missing-binary guard paths
     │   ├── multicursor_spec.lua   # multiple-cursors.nvim maps, commands, virtual-cursor core loop
     │   └── options_spec.lua       # Leader keys (load-order regression guard)
@@ -91,6 +94,7 @@ Detailed guidance lives under `.claude/instructions/` — read the relevant file
 | [`markdown.md`](.claude/instructions/markdown.md)         | `lib/markdown_utils.lua`, `plugins/markdown.lua` (markdown-plus, render-markdown, conform, nvim-lint live linting), `<C-S-I>` terminal caveat                                                            |
 | [`plugins.md`](.claude/instructions/plugins.md)           | theme, bufferline/lualine, zen-mode, lazygit, snacks.nvim picker                                                                                                                                         |
 | [`explorer.md`](.claude/instructions/explorer.md)         | neo-tree file-tree sidebar                                                                                                                                                                               |
+| [`lsp.md`](.claude/instructions/lsp.md)                   | language servers (`plugins/lsp.lua`): servers table, mason install flow, blink.cmp, LspAttach keymaps, refactor menu, diagnostics coexistence                                                            |
 | [`dev-workflow.md`](.claude/instructions/dev-workflow.md) | Adding/fetching plugins, running tests, headless Lua verification                                                                                                                                        |
 
 Check `config.md`'s Global Keymap Registry before adding any new global keymap — seven files declare keys and

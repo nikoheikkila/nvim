@@ -86,8 +86,6 @@ tasks:
 
   test:unit:
     desc: Run unit tests
-    sources:
-      - ./
     cmd: busted --run=unit {{ .CLI_ARGS | default "" }}
 
   test:integration:

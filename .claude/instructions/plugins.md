@@ -68,7 +68,7 @@ column, cursorline, and sets window width to 80 columns.
 Opens Lazygit in a floating window ("modal") over the current buffer. Lazy-loaded via its `keys` and
 `cmd` triggers; depends on `nvim-lua/plenary.nvim` for path handling.
 
-- `<leader>g` (global keymap) runs `:LazyGitCurrentFile`, scoping Lazygit to the **current file's Git
+- `<leader>gg` (global keymap) runs `:LazyGitCurrentFile`, scoping Lazygit to the **current file's Git
   repository** (falling back to the project/cwd Git root). Quit Lazygit with `q` to return to the
   buffer.
 - A **PATH guard** checks `vim.fn.executable("lazygit")` first and emits a clean `vim.notify` error
