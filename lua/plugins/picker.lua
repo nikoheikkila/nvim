@@ -78,7 +78,9 @@ return {
       {
         "<leader><leader>",
         function()
-          require("snacks").picker.files({ cwd = vim.fs.root(0, { ".git" }) })
+          -- hidden = true surfaces dotfiles/dot-dirs; .gitignore stays honoured
+          -- (ignored defaults to false) and .git/ is always excluded by snacks.
+          require("snacks").picker.files({ cwd = vim.fs.root(0, { ".git" }), hidden = true })
         end,
         desc = "Find Files (Project)",
       },
@@ -88,7 +90,7 @@ return {
           local cwd = vim.fs.root(0, { ".git" })
 
           if vim.fn.executable("rg") == 1 then
-            require("snacks").picker.grep({ cwd = cwd })
+            require("snacks").picker.grep({ cwd = cwd, hidden = true })
             return
           end
 

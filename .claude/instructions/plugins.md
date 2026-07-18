@@ -111,13 +111,18 @@ less common indentation options".
 
 Fuzzy file finder and project grep, scoped to the current project.
 
-- `<leader><leader>` (mapleader pressed twice) runs `Snacks.picker.files()`, an fzf-style fuzzy finder:
-  type to filter, `<Up>`/`<Down>` (or `<C-j>`/`<C-k>`) to move the selection, `<Enter>` to open the
-  selected file in the current buffer. These are snacks.nvim's picker defaults — no custom keymaps or
-  confirm actions were added.
+- `<leader><leader>` (mapleader pressed twice) runs `Snacks.picker.files({ hidden = true })`, an
+  fzf-style fuzzy finder: type to filter, `<Up>`/`<Down>` (or `<C-j>`/`<C-k>`) to move the selection,
+  `<Enter>` to open the selected file in the current buffer. These are snacks.nvim's picker defaults —
+  no custom keymaps or confirm actions were added. `hidden = true` surfaces dotfiles and
+  dot-directories (`.claude/`, `.busted`, …); `ignored` is left at its default (`false`) so `.gitignore`
+  (repo + global + `.git/info/exclude`) is still honoured, and `.git/` is always excluded by snacks'
+  own base args (`fd -E .git` / `rg -g '!.git'`).
 - `<leader>.` runs a full-project text search. If `rg` is on PATH, it calls
-  `Snacks.picker.grep({ cwd = ... })` — snacks' own live-grep-as-you-type picker, using the same
-  default `<Up>`/`<Down>`/`<Enter>`/`q` keymaps as `files`. If `rg` is missing, it `vim.notify`s a
+  `Snacks.picker.grep({ cwd = ..., hidden = true })` — snacks' own live-grep-as-you-type picker, using
+  the same default `<Up>`/`<Down>`/`<Enter>`/`q` keymaps as `files` and the same hidden/gitignore
+  behaviour as above (dotfiles searched, `.gitignore` honoured, `.git`/`.bare` excluded). If `rg` is
+  missing, it `vim.notify`s a
   warning and falls back to a native-Lua search: prompt for a term via `vim.ui.input`, walk the project
   once with `vim.fs.dir`, match lines with `lib/search_utils.lua`, and open the same picker UI
   (`Snacks.picker.pick({ items = ... })`) with the static results.
