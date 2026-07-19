@@ -4,13 +4,25 @@ Covers `theme.lua`, `treesitter.lua`, `ui.lua`, `zen.lua`, `git.lua`, `multicurs
 See `explorer.md` for neo-tree (kept standalone — the longest single-plugin section) and `markdown.md`
 for the markdown plugin stack.
 
-## `lua/plugins/theme.lua` — `projekt0n/github-nvim-theme`
+## `lua/plugins/theme.lua` — `projekt0n/github-nvim-theme` (default)
 
-Loads the `github_dark_default` colorscheme. `setup()` is called with
-`styles = { comments = "italic" }` — the theme's default is `'NONE'`, and italic comments are wanted
-both in regular code and inside markdown fences (injected `@comment` captures merge italic over the
-non-italic fence-content group set in `markdown.lua`'s `fix_highlights`). `setup()` must run _before_
-the `colorscheme` command or the style options don't apply.
+The lazy spec is built at spec-eval time from the optional root-level `theme.yml` (schema: `url`, `name`,
+`variant`, `options`), parsed with `lib/yaml_utils.parse` and deep-merged over hardcoded defaults with
+`vim.tbl_deep_extend("force", ...)` — so anything the YAML omits keeps the current value. User docs live
+in `docs/theming.md`.
+
+- Defaults: `projekt0n/github-nvim-theme`, name `github-theme`, variant `github_dark_default`,
+  `options = { styles = { comments = "italic" } }` — the theme's default is `'NONE'`, and italic comments
+  are wanted both in regular code and inside markdown fences (injected `@comment` captures merge italic
+  over the non-italic fence-content group set in `markdown.lua`'s `fix_highlights`).
+- `theme.options` is passed as the **`options` key** of `require(name).setup()` (github-nvim-theme's
+  shape) — `name` doubles as the lazy-spec name and the `require()` module.
+- `setup()` must run _before_ the `colorscheme` command or the style options don't apply; both are wrapped
+  in `pcall` + `vim.notify` so a typo'd `name`/`variant` degrades to default colors, not a startup error.
+- `lib/yaml_utils.parse` fails whole-file (returns nil) on any line outside its subset (no lists, anchors,
+  multiline scalars, or tabs); missing/unreadable/malformed `theme.yml` silently yields the defaults.
+- Test coverage: `tests/unit/yaml_utils_spec.lua` (parser) and `tests/integration/theme_spec.lua` (variant
+  applied, plugin registered, italic comments — expectations derived from `theme.yml` via the same parser).
 
 ## `lua/plugins/treesitter.lua` — `nvim-treesitter/nvim-treesitter` (branch `main`)
 

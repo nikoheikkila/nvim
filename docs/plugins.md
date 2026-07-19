@@ -13,7 +13,7 @@
 | [nvim-lualine/lualine.nvim](https://github.com/nvim-lualine/lualine.nvim)                                 | Status line                                                                                   |
 | [folke/zen-mode.nvim](https://github.com/folke/zen-mode.nvim)                                             | Distraction-free writing mode                                                                 |
 | [brenton-leighton/multiple-cursors.nvim](https://github.com/brenton-leighton/multiple-cursors.nvim)       | Multiple cursors with real-time editing (see [Multiple Cursors](editing.md#multiple-cursors)) |
-| [projekt0n/github-nvim-theme](https://github.com/projekt0n/github-nvim-theme)                             | Colorscheme (GitHub Dark)                                                                     |
+| [projekt0n/github-nvim-theme](https://github.com/projekt0n/github-nvim-theme)                             | Default colorscheme — configurable via `theme.yml` (see [Theming](theming.md))                |
 | [neovim/nvim-lspconfig](https://github.com/neovim/nvim-lspconfig)                                         | Base configurations for language servers                                                      |
 | [mason-org/mason.nvim](https://github.com/mason-org/mason.nvim)                                           | Automatic language-server installation                                                        |
 | [mason-org/mason-lspconfig.nvim](https://github.com/mason-org/mason-lspconfig.nvim)                       | Bridges mason and lspconfig; auto-enables installed servers                                   |

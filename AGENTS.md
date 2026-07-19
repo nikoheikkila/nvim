@@ -18,6 +18,7 @@
 ├── stylua.toml                # Lua formatter config (2-space indent, 120 columns; used by `task format` + conform.nvim)
 ├── vim.yml                    # Vendored selene std: declares the `vim` global
 ├── busted.yml                 # Vendored selene std: busted test globals (describe/it/luassert)
+├── theme.yml                  # Theme configuration (sourced by plugins/theme.lua; see docs/theming.md)
 ├── docs/                      # User documentation, linked from README.md's table of contents; ships in the release
 ├── scripts/
 │   ├── busted-nvim.sh         # Busted interpreter shim: runs integration specs inside a fully-loaded headless nvim
@@ -37,7 +38,8 @@
     │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
     │   ├── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
     │   ├── save_utils.lua     # Pure-Lua auto-save predicate (which buffers are safe to write)
-    │   └── search_utils.lua   # Pure-Lua case-insensitive substring matcher (grep fallback)
+    │   ├── search_utils.lua   # Pure-Lua case-insensitive substring matcher (grep fallback)
+    │   └── yaml_utils.lua     # Pure-Lua minimal YAML-subset parser (reads theme.yml)
     └── plugins/
         ├── explorer.lua       # File-tree sidebar (neo-tree.nvim)
         ├── git.lua            # Lazygit integration (lazygit.nvim)
@@ -45,7 +47,7 @@
         ├── markdown.lua       # All markdown plugin specs
         ├── multicursor.lua    # Real-time multiple cursors (multiple-cursors.nvim)
         ├── picker.lua         # Fuzzy file picker + project grep (snacks.nvim, picker module only)
-        ├── theme.lua          # Colorscheme (github-nvim-theme, github_dark_default, italic comments)
+        ├── theme.lua          # Colorscheme — spec built from theme.yml merged over defaults (github-nvim-theme)
         ├── treesitter.lua     # nvim-treesitter (main branch) — highlight queries for code-fence syntax highlighting
         ├── ui.lua             # UI plugins (bufferline.nvim, lualine.nvim)
         └── zen.lua            # Distraction-free writing (zen-mode.nvim)
@@ -58,12 +60,14 @@
     │   ├── lsp_spec.lua           # LSP wiring (LspAttach keymaps, server configs) + guarded attach path
     │   ├── markdown_lint_spec.lua # nvim-lint wiring + functional/missing-binary guard paths
     │   ├── multicursor_spec.lua   # multiple-cursors.nvim maps, commands, virtual-cursor core loop
-    │   └── options_spec.lua       # Leader keys (load-order regression guard)
+    │   ├── options_spec.lua       # Leader keys (load-order regression guard)
+    │   └── theme_spec.lua         # theme.yml sourcing (variant applied, plugin name, italic comments)
     └── unit/                      # Pure-Lua Busted specs for lua/lib/ (no Neovim involved)
         ├── markdown_utils_spec.lua
         ├── path_utils_spec.lua
         ├── save_utils_spec.lua
-        └── search_utils_spec.lua
+        ├── search_utils_spec.lua
+        └── yaml_utils_spec.lua
 ```
 
 `init.lua` calls s the entrypoint that calls the following files:

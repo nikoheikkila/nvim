@@ -1,0 +1,8 @@
+theme:
+  url: projekt0n/github-nvim-theme
+  name: github-theme
+  variant: github_dark_default
+  options:
+    styles:
+      comments: italic
+
