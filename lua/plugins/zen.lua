@@ -18,7 +18,7 @@ return {
           cursorcolumn = false,
           foldcolumn = "0",
           list = false,
-          wrap = false,
+          wrap = true,
         },
       },
       plugins = {
