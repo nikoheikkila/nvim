@@ -7,7 +7,7 @@ Includes a full agentic harness for using with Claude Code.
 
 | Requirement                                                                                       | Notes                                                   |
 | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Neovim ≥ 0.11                                                                                     | Required by nvim-treesitter (main) and the LSP client   |
+| Neovim ≥ 0.12.4                                                                                   | Required by nvim-treesitter (main) and the LSP client   |
 | Git                                                                                               | Used by lazy.nvim to clone and update plugins           |
 | A [Nerd Font](https://www.nerdfonts.com/)                                                         | Used by render-markdown.nvim for heading and list icons |
 | `prettier`                                                                                        | Optional — needed for auto-format on save               |
@@ -17,6 +17,30 @@ Includes a full agentic harness for using with Claude Code.
 Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
 
 ## Installation
+
+### Quick Install (Recommended)
+
+```sh
+curl -sSL https://raw.githubusercontent.com/nikoheikkila/nvim/refs/heads/main/scripts/install.sh | sh
+```
+
+The script downloads the latest [release](https://github.com/nikoheikkila/nvim/releases), extracts it into
+`$XDG_CONFIG_HOME/nvim` (or `~/.config/nvim` when `XDG_CONFIG_HOME` is unset), and pre-installs all plugins,
+so the configuration is ready on the first launch of `nvim`. An existing configuration is moved aside to
+`<dir>.bak.<timestamp>` first — nothing is overwritten.
+
+To install into a custom Neovim configuration directory, pass the `-o` / `--out` flag (the `sh -s --` form
+is required to forward flags through the pipe):
+
+```sh
+curl -sSL https://raw.githubusercontent.com/nikoheikkila/nvim/refs/heads/main/scripts/install.sh |
+  sh -s -- --out ~/path/to/nvim
+```
+
+Neovim only loads configuration from its standard locations, so a custom directory must be launched with
+`XDG_CONFIG_HOME` and `NVIM_APPNAME` pointing at it — the script prints the exact command when it finishes.
+
+### Manual Install (From Source)
 
 1. **Back up any existing config**
 
@@ -36,7 +60,9 @@ Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
    nvim
    ```
 
-4. **Install `prettier`** (optional, for auto-formatting on save):
+### Optional Tools
+
+1. **Install `prettier`** (optional, for auto-formatting on save):
 
    ```sh
    # via npm
@@ -46,7 +72,7 @@ Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
    brew install prettier
    ```
 
-5. **Install `markdownlint-cli2`** (optional, for live linting while writing):
+2. **Install `markdownlint-cli2`** (optional, for live linting while writing):
 
    ```sh
    # via npm
