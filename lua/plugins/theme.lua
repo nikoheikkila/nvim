@@ -39,7 +39,9 @@ return {
       -- don't apply. A typo'd name/variant in theme.yml degrades to default
       -- colors with a warning instead of a startup stack trace.
       local ok, err = pcall(function()
-        require(theme.name).setup({ options = theme.options })
+        -- groups (per-highlight-group overrides, github-nvim-theme shape) is
+        -- optional in theme.yml; nil is fine for themes without overrides.
+        require(theme.name).setup({ options = theme.options, groups = theme.groups })
         vim.cmd("colorscheme " .. theme.variant)
       end)
       if not ok then

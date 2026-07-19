@@ -18,11 +18,13 @@ local function coerce(value)
 end
 
 -- Parses a minimal YAML subset: nested maps via space indentation,
--- `key: value` scalars, blank lines, and full-line `#` comments (CRLF input is
--- tolerated). Returns a nested table, or nil when the input is not a string or
--- any line falls outside the subset — lists, anchors, multiline scalars,
--- inline {}/[] flow, trailing comments after values, and tab indentation are
--- all unsupported by design, so a malformed document never half-applies.
+-- `key: value` scalars, quoted keys (for characters the plain pattern rejects,
+-- e.g. `@` in highlight-group names), blank lines, and full-line `#` comments
+-- (CRLF input is tolerated). Returns a nested table, or nil when the input is
+-- not a string or any line falls outside the subset — lists, anchors,
+-- multiline scalars, inline {}/[] flow, trailing comments after values, and
+-- tab indentation are all unsupported by design, so a malformed document never
+-- half-applies.
 function M.parse(text)
   if type(text) ~= "string" then
     return nil
@@ -36,7 +38,13 @@ function M.parse(text)
         return nil
       end
       local indent = #line:match("^( *)")
-      local key, rest = line:match("^ *([%w_%-%.]+): *(.-)%s*$")
+      local key, rest = line:match('^ *"([^"]+)" *: *(.-)%s*$')
+      if not key then
+        key, rest = line:match("^ *'([^']+)' *: *(.-)%s*$")
+      end
+      if not key then
+        key, rest = line:match("^ *([%w_%-%.]+): *(.-)%s*$")
+      end
       if not key then
         return nil
       end

@@ -40,4 +40,25 @@ describe("plugins.theme", function()
   it("renders comments in italic", function()
     assert.is_true(vim.api.nvim_get_hl(0, { name = "Comment" }).italic)
   end)
+
+  -- groups.all overrides from theme.yml are applied by the theme's setup() at
+  -- colorscheme time. Expectations are derived from the file, so recoloring in
+  -- theme.yml never breaks this spec.
+  local groups = type(theme.groups) == "table" and theme.groups.all or nil
+  for group, spec in pairs(groups or {}) do
+    it("applies the theme.yml group override for " .. group, function()
+      local hl = vim.api.nvim_get_hl(0, { name = group, link = false })
+      if spec.fg then
+        assert.equal(tonumber(spec.fg:sub(2), 16), hl.fg)
+      end
+      if spec.bg then
+        assert.equal(tonumber(spec.bg:sub(2), 16), hl.bg)
+      end
+      -- A group defined without a style replaces the theme's styling entirely
+      -- (this is what un-italicizes inline code).
+      if not spec.style then
+        assert.is_falsy(hl.italic)
+      end
+    end)
+  end
 end)

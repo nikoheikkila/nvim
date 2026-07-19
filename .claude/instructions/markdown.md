@@ -130,6 +130,10 @@ fences depends on `plugins/treesitter.lua` supplying treesitter queries for the 
 render-markdown's defaults render the fence language twice: an icon in the sign column (`sign = true`) _and_
 an inline icon+name label overlaying the delimiter line. `sign = false` keeps only the inline label.
 
+**Inline code: `code.inline_pad = 1`**
+Adds one cell of `RenderMarkdownCodeInline`-highlighted padding on each side of inline code, so the
+background (set via `theme.yml`'s `groups`, see `plugins.md`) doesn't hug the text.
+
 **Why `render_modes = true`**
 The default is `{ 'n', 'c', 't' }` — insert and visual modes are excluded. Without this override, switching
 to insert or visual mode strips all rendering and changes the visual appearance of the buffer dramatically.
@@ -144,8 +148,10 @@ A single function applies all highlight overrides on startup and re-applies them
 - `@markup.raw.block.markdown` is redefined non-italic (keeping the theme's `@markup.raw` fg, read via
   `nvim_get_hl`). github-theme styles `@markup.raw` italic and leaves `@markup.raw.block` undefined, so
   fence content falls back to italic — and injected language captures set fg but not italic in extmark
-  attribute merging, so the italic bleeds through highlighted code. Only the block group is overridden;
-  inline code (`@markup.raw` on `markdown_inline`) keeps the theme's italic styling.
+  attribute merging, so the italic bleeds through highlighted code. Only the block group is overridden
+  here; inline code (`@markup.raw.markdown_inline`) is styled through `theme.yml`'s `groups` section
+  (regular red on dark grey, together with `RenderMarkdownCodeInline`) — see `plugins.md` and
+  `docs/theming.md`.
 - H1 renders in magenta: `RenderMarkdownH1` (fg `#ff00ff`, bold) and `RenderMarkdownH1Bg` (bg `#3a0d3a`). The
   shades differ deliberately — the `#` marker is drawn with the fg group _over_ the bg band, so identical
   values would make it invisible. The plugin's fg group only covers the marker and sign; the heading text is

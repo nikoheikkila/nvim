@@ -157,6 +157,9 @@ return {
         -- sign + inline language label rendered the marker twice; keep only
         -- the inline icon+name label
         sign = false,
+        -- one cell of RenderMarkdownCodeInline-highlighted padding on each
+        -- side of inline code, so the background doesn't hug the text
+        inline_pad = 1,
       },
     },
     config = function(_, opts)
@@ -177,7 +180,7 @@ return {
         -- undefined, so fence content falls back to italic — and injected language
         -- captures set fg but not italic, so italic bleeds through. Define the most
         -- specific group non-italic, keeping the theme's fg; inline code
-        -- (@markup.raw on markdown_inline) stays as the theme styles it.
+        -- (@markup.raw.markdown_inline) is styled via theme.yml's groups section.
         local raw = vim.api.nvim_get_hl(0, { name = "@markup.raw", link = false })
         vim.api.nvim_set_hl(0, "@markup.raw.block.markdown", { fg = raw.fg })
       end

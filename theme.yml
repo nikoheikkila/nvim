@@ -5,4 +5,14 @@ theme:
   options:
     styles:
       comments: italic
+  groups:
+    all:
+      # Inline code in markdown: regular (non-italic) red on dark grey.
+      "@markup.raw.markdown_inline":
+        fg: "#ff7b72"
+        bg: "#2e2e2e"
+      # render-markdown's own inline-code layer, pinned to the same colors.
+      RenderMarkdownCodeInline:
+        fg: "#ff7b72"
+        bg: "#2e2e2e"
 

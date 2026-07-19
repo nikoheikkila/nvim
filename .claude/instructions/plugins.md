@@ -7,9 +7,9 @@ for the markdown plugin stack.
 ## `lua/plugins/theme.lua` — `projekt0n/github-nvim-theme` (default)
 
 The lazy spec is built at spec-eval time from the optional root-level `theme.yml` (schema: `url`, `name`,
-`variant`, `options`), parsed with `lib/yaml_utils.parse` and deep-merged over hardcoded defaults with
-`vim.tbl_deep_extend("force", ...)` — so anything the YAML omits keeps the current value. User docs live
-in `docs/theming.md`.
+`variant`, `options`, `groups`), parsed with `lib/yaml_utils.parse` and deep-merged over hardcoded defaults
+with `vim.tbl_deep_extend("force", ...)` — so anything the YAML omits keeps the current value. User docs
+live in `docs/theming.md`.
 
 - Defaults: `projekt0n/github-nvim-theme`, name `github-theme`, variant `github_dark_default`,
   `options = { styles = { comments = "italic" } }` — the theme's default is `'NONE'`, and italic comments
@@ -17,12 +17,20 @@ in `docs/theming.md`.
   over the non-italic fence-content group set in `markdown.lua`'s `fix_highlights`).
 - `theme.options` is passed as the **`options` key** of `require(name).setup()` (github-nvim-theme's
   shape) — `name` doubles as the lazy-spec name and the `require()` module.
+- `theme.groups` is passed as the **`groups` key** of `setup()` — github-nvim-theme's per-highlight-group
+  override mechanism (`groups: { all: { <Group>: { fg/bg/style } } }`), applied at `:colorscheme` time and
+  reapplied on colorscheme reloads. The shipped `theme.yml` uses it to render markdown inline code
+  (`@markup.raw.markdown_inline` + `RenderMarkdownCodeInline`) non-italic red on dark grey — a group
+  defined without `style` fully replaces the theme's italic `@markup.raw` styling. Group names containing
+  `@` must be quoted in the YAML.
 - `setup()` must run _before_ the `colorscheme` command or the style options don't apply; both are wrapped
   in `pcall` + `vim.notify` so a typo'd `name`/`variant` degrades to default colors, not a startup error.
 - `lib/yaml_utils.parse` fails whole-file (returns nil) on any line outside its subset (no lists, anchors,
-  multiline scalars, or tabs); missing/unreadable/malformed `theme.yml` silently yields the defaults.
+  multiline scalars, or tabs); quoted keys (double or single) are supported for characters the plain key
+  pattern rejects, e.g. `@`; missing/unreadable/malformed `theme.yml` silently yields the defaults.
 - Test coverage: `tests/unit/yaml_utils_spec.lua` (parser) and `tests/integration/theme_spec.lua` (variant
-  applied, plugin registered, italic comments — expectations derived from `theme.yml` via the same parser).
+  applied, plugin registered, italic comments, `groups.all` overrides applied — expectations derived from
+  `theme.yml` via the same parser).
 
 ## `lua/plugins/treesitter.lua` — `nvim-treesitter/nvim-treesitter` (branch `main`)
 

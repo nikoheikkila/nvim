@@ -45,6 +45,25 @@ describe("parse", function()
     assert.are.same({ a = "x y", b = "z" }, M.parse("a: \"x y\"\nb: 'z'\n"))
   end)
 
+  it("parses double-quoted keys with characters the plain pattern rejects", function()
+    assert.are.same({ ["@markup.raw.markdown_inline"] = "x" }, M.parse('"@markup.raw.markdown_inline": x\n'))
+  end)
+
+  it("parses single-quoted keys", function()
+    assert.are.same({ ["a key"] = 1 }, M.parse("'a key': 1\n"))
+  end)
+
+  it("parses a quoted key opening a nested map", function()
+    local text = 'groups:\n  "@markup.raw.markdown_inline":\n    fg: "#ff7b72"\n    bg: "#2e2e2e"\n'
+    assert.are.same({
+      groups = { ["@markup.raw.markdown_inline"] = { fg = "#ff7b72", bg = "#2e2e2e" } },
+    }, M.parse(text))
+  end)
+
+  it("returns nil on an unclosed quoted key", function()
+    assert.is_nil(M.parse('"@markup.raw: x\n'))
+  end)
+
   it("coerces true and false to booleans", function()
     assert.are.same({ a = true, b = false }, M.parse("a: true\nb: false\n"))
   end)
