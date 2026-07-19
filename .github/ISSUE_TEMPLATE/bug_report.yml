@@ -1,0 +1,76 @@
+name: Bug report
+description: Something in the configuration does not work as documented
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill in the environment details —
+        especially the terminal emulator, since many key and mouse issues are terminal-specific.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected to happen instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to trigger the problem, starting from opening Neovim.
+      placeholder: |
+        1. Open a Markdown file
+        2. Press `Ctrl+L` on a plain line
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: nvim-version
+    attributes:
+      label: Neovim version
+      description: First line of `nvim --version` (this config requires ≥ 0.12.4).
+      placeholder: NVIM v0.12.4
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15.5 / Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: input
+    id: terminal
+    attributes:
+      label: Terminal emulator
+      description: >
+        e.g. Warp, kitty, WezTerm, Ghostty, iTerm2, Terminal.app. For dead keybindings or mouse
+        issues, run `:luafile scripts/debug-keys.lua`, press the key, and paste the notifications
+        below — terminals rewrite or swallow events before Neovim sees them.
+      placeholder: Warp
+    validations:
+      required: true
+
+  - type: textarea
+    id: healthcheck
+    attributes:
+      label: Health check output
+      description: >
+        Relevant sections of `:checkhealth` (e.g. `:checkhealth lint` for linting issues,
+        `:checkhealth vim.lsp` for LSP issues). Paste as-is; this field renders as code.
+      render: text
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: >
+        Anything else that helps — `debug-keys.lua` notifications, error messages from
+        `:messages`, whether the problem persists after `task install`, screenshots.

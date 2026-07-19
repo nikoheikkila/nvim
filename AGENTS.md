@@ -9,6 +9,7 @@
 ├── init.lua                   # Entry point — requires config.options, autocmds, keymaps, commands, then config.lazy
 ├── AGENTS.md                  # This file — project instructions (single source of truth)
 ├── CLAUDE.md                  # Symlink -> AGENTS.md
+├── CONTRIBUTING.md            # Contributor guide (setup, tests, style, PR workflow); excluded from releases
 ├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
 ├── Taskfile.yml                # Task runner: `task lint`, `task format` (stylua + markdownlint --fix), `task test`
 ├── .busted                    # Busted config: `unit` task (tests/unit) + `integration` task (tests/integration)
@@ -17,6 +18,7 @@
 ├── stylua.toml                # Lua formatter config (2-space indent, 120 columns; used by `task format` + conform.nvim)
 ├── vim.yml                    # Vendored selene std: declares the `vim` global
 ├── busted.yml                 # Vendored selene std: busted test globals (describe/it/luassert)
+├── docs/                      # User documentation, linked from README.md's table of contents; ships in the release
 ├── scripts/
 │   ├── busted-nvim.sh         # Busted interpreter shim: runs integration specs inside a fully-loaded headless nvim
 │   ├── check.sh               # Everything CI runs, in order: lint, unit, integration, guard path

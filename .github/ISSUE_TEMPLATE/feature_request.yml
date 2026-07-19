@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest an improvement or a new plugin
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: >
+        Describe the workflow gap or annoyance, not just the solution — the motivation determines
+        whether a change fits this deliberately minimal configuration.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: >
+        How you imagine it working. If you are proposing a plugin, link it and note whether it is
+        actively maintained and whether its issue tracker confirms it supports the core requirement
+        (see "Adding or Updating Plugins" in CONTRIBUTING.md).
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other plugins, native Neovim features, or workarounds you have tried or ruled out.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
