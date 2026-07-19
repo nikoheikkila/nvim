@@ -1,0 +1,22 @@
+# Ignored directories
+.claude/
+.git/
+.github/
+.task/
+scripts/
+tests/
+
+# Ignored files
+.busted
+.gitattributes
+.markdownlint.jsonc
+.nvimignore
+AGENTS.md
+busted.yml
+CLAUDE.md
+lefthook.yml
+selene.toml
+stylua.toml
+Taskfile.yml
+vim.yml
+

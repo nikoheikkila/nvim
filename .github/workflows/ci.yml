@@ -46,7 +46,7 @@ jobs:
       - name: Lint
         run: task lint
 
-  test:
+  unit-test:
     name: Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -136,3 +136,87 @@ jobs:
       - name: Integration tests (missing-binary guard path)
         if: runner.os == 'Linux'
         run: scripts/test-without-binary.sh markdownlint-cli2 -- busted --run=integration tests/integration/markdown_lint_spec.lua
+
+  # Publishes a GitHub release on every green push to main. The tag is CalVer
+  # (YYYY.MM.DD in UTC) with a same-day counter suffix (2026.07.19, then
+  # 2026.07.19.1, ...). The artifact ships only what .nvimignore permits.
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [lint, unit-test, integration-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Determine CalVer version
+        id: version
+        run: |
+          base="$(date -u +%Y.%m.%d)"
+          latest="$(git tag --list "$base" "$base.*" --sort=-version:refname | head -n 1)"
+
+          if [[ -z "$latest" ]]; then
+            version="$base"
+          elif [[ "$latest" == "$base" ]]; then
+            version="$base.1"
+          else
+            version="$base.$(( ${latest##*.} + 1 ))"
+          fi
+          
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Next version: $version"
+
+      - name: Package artifact
+        id: package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          stage="$RUNNER_TEMP/stage"
+          mkdir -p "$stage"
+          rsync -a --exclude-from=.nvimignore ./ "$stage/"
+          artifact="nvim-${VERSION}.tar.gz"
+          tar -czf "$artifact" -C "$stage" .
+          echo "artifact=$artifact" >> "$GITHUB_OUTPUT"
+          tar -tzf "$artifact"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          ARTIFACT: ${{ steps.package.outputs.artifact }}
+        run: |
+          gh release create "$VERSION" "$ARTIFACT" \
+            --title "$VERSION" \
+            --target "$GITHUB_SHA" \
+            --generate-notes
+
+      - name: Write release summary
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          ARTIFACT: ${{ steps.package.outputs.artifact }}
+        run: |
+          {
+            echo "## Release $VERSION"
+            echo
+            echo "- **Tag:** \`$VERSION\`"
+            echo "- **Artifact:** \`$ARTIFACT\` ($(du -h "$ARTIFACT" | cut -f1))"
+            echo "- **Release:** ${{ github.server_url }}/${{ github.repository }}/releases/tag/$VERSION"
+            echo
+            echo "<details><summary>Artifact contents</summary>"
+            echo
+            echo '```text'
+            tar -tzf "$ARTIFACT"
+            echo '```'
+            echo
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
