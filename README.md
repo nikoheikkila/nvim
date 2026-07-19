@@ -3,6 +3,8 @@
 A minimal Neovim setup built around a comprehensive Markdown editing experience.
 Includes a full agentic harness for using with Claude Code.
 
+![Screenshot of the configuration showing an example Markdown document.](screenshot.png "Screenshot")
+
 ## Quick Install
 
 ```sh
