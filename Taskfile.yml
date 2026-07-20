@@ -62,7 +62,7 @@ tasks:
     desc: Lint Markdown files
     sources:
       - ./**/*.md
-    cmd: markdownlint-cli2 {{ .CLI_ARGS | default "./**/*.md" }}
+    cmd: markdownlint-cli2 {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}"**/*.md"{{end}}
 
   lint:shell:
     desc: Lint Shell scripts
@@ -80,7 +80,7 @@ tasks:
     desc: Fix auto-fixable Markdown lint issues
     sources:
       - ./**/*.md
-    cmd: markdownlint-cli2 --fix {{ .CLI_ARGS | default "./**/*.md" }}
+    cmd: markdownlint-cli2 --fix {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}"**/*.md"{{end}}
 
   test:unit:
     desc: Run unit tests
