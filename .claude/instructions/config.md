@@ -177,6 +177,10 @@ own files (`markdown.md`, `explorer.md`), not here; the design details behind th
 | `<C-RightMouse>` / `<RightMouse>` | n, i                             | Same as `<C-LeftMouse>` — catches macOS's Ctrl+click→right-click synthesis, including terminals that strip the Ctrl modifier from mouse reports (Warp) | `plugins/multicursor.lua` |
 | `<Esc>`                           | n _(while cursors active)_       | Reset to a single cursor — plugin whitelist map, exists only in multi-cursor mode                                                                      | `plugins/multicursor.lua` |
 | `<LeftMouse>`                     | n, i, x _(while cursors active)_ | Reset cursors, then perform the normal click — buffer-local via `pre_hook`/`post_hook`                                                                 | `plugins/multicursor.lua` |
+| `ys{motion}{char}` / `yss`        | n                                | Add surround around motion (`yss` = whole line); nvim-surround defaults                                                                                | `plugins/surround.lua`    |
+| `ds{char}` / `cs{old}{new}`       | n                                | Delete / change the surrounding pair                                                                                                                   | `plugins/surround.lua`    |
+| `S{char}`                         | x                                | Surround the visual selection                                                                                                                          | `plugins/surround.lua`    |
+| `<C-g>s` / `<C-g>S`               | i                                | Insert-mode surround (and its line-wise variant)                                                                                                       | `plugins/surround.lua`    |
 
 <!-- markdownlint-enable MD013 -->
 
