@@ -45,15 +45,11 @@ if (failures.length > 0) {
     .filter((line) => !banner.test(line))
     .join('\n')
 
-  echo(JSON.stringify({
-    hookSpecificOutput: {
-      decision: 'block',
-      hookEventName: 'PostToolUse',
-      reason,
-    }
-  }))
-
-  process.exit(2);
+  // A PostToolUse hook blocks by exiting 2 with the reason on STDERR: Claude
+  // Code feeds stderr back to the model on a non-zero exit and discards stdout,
+  // so a stdout JSON payload here would be silently dropped ("No stderr output").
+  console.error(reason)
+  process.exit(2)
 }
 
 process.exit(0)
