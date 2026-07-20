@@ -38,19 +38,36 @@ vim.cmd([[
   cnoreabbrev <expr> wq (getcmdtype() ==# ':' && getcmdline() ==# 'wq') ? 'BufWriteClose' : 'wq'
 ]])
 
--- `:Daily` opens today's note (`YYYY-MM-DD.md`) in $NVIM_NOTES_DIR (default
--- ~/Notes), creating the directory on first use. Running it again the same day
--- reopens the same note. A literal `~` in NVIM_NOTES_DIR is not expanded — use
--- an absolute path. Filetype detection sets markdown from the `.md` name.
-vim.api.nvim_create_user_command("Daily", function()
-  local dir = vim.env.NVIM_NOTES_DIR
-  if dir == nil or dir == "" then
-    dir = vim.fs.joinpath(vim.env.HOME, "Notes")
+-- `:Daily` opens today's note, creating the directory on first use. Running it
+-- again the same day reopens the same note. The notes directory and the
+-- filename format come from config.yml (`config.daily.directory` /
+-- `config.daily.filenamePattern`), falling back to hardcoded defaults
+-- ($HOME/Notes, %Y-%m-%d.md) when config.yml is missing or malformed. The
+-- NVIM_NOTES_DIR env var, when set and non-empty, overrides the directory. The
+-- resolved directory is run through vim.fn.expand, so `$HOME`/`~`/other env vars
+-- work in either source. Filetype detection sets markdown from the `.md` name.
+local yaml_utils = require("lib.yaml_utils")
+local daily_utils = require("lib.daily_utils")
+
+-- Mirrors plugins/theme.lua: a missing/unreadable config.yml yields nil, so
+-- resolve_config falls back to defaults.
+local function read_config()
+  local file = io.open(vim.fn.stdpath("config") .. "/config.yml", "r")
+  if not file then
+    return nil
   end
+  local text = file:read("*a")
+  file:close()
+  return yaml_utils.parse(text)
+end
+
+vim.api.nvim_create_user_command("Daily", function()
+  local cfg = daily_utils.resolve_config(read_config())
+  local dir = vim.fn.expand(daily_utils.effective_directory(cfg, vim.env.NVIM_NOTES_DIR))
   local ok, err = pcall(vim.fn.mkdir, dir, "p")
   if not ok then
     vim.notify("Daily: cannot create notes dir " .. dir .. ": " .. err, vim.log.levels.ERROR)
     return
   end
-  vim.cmd.edit(vim.fs.joinpath(dir, os.date("%Y-%m-%d") .. ".md"))
-end, { desc = "Open today's Markdown note in $NVIM_NOTES_DIR (default ~/Notes)" })
+  vim.cmd.edit(vim.fs.joinpath(dir, os.date(cfg.filenamePattern)))
+end, { desc = "Open today's Markdown note (dir/format from config.yml; NVIM_NOTES_DIR overrides dir)" })

@@ -121,12 +121,17 @@ skipped.
 
 ## User Commands (`lua/config/commands.lua`)
 
-`:Daily` opens today's Markdown note — `YYYY-MM-DD.md` inside `$NVIM_NOTES_DIR` (default: `$HOME/Notes`). The directory
-is created on first use; the file is created by `:edit` and reopened on every later `:Daily` the same day.
+`:Daily` opens today's Markdown note. The directory and filename format come from `config.yml`
+(`config.daily.directory` and `config.daily.filenamePattern`, the latter an `os.date` pattern), read via
+`lib/yaml_utils.lua` and resolved by `lib/daily_utils.lua`. A missing or malformed `config.yml` falls back to
+hardcoded defaults (`$HOME/Notes`, `%Y-%m-%d.md`). `NVIM_NOTES_DIR`, when set and non-empty, overrides the directory
+(precedence: `NVIM_NOTES_DIR` → `config.yml` → default). The directory is created on first use; the file is created by
+`:edit` and reopened on every later `:Daily` the same day.
 
-Filetype detection sets `markdown` from the `.md` name, so the markdown plugins activate normally. A literal `~` in
-`NVIM_NOTES_DIR` is **not** expanded — set it to an absolute path. Unlike `:q`/`:x`/`:wq` above, this is an ordinary
-uppercase user command and needs no `cnoreabbrev` machinery. Bound to `<leader>nd` in `keymaps.lua`.
+Filetype detection sets `markdown` from the `.md` name, so the markdown plugins activate normally. The resolved
+directory (from either source) is run through `vim.fn.expand`, so `$HOME`, other env vars, and `~` are all expanded.
+Unlike `:q`/`:x`/`:wq` above, this is an ordinary uppercase user command and needs no `cnoreabbrev` machinery. Bound to
+`<leader>nd` in `keymaps.lua`.
 
 ## Global Keymap Registry
 

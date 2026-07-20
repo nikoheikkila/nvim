@@ -1,0 +1,4 @@
+config:
+  daily:
+    directory: "$HOME/Notes"
+    filenamePattern: "%Y-%m-%d.md"

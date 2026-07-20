@@ -55,5 +55,14 @@ describe("config.commands", function()
       vim.cmd("Daily")
       assert.equal(expected, vim.fn.resolve(vim.api.nvim_buf_get_name(0)))
     end)
+
+    -- config.yml specifies its own directory ($HOME/Notes); NVIM_NOTES_DIR must
+    -- win over it. The note landing in the scratch dir above (not ~/Notes)
+    -- already proves the override, so assert the note is outside $HOME/Notes.
+    it("lets NVIM_NOTES_DIR override the config.yml directory", function()
+      local home_notes = vim.fn.resolve(vim.fs.joinpath(vim.env.HOME, "Notes"))
+      assert.is_nil(vim.api.nvim_buf_get_name(0):find(home_notes, 1, true))
+      assert.equal(expected, vim.fn.resolve(vim.api.nvim_buf_get_name(0)))
+    end)
   end)
 end)
