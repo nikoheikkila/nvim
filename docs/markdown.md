@@ -11,10 +11,11 @@ These shortcuts are active only in Markdown buffers.
 | Key      | Mode           | Action                                            |
 | -------- | -------------- | ------------------------------------------------- |
 | `Ctrl+B` | Normal, Visual | Toggle **bold** (`**text**`) on word or selection |
-| `Ctrl+I` | Normal, Visual | Toggle _italic_ (`_text_`) on word or selection   |
+| `Ctrl+I` | Visual         | Toggle _italic_ (`_text_`) on the selection       |
 
-In Normal mode, formatting applies to the word under the cursor. In Visual mode, it applies to the selected
-text. Pressing the key again on already-formatted text removes the markers.
+In Normal mode, `Ctrl+B` applies to the word under the cursor; in Visual mode it applies to the selection.
+Pressing the key again on already-formatted text removes the markers. Italic is Visual-only: in a terminal
+`Ctrl+I` and `Tab` are the same key, and `Tab` toggles folds in Normal mode (see [Folding](#folding)).
 
 ### Links and Images
 
@@ -85,6 +86,20 @@ If `markdownlint-cli2` is not installed, editing works normally and a one-time w
 - Bold and italic are visually styled
 
 The rendering is active in all modes. Raw syntax is revealed on the cursor line (controlled by `anti_conceal`).
+
+## Folding
+
+Headings, list items that have nested children, and fenced code blocks can be collapsed and expanded.
+
+| Key   | Mode   | Action                           |
+| ----- | ------ | -------------------------------- |
+| `Tab` | Normal | Toggle the fold under the cursor |
+
+A marker in the left gutter shows each foldable line's state — `▼` when expanded, `▶` when collapsed.
+Left-clicking the marker toggles that fold. Everything starts expanded when a file opens.
+
+Folding for non-Markdown files is driven by the language server instead — any range it reports as
+collapsible — with the same `Tab` toggle and gutter markers.
 
 ## Additional Shortcuts (from markdown-plus.nvim defaults)
 

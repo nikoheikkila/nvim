@@ -69,9 +69,13 @@ describe("live markdown linting", function()
   end)
 
   -- Presentation contract: vim.diagnostic.set renders synchronously, so a
-  -- synthetic diagnostic proves the linehl extmark and the closed signcolumn
-  -- without spawning anything (also covered when the binary is absent).
+  -- synthetic diagnostic proves the linehl extmark and that a warning does not
+  -- open the signcolumn (empty sign text) — the gutter width is unchanged by
+  -- the warning. Markdown buffers carry a constant fold-indicator gutter from
+  -- config/folding.lua, so this is a before-vs-after check, not textoff == 0.
   it("renders a warning as a line highlight without opening the signcolumn", function()
+    vim.cmd("redraw") -- force the statuscolumn to evaluate so textoff is real
+    local textoff_before = vim.fn.getwininfo()[1].textoff
     vim.diagnostic.set(lint_ns, md_buf, {
       { lnum = 0, col = 0, severity = warn, message = "MD000/spec-double", source = "markdownlint" },
     })
@@ -84,7 +88,8 @@ describe("live markdown linting", function()
     local marks = sign_ns and vim.api.nvim_buf_get_extmarks(md_buf, sign_ns, 0, -1, { details = true }) or {}
     assert.is_true(#marks > 0)
     assert.equal("MarkdownLintLine", marks[1][4].line_hl_group)
-    assert.equal(0, vim.fn.getwininfo()[1].textoff)
+    vim.cmd("redraw")
+    assert.equal(textoff_before, vim.fn.getwininfo()[1].textoff)
     -- Clear the synthetic diagnostic: later tests assert on real publishes
     -- (functional path) or on staying empty (guard path).
     vim.diagnostic.set(lint_ns, md_buf, {})

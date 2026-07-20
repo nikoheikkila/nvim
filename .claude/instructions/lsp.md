@@ -64,6 +64,20 @@ namespace-transparent: the markdownlint presentation in `plugins/markdown.lua` i
 `lsp_spec.lua` has a regression guard for exactly this. bufferline (`diagnostics = "nvim_lsp"`) and lualine's
 diagnostics component pick LSP counts up with no extra wiring.
 
+## Folding
+
+The same `LspAttach` autocmd enables folding for non-markdown buffers, driven by the server's
+`textDocument/foldingRange`. Unlike the keymaps above, this branch **is** capability-gated: it fetches the
+client (`vim.lsp.get_client_by_id(ev.data.client_id)`) and only calls
+`config.folding.enable(buf, { engine = "lsp", ... })` — with `vim.lsp.foldexpr()` / `vim.lsp.foldtext()` as the
+source — when `client.server_capabilities.foldingRangeProvider` is set; no point wiring folds a server can't
+supply. `ev.data` is guarded because a spec can fire `LspAttach` synthetically with no client (`lsp_spec.lua`).
+
+`config/folding.lua` owns the shared UX (`<Tab>` toggle, the `▼`/`▶` `statuscolumn` indicator, click-to-toggle)
+that markdown reuses with its own foldexpr — see `config.md` and `markdown.md`. Requires Neovim ≥ 0.11 for
+`vim.lsp.foldexpr`/`foldtext` (0.12.4 here); LSP folds populate after the server answers, so they may appear a
+beat after attach.
+
 ## Keymaps (buffer-local, registered on `LspAttach`)
 
 All maps live in `setup_lsp_keymaps(buf)` and are created by the `lsp_keymaps` augroup's `LspAttach` autocmd —

@@ -30,11 +30,13 @@
     ├── config/
     │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save; auto-save on InsertLeave)
     │   ├── commands.lua       # Command-line overrides (:q/:x/:wq close current buffer) + :Daily note command
+    │   ├── folding.lua        # Shared fold UX: <Tab> toggle, ▼/▶ statuscolumn indicator, click-to-toggle
     │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line, <leader>nd daily note)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
     │   ├── lsp_servers.lua    # Language-server table (single source; read by plugins/lsp.lua + lsp_spec)
     │   └── options.lua        # Leader keys + core editor options (wrap, textwidth, mouse, mousemodel)
     ├── lib/
+    │   ├── markdown_fold.lua  # Pure-Lua fold-level computation (headings, list items, fenced code blocks)
     │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
     │   ├── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
     │   ├── save_utils.lua     # Pure-Lua auto-save predicate (which buffers are safe to write)
@@ -56,6 +58,7 @@
     │   ├── helper.lua             # Busted helper: records vim.notify from session start (require("notify_log"))
     │   ├── autosave_spec.lua      # auto_save contract (InsertLeave-only trigger, nested write autocmds)
     │   ├── commands_spec.lua      # :BufClose/:BufWriteClose + :q/:x/:wq abbreviations, :Daily end-to-end
+    │   ├── folding_spec.lua       # Fold wiring (foldexpr/statuscolumn/<Tab>), toggling, ▼/▶ indicators
     │   ├── keymaps_spec.lua       # Global keymaps (<leader>nd, <leader>bn/bp, <leader>gg)
     │   ├── lsp_spec.lua           # LSP wiring (LspAttach keymaps, server configs) + guarded attach path
     │   ├── markdown_lint_spec.lua # nvim-lint wiring + functional/missing-binary guard paths
@@ -63,6 +66,7 @@
     │   ├── options_spec.lua       # Leader keys (load-order regression guard)
     │   └── theme_spec.lua         # theme.yml sourcing (variant applied, plugin name, italic comments)
     └── unit/                      # Pure-Lua Busted specs for lua/lib/ (no Neovim involved)
+        ├── markdown_fold_spec.lua
         ├── markdown_utils_spec.lua
         ├── path_utils_spec.lua
         ├── save_utils_spec.lua
@@ -103,7 +107,7 @@ Detailed guidance lives under `.claude/instructions/` — read the relevant file
 | [`lsp.md`](.claude/instructions/lsp.md)                   | language servers (`plugins/lsp.lua`): servers table, mason install flow, blink.cmp, LspAttach keymaps, refactor menu, diagnostics coexistence                                                            |
 | [`dev-workflow.md`](.claude/instructions/dev-workflow.md) | Adding/fetching plugins, running tests, headless Lua verification                                                                                                                                        |
 
-Check `config.md`'s Global Keymap Registry before adding any new global keymap — seven files declare keys and
+Check `config.md`'s Global Keymap Registry before adding any new global keymap — eight files declare keys and
 there's no other index.
 
 **Bindings must survive the terminal.** This config runs in Warp on macOS with a trackpad: the OS and terminal

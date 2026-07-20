@@ -1,4 +1,16 @@
 local mu = require("lib.markdown_utils")
+local folding = require("config.folding")
+
+-- Markdown folds come from the pure lib.markdown_fold levels (headings, list
+-- items with children, fenced code blocks). foldtext = "" lets Neovim render
+-- the collapsed line with its real treesitter/render-markdown highlighting.
+local function setup_folding(buf)
+  folding.enable(buf, {
+    engine = "markdown",
+    foldexpr = "v:lua.require'config.folding'.markdown_foldexpr()",
+    foldtext = "",
+  })
+end
 
 local function rename_image_at_cursor()
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -73,15 +85,9 @@ local function setup_keymaps(buf)
     require("markdown-plus.format.toggle").toggle_format("italic")
     p.patterns.italic.wrap = orig
   end
-  local function italic_normal()
-    local p = require("markdown-plus.format.patterns")
-    local orig = p.patterns.italic.wrap
-    p.patterns.italic.wrap = "_"
-    require("markdown-plus.format.toggle").toggle_format_word("italic")
-    p.patterns.italic.wrap = orig
-  end
+  -- Visual only: normal-mode <C-i> is the same terminal keycode as <Tab>, which
+  -- folding.enable() binds to the fold toggle in markdown buffers.
   vim.keymap.set("x", "<C-i>", italic_visual, { buffer = buf, desc = "Toggle italic (_)" })
-  vim.keymap.set("n", "<C-i>", italic_normal, { buffer = buf, desc = "Toggle italic (_)" })
 
   -- Link
   vim.keymap.set("n", "<C-k>", "<Plug>(MarkdownPlusInsertLink)", { buffer = buf, desc = "Insert link" })
@@ -120,6 +126,7 @@ return {
       for _, buf in ipairs(vim.api.nvim_list_bufs()) do
         if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype == "markdown" then
           setup_keymaps(buf)
+          setup_folding(buf)
         end
       end
 
@@ -128,6 +135,7 @@ return {
         pattern = "markdown",
         callback = function(ev)
           setup_keymaps(ev.buf)
+          setup_folding(ev.buf)
         end,
       })
     end,

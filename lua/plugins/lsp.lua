@@ -179,6 +179,19 @@ return {
         group = vim.api.nvim_create_augroup("lsp_keymaps", { clear = true }),
         callback = function(ev)
           setup_lsp_keymaps(ev.buf)
+
+          -- Non-markdown folding: drive <Tab>/indicator from the server's
+          -- foldingRange support. Markdown has its own foldexpr (plugins/
+          -- markdown.lua) and no server here, so it never reaches this branch.
+          -- ev.data is absent when a spec fires LspAttach synthetically.
+          local client = ev.data and vim.lsp.get_client_by_id(ev.data.client_id)
+          if client and client.server_capabilities.foldingRangeProvider then
+            require("config.folding").enable(ev.buf, {
+              engine = "lsp",
+              foldexpr = "v:lua.vim.lsp.foldexpr()",
+              foldtext = "v:lua.vim.lsp.foldtext()",
+            })
+          end
         end,
       })
     end,

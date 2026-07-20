@@ -54,10 +54,13 @@ targets). Order is guaranteed.
 
 **Italic uses pattern-patching, not the `<Plug>` target**
 `markdown-plus.nvim` hardcodes `italic = { wrap = "*" }` in `lua/markdown-plus/format/patterns.lua` with no
-config option. To honour the requirement of `_` for italic, `italic_visual()` and `italic_normal()`
-temporarily overwrite `patterns.patterns.italic.wrap` with `"_"`, call the plugin's toggle function
-synchronously, then restore the original value. This is safe because the toggle runs synchronously with no
-async callbacks.
+config option. To honour the requirement of `_` for italic, `italic_visual()` temporarily overwrites
+`patterns.patterns.italic.wrap` with `"_"`, calls the plugin's toggle function synchronously, then restores
+the original value. This is safe because the toggle runs synchronously with no async callbacks.
+
+Italic is bound in **visual mode only**. In a terminal `<C-i>` and `<Tab>` are the same keycode, and folding
+(see below) binds `<Tab>` to the fold toggle in Normal mode, so the former normal-mode `italic_normal()`
+word-toggle was removed. Select the text and press `<C-i>` to italicise.
 
 **Checklist toggle delegates to `markdown_utils`**
 The custom `checklist_toggle()` function in `markdown.lua` avoids `parse_list_line` entirely and delegates to
@@ -89,12 +92,13 @@ validates the file exists, prompts for a new name via `vim.ui.input`, renames th
 | Key       | Mode  | Action                              |
 | --------- | ----- | ----------------------------------- |
 | `<C-b>`   | n + x | Toggle bold                         |
-| `<C-i>`   | n + x | Toggle italic (`_`)                 |
+| `<C-i>`   | x     | Toggle italic (`_`) — visual only   |
 | `<C-k>`   | n + x | Insert / wrap link                  |
 | `<C-l>`   | n + i | Toggle checklist item (single line) |
 | `<C-l>`   | x     | Toggle checklist range              |
 | `<C-S-I>` | n + x | Insert / wrap image                 |
 | `<F2>`    | n     | Rename image file at cursor         |
+| `<Tab>`   | n     | Toggle fold (see Folding below)     |
 
 **Terminal compatibility:** `<C-S-I>` (Ctrl+Shift+I) requires the Kitty keyboard protocol. Supported terminals:
 kitty, WezTerm, Ghostty, and recent versions of foot. In terminals that do not support it the mapping is
@@ -204,8 +208,10 @@ only reads the buffer.
 **Empty sign text (`signs.text = { [WARN] = "" }`):** the whole-line background rides on diagnostic _sign_
 extmarks. If `signs.text` is unset, the runtime defaults it to `"W"` (`runtime/lua/vim/diagnostic.lua`, signs
 handler), and a visible sign opens/shifts the auto signcolumn on every appearing/disappearing warning. An
-explicitly empty string keeps `line_hl_group` working with `textoff == 0` (verified on 0.12.4 and asserted in
-the integration spec).
+explicitly empty string keeps `line_hl_group` working without opening the signcolumn. (Markdown buffers also
+carry a constant fold-indicator gutter from `config/folding.lua`, whose `statuscolumn` has no `%s`, so signs
+never render there regardless; the integration spec asserts a warning does not change `textoff`, not that it
+is zero.)
 
 **Missing-binary guard:** checked inside `lint_buf()` before any spawn, notifying once per session (`warned`
 upvalue) — the house idiom from `git.lua`/`picker.lua`. Wiring (augroup, highlight, namespace config) is set up
@@ -223,3 +229,24 @@ on the first edit.
 Known cosmetic caveat: render-markdown's heading background bands use a higher extmark priority (4096) than
 diagnostic signs (10), so on a _heading_ line the band wins over the dark-yellow background — the virtual-text
 message still shows. If that ever matters, add `signs.priority` to the namespace config; don't pre-fix it.
+
+## Folding
+
+Markdown buffers fold headings, list items with children (unordered, ordered, and task alike), and fenced
+code blocks. `<Tab>` in Normal mode toggles the fold under the cursor; a `▼` (expanded) / `▶` (collapsed)
+indicator sits in the left gutter on every foldable line and a left-click on it toggles that fold.
+
+The fold _levels_ come from the pure `lib.markdown_fold.fold_levels(lines)` (unit-tested in
+`tests/unit/markdown_fold_spec.lua`); the shared UX (foldexpr caching, `statuscolumn` indicator, click
+handler, `<Tab>` map) lives in `lua/config/folding.lua` and is reused by the LSP path for other filetypes
+(see `config.md` and `lsp.md`). `plugins/markdown.lua`'s `setup_folding(buf)` wires it on every markdown
+buffer via `folding.enable(buf, { engine = "markdown", ... })`, using the pure levels as the foldexpr and
+`foldtext = ""` so a collapsed line keeps its real treesitter/render-markdown highlighting.
+
+Fold-start rules (see the module header for detail): a heading emits `">"..level` (level = `#` count); a list
+item emits a forced `">"..level` **only when it has a deeper child** so leaf items never become folds of their
+own, and a sibling's forced start ends the previous item's fold (per-item folding); a fenced block folds from
+its opening delimiter, and `#`/`-` inside a fence are never mistaken for headings/lists. The indicator's
+fold-start detection reads these `">"` markers directly (via `engine = "markdown"`) because the generic
+`foldlevel(l) > foldlevel(l-1)` heuristic misses a forced start that follows a deeper line (e.g. a top-level
+item right after a nested one).
