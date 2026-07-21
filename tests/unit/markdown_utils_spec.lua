@@ -67,6 +67,68 @@ describe("find_image_path_at", function()
   end)
 end)
 
+describe("find_link_at", function()
+  it("inline link col inside", function()
+    assert.are.equal(M.find_link_at("[text](target.md)", 3), "target.md")
+  end)
+
+  it("inline link col at start", function()
+    assert.are.equal(M.find_link_at("[text](target.md)", 1), "target.md")
+  end)
+
+  it("inline link col at end", function()
+    local line = "[text](target.md)"
+    assert.are.equal(M.find_link_at(line, #line), "target.md")
+  end)
+
+  it("image span col inside", function()
+    assert.are.equal(M.find_link_at("![alt](image.png)", 5), "image.png")
+  end)
+
+  it("image span cursor on bang", function()
+    assert.are.equal(M.find_link_at("![alt](image.png)", 1), "image.png")
+  end)
+
+  it("strips title attribute", function()
+    assert.are.equal(M.find_link_at('[text](target.md "Title")', 3), "target.md")
+  end)
+
+  it("path with directory", function()
+    assert.are.equal(M.find_link_at("[text](docs/notes/a.md)", 3), "docs/notes/a.md")
+  end)
+
+  it("remote url returned as is", function()
+    assert.are.equal(M.find_link_at("[text](https://example.com)", 3), "https://example.com")
+  end)
+
+  it("col before link returns nil", function()
+    assert.is_nil(M.find_link_at("text [a](b.md)", 1))
+  end)
+
+  it("col after link returns nil", function()
+    local line = "[a](b.md) trailing"
+    assert.is_nil(M.find_link_at(line, #line))
+  end)
+
+  it("second of two links", function()
+    local line = "[a](one.md) and [b](two.md)"
+    assert.are.equal(M.find_link_at(line, 20), "two.md")
+  end)
+
+  it("first of two links", function()
+    local line = "[a](one.md) and [b](two.md)"
+    assert.are.equal(M.find_link_at(line, 2), "one.md")
+  end)
+
+  it("no link returns nil", function()
+    assert.is_nil(M.find_link_at("just plain text", 5))
+  end)
+
+  it("empty line returns nil", function()
+    assert.is_nil(M.find_link_at("", 1))
+  end)
+end)
+
 describe("is_remote_url", function()
   it("https is remote", function()
     assert.is_true(M.is_remote_url("https://example.com/image.png"))

@@ -50,3 +50,63 @@ describe("has_uri_scheme", function()
     assert.is_false(M.has_uri_scheme(""))
   end)
 end)
+
+describe("classify_link", function()
+  it("https is external", function()
+    assert.are.equal(M.classify_link("https://example.com/x"), "external")
+  end)
+
+  it("http is external", function()
+    assert.are.equal(M.classify_link("http://example.com"), "external")
+  end)
+
+  it("ftp with slashes is external", function()
+    assert.are.equal(M.classify_link("ftp://host/file"), "external")
+  end)
+
+  it("mailto is ignored", function()
+    assert.are.equal(M.classify_link("mailto:x@y.com"), "ignored")
+  end)
+
+  it("tel is ignored", function()
+    assert.are.equal(M.classify_link("tel:+123456"), "ignored")
+  end)
+
+  it("bare anchor is ignored", function()
+    assert.are.equal(M.classify_link("#section"), "ignored")
+  end)
+
+  it("bare filename is internal", function()
+    assert.are.equal(M.classify_link("notes.md"), "internal")
+  end)
+
+  it("dot-relative path is internal", function()
+    assert.are.equal(M.classify_link("./a.md"), "internal")
+  end)
+
+  it("absolute path is internal", function()
+    assert.are.equal(M.classify_link("/abs/x.md"), "internal")
+  end)
+
+  it("subdirectory path is internal", function()
+    assert.are.equal(M.classify_link("img/p.png"), "internal")
+  end)
+
+  it("file with anchor is internal", function()
+    assert.are.equal(M.classify_link("notes.md#section"), "internal")
+  end)
+end)
+
+describe("strip_anchor", function()
+  it("strips a trailing anchor", function()
+    assert.are.equal(M.strip_anchor("notes.md#section"), "notes.md")
+  end)
+
+  it("leaves a target without an anchor unchanged", function()
+    assert.are.equal(M.strip_anchor("notes.md"), "notes.md")
+  end)
+
+  it("strips a bare anchor to empty", function()
+    assert.are.equal(M.strip_anchor("#section"), "")
+  end)
+end)

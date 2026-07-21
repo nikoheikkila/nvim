@@ -1,4 +1,5 @@
 local mu = require("lib.markdown_utils")
+local pu = require("lib.path_utils")
 local folding = require("config.folding")
 
 -- Markdown folds come from the pure lib.markdown_fold levels (headings, list
@@ -10,6 +11,15 @@ local function setup_folding(buf)
     foldexpr = "v:lua.require'config.folding'.markdown_foldexpr()",
     foldtext = "",
   })
+end
+
+-- Absolute targets (leading "/") pass through; relative targets resolve against
+-- buf_dir and expand to a full path.
+local function resolve_path(buf_dir, target)
+  if target:sub(1, 1) == "/" then
+    return target
+  end
+  return vim.fn.fnamemodify(buf_dir .. "/" .. target, ":p")
 end
 
 local function rename_image_at_cursor()
@@ -36,7 +46,7 @@ local function rename_image_at_cursor()
   end
   local buf_dir = vim.fn.fnamemodify(buf_file, ":h")
 
-  local full_path = found_path:sub(1, 1) == "/" and found_path or vim.fn.fnamemodify(buf_dir .. "/" .. found_path, ":p")
+  local full_path = resolve_path(buf_dir, found_path)
 
   if vim.fn.filereadable(full_path) == 0 then
     vim.notify("File not found: " .. full_path, vim.log.levels.ERROR)
@@ -51,7 +61,7 @@ local function rename_image_at_cursor()
     end
 
     local new_path = mu.replace_filename(found_path, new_name)
-    local new_full = found_path:sub(1, 1) == "/" and new_path or vim.fn.fnamemodify(buf_dir .. "/" .. new_path, ":p")
+    local new_full = resolve_path(buf_dir, new_path)
 
     local ok, err = os.rename(full_path, new_full)
     if not ok then
@@ -71,6 +81,48 @@ local function rename_image_at_cursor()
 
     vim.notify(("Renamed: %s → %s"):format(found_path, new_path), vim.log.levels.INFO)
   end)
+end
+
+local function open_link_at_cursor()
+  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+  col = col + 1 -- convert 0-based to 1-based
+  local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
+
+  local target = mu.find_link_at(line, col)
+
+  if not target or target == "" then
+    vim.notify("No link under cursor", vim.log.levels.WARN)
+    return
+  end
+
+  local kind = pu.classify_link(target)
+
+  if kind == "external" then
+    vim.ui.open(target)
+    return
+  end
+
+  if kind == "ignored" then
+    vim.notify("Ignoring link: " .. target, vim.log.levels.INFO)
+    return
+  end
+
+  -- internal: open the file, dropping any #anchor, resolving relative to the buffer dir
+  local path = pu.strip_anchor(target)
+  local full_path
+
+  if path:sub(1, 1) == "/" then
+    full_path = path
+  else
+    local buf_file = vim.api.nvim_buf_get_name(0)
+    if buf_file == "" then
+      vim.notify("Buffer has no file — save it first", vim.log.levels.ERROR)
+      return
+    end
+    full_path = resolve_path(vim.fn.fnamemodify(buf_file, ":h"), path)
+  end
+
+  vim.cmd.edit(vim.fn.fnameescape(full_path))
 end
 
 local function setup_keymaps(buf)
@@ -110,6 +162,9 @@ local function setup_keymaps(buf)
   vim.keymap.set("n", "<C-S-I>", "<Plug>(MarkdownPlusInsertImage)", { buffer = buf, desc = "Insert image" })
   vim.keymap.set("x", "<C-S-I>", "<Plug>(MarkdownPlusSelectionToImage)", { buffer = buf, desc = "Selection to image" })
   vim.keymap.set("n", "<F2>", rename_image_at_cursor, { buffer = buf, desc = "Rename image at cursor" })
+
+  -- Follow the link under the cursor: browser for URLs, :e for files, ignore mailto/tel/anchors
+  vim.keymap.set("n", "<leader>gl", open_link_at_cursor, { buffer = buf, desc = "Open link under cursor" })
 end
 
 return {

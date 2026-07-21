@@ -1,32 +1,57 @@
 local M = {}
 
--- Returns nil when col is outside any image span. Strips trailing title attributes.
-function M.find_image_path_at(line, col)
+-- Scans line for markdown link spans and returns the target of the one that col
+-- (1-based) falls inside, or nil when col is outside every span. Trailing title
+-- attributes are stripped. When images_only is true only image spans
+-- (![...](...)) match; otherwise both inline links and images match (a leading
+-- "!" is absorbed so the cursor-on-bang case still resolves to the image).
+local function find_span_target(line, col, images_only)
   local pos = 1
   while pos <= #line do
-    local s = line:find("!%[", pos)
+    local s = line:find("%[", pos)
     if not s then
       break
     end
 
-    local cb = line:find("%]%(", s)
-    if not cb then
-      break
-    end
+    local is_image = s > 1 and line:sub(s - 1, s - 1) == "!"
+    if images_only and not is_image then
+      pos = s + 1
+    else
+      if is_image then
+        s = s - 1
+      end
 
-    local cp = line:find(")", cb + 2, true)
-    if not cp then
-      break
-    end
+      local cb = line:find("%]%(", s)
+      if not cb then
+        break
+      end
 
-    if col >= s and col <= cp then
-      local raw = line:sub(cb + 2, cp - 1)
-      return raw:match("^([^%s\"']+)")
-    end
+      local cp = line:find(")", cb + 2, true)
+      if not cp then
+        break
+      end
 
-    pos = cp + 1
+      if col >= s and col <= cp then
+        local raw = line:sub(cb + 2, cp - 1)
+        return raw:match("^([^%s\"']+)")
+      end
+
+      pos = cp + 1
+    end
   end
   return nil
+end
+
+-- Returns nil when col is outside any image span. Strips trailing title attributes.
+function M.find_image_path_at(line, col)
+  return find_span_target(line, col, true)
+end
+
+-- Returns the target of the markdown link span (inline [text](target) or image
+-- ![alt](target)) that col (1-based) falls inside, or nil when col is outside
+-- every span. Strips trailing title attributes like find_image_path_at does.
+function M.find_link_at(line, col)
+  return find_span_target(line, col, false)
 end
 
 function M.is_remote_url(path)
