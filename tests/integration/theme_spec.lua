@@ -54,6 +54,12 @@ describe("plugins.theme", function()
       if spec.bg then
         assert.equal(tonumber(spec.bg:sub(2), 16), hl.bg)
       end
+      if spec.sp then
+        assert.equal(tonumber(spec.sp:sub(2), 16), hl.sp)
+      end
+      if type(spec.style) == "string" and spec.style:find("undercurl") then
+        assert.is_true(hl.undercurl)
+      end
       -- A group defined without a style replaces the theme's styling entirely
       -- (this is what un-italicizes inline code).
       if not spec.style then

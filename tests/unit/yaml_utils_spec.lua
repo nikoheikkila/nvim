@@ -93,11 +93,54 @@ describe("parse", function()
     assert.is_nil(M.parse("a: 1\njust some text\n"))
   end)
 
-  it("returns nil for list items (outside the supported subset)", function()
-    assert.is_nil(M.parse("plugins:\n  - one\n  - two\n"))
+  it("parses a block sequence of strings under a key", function()
+    assert.are.same({ plugins = { "one", "two" } }, M.parse("plugins:\n  - one\n  - two\n"))
+  end)
+
+  it("coerces sequence item types and strips quotes", function()
+    local text = table.concat({
+      "items:",
+      "  - 1",
+      "  - true",
+      '  - "a b"',
+      "",
+    }, "\n")
+    assert.are.same({ items = { 1, true, "a b" } }, M.parse(text))
+  end)
+
+  it("parses a sequence under a nested key", function()
+    local text = 'config:\n  harper:\n    excludePatterns:\n      - "*.min.js"\n      - vendor\n'
+    assert.are.same({
+      config = { harper = { excludePatterns = { "*.min.js", "vendor" } } },
+    }, M.parse(text))
+  end)
+
+  it("dedents back to sibling keys after a sequence", function()
+    local text = "a:\n  - x\n  - y\nb: 2\n"
+    assert.are.same({ a = { "x", "y" }, b = 2 }, M.parse(text))
+  end)
+
+  it("does not parse inline flow sequences as lists", function()
+    -- Inline [a, b] is unsupported; the value is taken verbatim as a string.
+    assert.are.same({ a = "[x, y]" }, M.parse("a: [x, y]\n"))
   end)
 
   it("returns nil on tab indentation", function()
     assert.is_nil(M.parse("a:\n\tb: 1\n"))
+  end)
+end)
+
+describe("read_file", function()
+  it("returns nil for a missing file", function()
+    assert.is_nil(M.read_file("/no/such/path/config.yml"))
+  end)
+
+  it("reads and parses an existing file", function()
+    local path = os.tmpname()
+    local f = assert(io.open(path, "w"))
+    f:write("a:\n  - x\n  - y\nb: 2\n")
+    f:close()
+    assert.are.same({ a = { "x", "y" }, b = 2 }, M.read_file(path))
+    os.remove(path)
   end)
 end)

@@ -19,7 +19,7 @@
 ├── vim.yml                    # Vendored selene std: declares the `vim` global
 ├── busted.yml                 # Vendored selene std: busted test globals (describe/it/luassert)
 ├── theme.yml                  # Theme configuration (sourced by plugins/theme.lua; see docs/theming.md)
-├── config.yml                 # Editor configuration (sourced by config/commands.lua; :Daily note dir + filename format)
+├── config.yml                 # Editor configuration (:Daily note dir + filename format; Harper harper-ls options)
 ├── docs/                      # User documentation, linked from README.md's table of contents; ships in the release
 ├── scripts/
 │   ├── busted-nvim.sh         # Busted interpreter shim: runs integration specs inside a fully-loaded headless nvim
@@ -34,16 +34,17 @@
     │   ├── folding.lua        # Shared fold UX: <Tab> toggle, ▼/▶ statuscolumn indicator, click-to-toggle
     │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line, <leader>nd daily note)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
-    │   ├── lsp_servers.lua    # Language-server table (single source; read by plugins/lsp.lua + lsp_spec)
+    │   ├── lsp_servers.lua    # Language-server table (single source; plugins/lsp.lua + lsp_spec; harper_ls ← config.yml)
     │   └── options.lua        # Leader keys + core editor options (wrap, textwidth, mouse, mousemodel)
     ├── lib/
     │   ├── daily_utils.lua    # Pure-Lua :Daily config resolver (config.yml over defaults, NVIM_NOTES_DIR override)
+    │   ├── harper_utils.lua   # Pure-Lua harper-ls settings resolver (config.harper over harper's defaults)
     │   ├── markdown_fold.lua  # Pure-Lua fold-level computation (headings, list items, fenced code blocks)
     │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
     │   ├── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
     │   ├── save_utils.lua     # Pure-Lua auto-save predicate (which buffers are safe to write)
     │   ├── search_utils.lua   # Pure-Lua case-insensitive substring matcher (grep fallback)
-    │   └── yaml_utils.lua     # Pure-Lua minimal YAML-subset parser (reads theme.yml + config.yml)
+    │   └── yaml_utils.lua     # Pure-Lua minimal YAML-subset parser incl. block sequences (reads theme.yml + config.yml)
     └── plugins/
         ├── explorer.lua       # File-tree sidebar (neo-tree.nvim)
         ├── git.lua            # Lazygit integration (lazygit.nvim)
@@ -69,6 +70,7 @@
     │   └── theme_spec.lua         # theme.yml sourcing (variant applied, plugin name, italic comments)
     └── unit/                      # Pure-Lua Busted specs for lua/lib/ (no Neovim involved)
         ├── daily_utils_spec.lua
+        ├── harper_utils_spec.lua
         ├── markdown_fold_spec.lua
         ├── markdown_utils_spec.lua
         ├── path_utils_spec.lua

@@ -46,6 +46,20 @@ describe("lsp support", function()
     assert.is_true(vim.tbl_contains(globals, "vim"))
   end)
 
+  it("resolves harper_ls settings from config.yml", function()
+    local harper = vim.lsp.config.harper_ls.settings["harper-ls"]
+    assert.is_table(harper, "harper_ls has no resolved settings")
+    assert.is_string(harper.dialect)
+    assert.is_boolean(harper.linters.SpellCheck)
+  end)
+
+  it("registers the harper/underline diagnostic handler", function()
+    local handler = vim.diagnostic.handlers["harper/underline"]
+    assert.is_table(handler, "harper/underline handler is not registered")
+    assert.is_function(handler.show)
+    assert.is_function(handler.hide)
+  end)
+
   it("sets global diagnostic defaults without clobbering the markdownlint namespace", function()
     assert.is_true(vim.diagnostic.config().severity_sort)
     -- Regression guard: plugins/markdown.lua scopes its presentation to the

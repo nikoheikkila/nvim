@@ -2,8 +2,6 @@
 -- refactoring. See .claude/instructions/lsp.md for the full design notes.
 --
 -- Adding a language server = one entry in lua/config/lsp_servers.lua.
-local servers = require("config.lsp_servers")
-
 return {
   {
     "saghen/blink.cmp",
@@ -37,6 +35,10 @@ return {
       "saghen/blink.cmp",
     },
     config = function()
+      -- Required here (not at spec-collection time) so lsp_servers.lua's
+      -- config.yml read for harper_ls happens on plugin load, not every startup.
+      local servers = require("config.lsp_servers")
+
       require("mason").setup() -- must run before mason-lspconfig.setup(); prepends mason/bin to PATH
 
       vim.lsp.config("*", { capabilities = require("blink.cmp").get_lsp_capabilities() })
@@ -63,6 +65,30 @@ return {
         severity_sort = true,
         virtual_text = { source = "if_many" },
       })
+
+      -- Harper's grammar diagnostics are all Hint severity, so the theme renders
+      -- them with the (bluish) DiagnosticUnderlineHint group — a flat, link-like
+      -- underline on terminals without undercurl. A custom handler draws a
+      -- dark-red wavy underline instead, in the HarperDiagnosticUnderline color
+      -- from theme.yml. It's enabled per-namespace on attach below, so it runs
+      -- for Harper alone and other servers' hints keep their default styling.
+      local harper_underline_ns = vim.api.nvim_create_namespace("harper_underline")
+      vim.diagnostic.handlers["harper/underline"] = {
+        show = function(_, bufnr, diagnostics, _)
+          for _, d in ipairs(diagnostics) do
+            -- pcall: end_col can point past a shrinking line between publishes.
+            pcall(vim.api.nvim_buf_set_extmark, bufnr, harper_underline_ns, d.lnum, d.col, {
+              end_row = d.end_lnum,
+              end_col = d.end_col,
+              hl_group = "HarperDiagnosticUnderline",
+              priority = 200, -- above treesitter (100) so the undercurl shows
+            })
+          end
+        end,
+        hide = function(_, bufnr)
+          vim.api.nvim_buf_clear_namespace(bufnr, harper_underline_ns, 0, -1)
+        end,
+      }
 
       -- <leader>r menu: rename + kind-filtered code actions. `only` matching
       -- is hierarchical ("refactor.extract" catches .function, .constant, …)
@@ -191,6 +217,16 @@ return {
               foldexpr = "v:lua.vim.lsp.foldexpr()",
               foldtext = "v:lua.vim.lsp.foldtext()",
             })
+          end
+
+          -- Swap Harper's flat hint underline for the scoped dark-red wavy one:
+          -- disable the built-in underline on its namespace and route it through
+          -- the harper/underline handler registered above.
+          if client and client.name == "harper_ls" then
+            vim.diagnostic.config(
+              { underline = false, ["harper/underline"] = true },
+              vim.lsp.diagnostic.get_namespace(client.id)
+            )
           end
         end,
       })

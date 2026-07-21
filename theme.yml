@@ -15,4 +15,10 @@ theme:
       RenderMarkdownCodeInline:
         fg: "#ff7b72"
         bg: "#2e2e2e"
+      # Harper grammar diagnostics: dark-red wavy underline, scoped to Harper's
+      # namespace by plugins/lsp.lua so it never recolors other servers' hints.
+      # (undercurl needs terminal support; degrades to a flat dark-red underline.)
+      HarperDiagnosticUnderline:
+        sp: "#8b0000"
+        style: undercurl
 

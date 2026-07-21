@@ -2,3 +2,39 @@ config:
   daily:
     directory: "$HOME/Notes"
     filenamePattern: "%Y-%m-%d.md"
+  # Harper grammar/spell checker (harper-ls). See docs for the full option list:
+  # https://writewithharper.com/docs/integrations/neovim
+  # NOTE: trailing comments after a value are unsupported by the YAML parser —
+  # keep option notes on their own comment line, as below.
+  harper:
+    # dialect: American | British | Australian | Canadian
+    dialect: "American"
+    # diagnosticSeverity: hint | information | warning | error
+    diagnosticSeverity: "hint"
+    isolateEnglish: false
+    maxFileLength: 120000
+    # Dictionary/ignore paths: empty means "use harper's default location".
+    userDictPath: ""
+    workspaceDictPath: ""
+    fileDictPath: ""
+    ignoredLintsPath: ""
+    # excludePatterns: uncomment to add glob patterns (block sequence, one per
+    # line). Omitting it leaves harper on its default.
+    # excludePatterns:
+    #   - "node_modules/**"
+    #   - "*.min.js"
+    codeActions:
+      ForceStable: false
+    markdown:
+      IgnoreLinkTitle: false
+    linters:
+      SpellCheck: true
+      SpelledNumbers: false
+      AnA: true
+      SentenceCapitalization: true
+      UnclosedQuotes: true
+      WrongApostrophe: false
+      LongSentences: true
+      RepeatedWords: true
+      Spaces: true
+      CorrectNumberSuffix: true

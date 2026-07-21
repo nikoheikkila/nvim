@@ -78,6 +78,7 @@ line (or a visual selection) up/down using the `:m[ove]` command with `==` to re
 | `<M-Up>`     | x    | Move selection up (stays selected via `gv=gv`)       |
 | `<M-Down>`   | x    | Move selection down (stays selected via `gv=gv`)     |
 | `<leader>nd` | n    | Open today's note (`:Daily`; mnemonic "new → daily") |
+| `<leader>cd` | n    | Show line diagnostics in a wrapping float            |
 
 **Terminal compatibility:** `<M-…>` is the Alt/Option key. On macOS the Option key does not send a Meta modifier by
 default — the terminal must be configured to (Kitty/Ghostty/WezTerm via the Kitty keyboard protocol, or
@@ -159,6 +160,7 @@ own files (`markdown.md`, `explorer.md`), not here; the design details behind th
 | `<leader>br` / `<leader>bl`       | n                                | Delete buffers to the right / left                                                                                                                     | `plugins/ui.lua`          |
 | `<leader>bj`                      | n                                | Pick buffer                                                                                                                                            | `plugins/ui.lua`          |
 | `<leader>nd`                      | n                                | Open today's note (`:Daily`)                                                                                                                           | `config/keymaps.lua`      |
+| `<leader>cd`                      | n                                | Show line diagnostics (full text) in a wrapping float (`vim.diagnostic.open_float`)                                                                    | `config/keymaps.lua`      |
 | `<leader>gg`                      | n                                | Lazygit (current file's repo)                                                                                                                          | `plugins/git.lua`         |
 | `<F2>`                            | n, i                             | Rename symbol (LSP) — markdown's buffer-local image-rename map shadows it there                                                                        | `plugins/lsp.lua`         |
 | `<F12>`                           | n, i                             | Go to definition (LSP)                                                                                                                                 | `plugins/lsp.lua`         |

@@ -14,13 +14,27 @@ These shortcuts become active in a buffer once its language server attaches:
 | `F12` or `Space` `g` `d`       | Go to definition (a picker opens when there are several)        |
 | `Shift+F12` or `Space` `g` `r` | List all references in a modal picker                           |
 | `Space` `r`                    | Refactoring menu — rename, extract function/constant, inline, … |
+| `Space` `c` `d`                | Show the line's full diagnostics in a wrapping popup            |
 
 Completion pops up automatically while typing, with the first suggestion preselected: `Enter` accepts it,
 `Ctrl+N` / `Ctrl+P` or the arrow keys pick another candidate, `Ctrl+E` closes the menu (for when you want a
 plain newline instead), and `Ctrl+Space` opens the menu manually.
 
 Diagnostics appear as virtual text at the
-end of the line and as counts in the buffer tabs and status line.
+end of the line and as counts in the buffer tabs and status line. The inline text can't wrap, so a long
+message is truncated on the right — press `Space` `c` `d` to read the current line's diagnostics in full in a
+wrapping popup.
+
+## Grammar checking (Harper)
+
+[Harper](https://writewithharper.com) (`harper-ls`) adds grammar and spell checking on top of the code
+servers. It attaches to prose (Markdown, text, …) and to comments and string literals in source files, and
+is installed by mason.nvim like the other servers. Its flagged text is drawn as a **dark-red wavy
+underline** to set it apart from code diagnostics.
+
+Options — dialect, which lints run, dictionary paths, `excludePatterns`, and more — live under
+`config.harper` in `config.yml`; the file documents each field. If the underline renders flat instead of
+wavy, the terminal needs undercurl support — see [Terminal Setup](terminal.md).
 
 ## Notes
 

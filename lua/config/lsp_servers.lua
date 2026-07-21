@@ -5,6 +5,13 @@
 -- vim.lsp.config() (settings, cmd, root_markers, ...) — {} is enough for
 -- most servers. mason-lspconfig maps the name to a mason package, installs
 -- it on the first interactive launch, and auto-enables it.
+local yaml_utils = require("lib.yaml_utils")
+local harper_utils = require("lib.harper_utils")
+
+-- A missing/unreadable config.yml yields nil, so resolve_config falls back to
+-- harper's defaults.
+local config = yaml_utils.read_file(vim.fn.stdpath("config") .. "/config.yml")
+
 return {
   ts_ls = {}, -- JavaScript + TypeScript; exposes tsserver refactor.* code actions (extract/inline)
   basedpyright = {}, -- Python (maintained pyright fork)
@@ -18,5 +25,12 @@ return {
         workspace = { library = { vim.env.VIMRUNTIME }, checkThirdParty = false },
       },
     },
+  },
+  -- Harper grammar/spell checking. Attaches on nvim-lspconfig's default
+  -- filetypes (prose + many programming languages, where it checks comments and
+  -- string literals). Options come from config.yml (`config.harper.*`) via
+  -- lib/harper_utils.lua, falling back to harper's defaults when absent.
+  harper_ls = {
+    settings = { ["harper-ls"] = harper_utils.resolve_config(config) },
   },
 }

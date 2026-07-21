@@ -18,4 +18,8 @@ describe("global keymaps", function()
   it("binds <leader>gg to Lazygit", function()
     assert.equal("Lazygit (current file repo)", vim.fn.maparg(leader .. "gg", "n", false, true).desc)
   end)
+
+  it("binds <leader>cd to the line-diagnostics float", function()
+    assert.equal("Show line diagnostics", vim.fn.maparg(leader .. "cd", "n", false, true).desc)
+  end)
 end)

@@ -13,13 +13,7 @@ local defaults = {
 
 -- A missing, unreadable, or malformed theme.yml silently yields the defaults.
 local function load_theme()
-  local file = io.open(vim.fn.stdpath("config") .. "/theme.yml", "r")
-  if not file then
-    return defaults
-  end
-  local text = file:read("*a")
-  file:close()
-  local parsed = yaml_utils.parse(text)
+  local parsed = yaml_utils.read_file(vim.fn.stdpath("config") .. "/theme.yml")
   if type(parsed) ~= "table" or type(parsed.theme) ~= "table" then
     return defaults
   end

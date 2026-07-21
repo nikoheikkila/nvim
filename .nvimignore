@@ -20,4 +20,5 @@ selene.toml
 stylua.toml
 Taskfile.yml
 vim.yml
+screenshot.png
 

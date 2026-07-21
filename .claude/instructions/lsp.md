@@ -27,7 +27,14 @@ return {
 Server-choice rationale (per-server gotchas live as comments in the table itself): `ts_ls` over vtsls
 because it exposes tsserver's `refactor.*` code actions with less surface; `basedpyright` is the maintained
 pyright fork; `yamlls` has SchemaStore support built in — no schemastore.nvim; `lua_ls` gets `vim` as a
-global and `$VIMRUNTIME` in the workspace library — no lazydev.nvim.
+global and `$VIMRUNTIME` in the workspace library — no lazydev.nvim. `harper_ls` is Harper's
+grammar/spell checker — diagnostics/code-actions only, attaching on nvim-lspconfig's default filetypes
+(prose plus many programming languages, where it checks comments and string literals); its options are
+resolved from `config.yml` (`config.harper.*`) via `lib/harper_utils.lua`, so `lsp_servers.lua` reads the
+file at load time like `commands.lua`/`theme.lua` do. Harper's diagnostics are all Hint severity; the
+`harper/underline` diagnostic handler (registered in `plugins/lsp.lua`, enabled per-namespace on its
+`LspAttach`) replaces the flat, link-like default underline with a dark-red wavy one in the
+`HarperDiagnosticUnderline` group from `theme.yml` — scoped to Harper so other servers' hints are untouched.
 
 ## Install flow and the headless guard
 

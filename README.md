@@ -19,11 +19,12 @@ The script installs the latest [release](https://github.com/nikoheikkila/nvim/re
 
 - [Installation](docs/installation.md) — requirements, quick install, manual install, optional tools
 - [Plugins](docs/plugins.md) — the plugin set and how to update it safely
-- [Theming](docs/theming.md) — pick and configure the colorscheme via `theme.yml`
+- [Theming](docs/theming.md) — pick and configure the color scheme via `theme.yml`
 - [Editing](docs/editing.md) — general shortcuts, buffer tabs, multiple cursors
-- [Code Intelligence (LSP)](docs/lsp.md) — language servers, completion, diagnostics, refactoring
+- [Code Intelligence (LSP)](docs/lsp.md) — language servers, completion, diagnostics, refactoring, grammar
 - [Markdown Features](docs/markdown.md) — Markdown shortcuts, formatting, linting, rendering, daily notes
 - [File Explorer](docs/explorer.md) — the file-tree sidebar
+- [Terminal Setup](docs/terminal.md) — enabling wavy underline support in the terminal
 
 Want to contribute? See the [contributing guide](CONTRIBUTING.md) for the development environment, test
 suites, coding style, and pull-request workflow.

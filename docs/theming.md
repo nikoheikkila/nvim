@@ -70,9 +70,9 @@ afterwards to remove the previous theme from disk.
 - `options` and `groups` are passed as the same-named keys of the theme's `setup()` call, matching
   github-nvim-theme's configuration shape. Themes that take their configuration at the top level of
   `setup()` (catppuccin, for example) still load and apply their `variant`, but may ignore these tables.
-- Only a minimal YAML subset is supported: nested maps via space indentation, `key: value` scalars, quoted
-  keys, blank lines, and full-line `#` comments. Lists, anchors, multiline scalars, inline `{}`/`[]`, and
-  tabs are not.
+- Only a minimal YAML subset is supported: nested maps via space indentation, `key: value` scalars, block
+  sequences (`- item` lines, scalar items), quoted keys, blank lines, and full-line `#` comments. Anchors,
+  multiline scalars, inline `{}`/`[]`, trailing comments after a value, and tabs are not.
 - A missing, unreadable, or malformed `theme.yml` silently falls back to the defaults above — if your
   changes don't seem to apply, check the file against the supported subset.
 - Switching to an uninstalled theme requires network access on the first start (lazy.nvim clones it). If

@@ -49,20 +49,10 @@ vim.cmd([[
 local yaml_utils = require("lib.yaml_utils")
 local daily_utils = require("lib.daily_utils")
 
--- Mirrors plugins/theme.lua: a missing/unreadable config.yml yields nil, so
--- resolve_config falls back to defaults.
-local function read_config()
-  local file = io.open(vim.fn.stdpath("config") .. "/config.yml", "r")
-  if not file then
-    return nil
-  end
-  local text = file:read("*a")
-  file:close()
-  return yaml_utils.parse(text)
-end
-
 vim.api.nvim_create_user_command("Daily", function()
-  local cfg = daily_utils.resolve_config(read_config())
+  -- A missing/unreadable config.yml yields nil, so resolve_config falls back to
+  -- defaults. Read at command time, not load time.
+  local cfg = daily_utils.resolve_config(yaml_utils.read_file(vim.fn.stdpath("config") .. "/config.yml"))
   local dir = vim.fn.expand(daily_utils.effective_directory(cfg, vim.env.NVIM_NOTES_DIR))
   local ok, err = pcall(vim.fn.mkdir, dir, "p")
   if not ok then
