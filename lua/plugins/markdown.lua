@@ -103,7 +103,6 @@ local function open_link_at_cursor()
   end
 
   if kind == "ignored" then
-    vim.notify("Ignoring link: " .. target, vim.log.levels.INFO)
     return
   end
 
