@@ -91,6 +91,9 @@ tasks:
     desc: Run zizmor
     if: command -v zizmor
     cmd: zizmor --persona auditor .github/workflows
+    env:
+      GITHUB_TOKEN:
+        sh: gh auth token
 
   format:lua:
     desc: Format Lua sources and tests
