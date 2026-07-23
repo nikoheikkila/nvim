@@ -1,8 +1,11 @@
 -- Theme sourcing from theme.yml: the colorscheme applied at startup must match
 -- the configuration file (or the hardcoded defaults when the file is absent or
 -- malformed). Expectations are derived through the same lib parser theme.lua
--- uses, so editing theme.yml never breaks this spec.
+-- uses, and read from the SAME active path (config.paths — the fixture theme.yml
+-- the harness generates), so the spec depends on the injected fixture, never on
+-- the real, user-editable theme.yml.
 local yaml_utils = require("lib.yaml_utils")
+local paths = require("config.paths")
 
 -- Mirrors the defaults in lua/plugins/theme.lua.
 local defaults = {
@@ -11,7 +14,7 @@ local defaults = {
 }
 
 local function configured_theme()
-  local file = io.open(vim.fn.stdpath("config") .. "/theme.yml", "r")
+  local file = io.open(paths.config_file("theme.yml"), "r")
   if not file then
     return defaults
   end

@@ -7,10 +7,11 @@
 -- it on the first interactive launch, and auto-enables it.
 local yaml_utils = require("lib.yaml_utils")
 local harper_utils = require("lib.harper_utils")
+local paths = require("config.paths")
 
 -- A missing/unreadable config.yml yields nil, so resolve_config falls back to
 -- harper's defaults.
-local config = yaml_utils.read_file(vim.fn.stdpath("config") .. "/config.yml")
+local config = yaml_utils.read_file(paths.config_file("config.yml"))
 
 return {
   ts_ls = {}, -- JavaScript + TypeScript; exposes tsserver refactor.* code actions (extract/inline)

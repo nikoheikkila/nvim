@@ -48,11 +48,12 @@ vim.cmd([[
 -- work in either source. Filetype detection sets markdown from the `.md` name.
 local yaml_utils = require("lib.yaml_utils")
 local daily_utils = require("lib.daily_utils")
+local paths = require("config.paths")
 
 vim.api.nvim_create_user_command("Daily", function()
   -- A missing/unreadable config.yml yields nil, so resolve_config falls back to
   -- defaults. Read at command time, not load time.
-  local cfg = daily_utils.resolve_config(yaml_utils.read_file(vim.fn.stdpath("config") .. "/config.yml"))
+  local cfg = daily_utils.resolve_config(yaml_utils.read_file(paths.config_file("config.yml")))
   local dir = vim.fn.expand(daily_utils.effective_directory(cfg, vim.env.NVIM_NOTES_DIR))
   local ok, err = pcall(vim.fn.mkdir, dir, "p")
   if not ok then

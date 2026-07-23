@@ -1,4 +1,5 @@
 local yaml_utils = require("lib.yaml_utils")
+local paths = require("config.paths")
 
 -- Hardcoded fallbacks; theme.yml (optional, config root) deep-merges over
 -- these. Default styles.comments is 'NONE'; italic comments are wanted both in
@@ -13,7 +14,7 @@ local defaults = {
 
 -- A missing, unreadable, or malformed theme.yml silently yields the defaults.
 local function load_theme()
-  local parsed = yaml_utils.read_file(vim.fn.stdpath("config") .. "/theme.yml")
+  local parsed = yaml_utils.read_file(paths.config_file("theme.yml"))
   if type(parsed) ~= "table" or type(parsed.theme) ~= "table" then
     return defaults
   end

@@ -275,7 +275,8 @@ return {
       -- Base config aligning MD013 with textwidth=120; per-project
       -- .markdownlint* files still override it (cli2 --config is a base, not
       -- a replacement). "-" (the stdin glob) must stay last.
-      lint.linters["markdownlint-cli2"].args = { "--config", vim.fn.stdpath("config") .. "/.markdownlint.jsonc", "-" }
+      lint.linters["markdownlint-cli2"].args =
+        { "--config", require("config.paths").config_file(".markdownlint.jsonc"), "-" }
       -- cli2 >= 0.18 prefixes findings with a severity word
       -- ("stdin:3:121 error MD013/... message"); nvim-lint's bundled
       -- errorformat predates that and would leak "error " into every

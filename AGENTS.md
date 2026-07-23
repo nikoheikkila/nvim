@@ -22,11 +22,12 @@
 ├── config.yml                 # Editor configuration (:Daily note dir + filename format; Harper harper-ls options)
 ├── docs/                      # User documentation, linked from README.md's table of contents; ships in the release
 ├── scripts/
-│   ├── busted-nvim.sh         # Busted interpreter shim: runs integration specs inside a fully-loaded headless nvim
+│   ├── busted-nvim.sh         # Busted interpreter shim: integration specs in a headless nvim; fixtures via NVIM_CONFIG_ROOT
 │   ├── check.sh               # Everything CI runs, in order: lint, unit, integration, guard path
 │   ├── debug-keys.lua         # :luafile it to log which key/mouse events actually reach Neovim
 │   ├── headless-lua.sh        # Run a Lua script in a fully-loaded headless nvim (`nvim -l` skips user config)
-│   └── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
+│   ├── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
+│   └── verify-config-isolation.sh # Proves integration tests ignore the real config files (corrupt + byte-restore via trap)
 └── lua/
     ├── config/
     │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save; auto-save on InsertLeave)
@@ -35,7 +36,8 @@
     │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line, <leader>nd daily note)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
     │   ├── lsp_servers.lua    # Language-server table (single source; plugins/lsp.lua + lsp_spec; harper_ls ← config.yml)
-    │   └── options.lua        # Leader keys + core editor options (wrap, textwidth, mouse, mousemodel)
+    │   ├── options.lua        # Leader keys + core editor options (wrap, textwidth, mouse, mousemodel)
+    │   └── paths.lua          # Config-file path seam (config_root/config_file); NVIM_CONFIG_ROOT redirects to fixtures
     ├── lib/
     │   ├── daily_utils.lua    # Pure-Lua :Daily config resolver (config.yml over defaults, NVIM_NOTES_DIR override)
     │   ├── harper_utils.lua   # Pure-Lua harper-ls settings resolver (config.harper over harper's defaults)
@@ -98,6 +100,14 @@ before `options.lua`.
 
 Tests are run through the `Taskfile.yml` tasks (`task test`, `task test:unit`, `task test:integration`), not
 by invoking `busted` directly — see [`dev-workflow.md`](.claude/instructions/dev-workflow.md).
+
+**Never corrupt the real config files (`theme.yml`, `config.yml`, `.markdownlint.jsonc`) in place to test or
+prove anything.** Integration tests read only the throwaway fixtures the harness injects via `NVIM_CONFIG_ROOT`
+(`scripts/busted-nvim.sh`), so touching the real files is never required. To prove that isolation, run
+`scripts/verify-config-isolation.sh` — it corrupts and then byte-restores them under a `trap`, so an interrupted or
+failed run can't leave your config broken. Do **not** "restore" an overwritten real file with `git checkout` — it
+silently discards uncommitted edits and can't recover untracked content. When a verification genuinely must mutate
+tracked files, do it in an isolated `git worktree` or snapshot the exact bytes first and restore from that.
 
 ## Instructions
 

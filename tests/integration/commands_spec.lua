@@ -1,5 +1,9 @@
 -- Command-line overrides and :Daily (config/commands.lua), asserted against
 -- the real command registry of a fully-loaded config.
+local yaml_utils = require("lib.yaml_utils")
+local daily_utils = require("lib.daily_utils")
+local paths = require("config.paths")
+
 describe("config.commands", function()
   local cmds = vim.api.nvim_get_commands({})
 
@@ -56,12 +60,15 @@ describe("config.commands", function()
       assert.equal(expected, vim.fn.resolve(vim.api.nvim_buf_get_name(0)))
     end)
 
-    -- config.yml specifies its own directory ($HOME/Notes); NVIM_NOTES_DIR must
-    -- win over it. The note landing in the scratch dir above (not ~/Notes)
-    -- already proves the override, so assert the note is outside $HOME/Notes.
+    -- config.yml specifies its own daily directory; NVIM_NOTES_DIR must win over
+    -- it. Derive that configured dir from the SAME active config (config.paths —
+    -- the harness fixture during tests) instead of hardcoding it, so this never
+    -- depends on the real config.yml. The note landing in the scratch dir above
+    -- (not the configured dir) proves the override.
     it("lets NVIM_NOTES_DIR override the config.yml directory", function()
-      local home_notes = vim.fn.resolve(vim.fs.joinpath(vim.env.HOME, "Notes"))
-      assert.is_nil(vim.api.nvim_buf_get_name(0):find(home_notes, 1, true))
+      local cfg = daily_utils.resolve_config(yaml_utils.read_file(paths.config_file("config.yml")))
+      local configured = vim.fn.resolve(vim.fn.expand(cfg.directory))
+      assert.is_nil(vim.api.nvim_buf_get_name(0):find(configured, 1, true))
       assert.equal(expected, vim.fn.resolve(vim.api.nvim_buf_get_name(0)))
     end)
   end)

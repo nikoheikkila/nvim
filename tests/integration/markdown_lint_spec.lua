@@ -11,8 +11,10 @@
 -- Wiring checks run unconditionally; the end-to-end path needs the binary,
 -- the guard path is exercised via:
 --   scripts/test-without-binary.sh markdownlint-cli2 -- task test:integration
+local paths = require("config.paths")
+
 describe("live markdown linting", function()
-  local lint, lint_ns, md_buf
+  local lint, lint_ns, md_buf, orig_cwd
   local warn = vim.diagnostic.severity.WARN
 
   setup(function()
@@ -22,9 +24,18 @@ describe("live markdown linting", function()
     vim.bo.filetype = "markdown" -- ft-loads nvim-lint (if another spec hasn't already)
     lint = require("lint")
     lint_ns = lint.get_namespace("markdownlint-cli2")
+    -- cli2's --config is only a *base*: it still discovers a project
+    -- .markdownlint.jsonc from its working directory (the repo root during
+    -- tests) and overrides the base with it. Run cli2 from the fixture root
+    -- instead — it holds only the harness-injected fixture — so this spec never
+    -- depends on the real, editable .markdownlint.jsonc. Both the explicit
+    -- vim.system run and the debounced try_lint inherit this cwd.
+    orig_cwd = vim.fn.getcwd()
+    vim.cmd.cd(paths.config_root())
   end)
 
   teardown(function()
+    vim.cmd.cd(orig_cwd)
     vim.cmd("bwipeout! " .. md_buf)
   end)
 
@@ -39,7 +50,9 @@ describe("live markdown linting", function()
   end)
 
   it("ships the .markdownlint.jsonc base config", function()
-    assert.equal(1, vim.fn.filereadable(vim.fn.stdpath("config") .. "/.markdownlint.jsonc"))
+    -- The active config path (config.paths) — the harness-injected fixture
+    -- during tests — so this never depends on the real, editable file.
+    assert.equal(1, vim.fn.filereadable(paths.config_file(".markdownlint.jsonc")))
   end)
 
   it("configures the diagnostic namespace: line highlight, no underline/signs", function()
