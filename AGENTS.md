@@ -81,7 +81,7 @@
         └── yaml_utils_spec.lua
 ```
 
-`init.lua` calls s the entrypoint that calls the following files:
+`init.lua` calls the entry point that calls the following files:
 
 - `config.options`
 - `config.autocmd`
@@ -93,9 +93,9 @@ All plugin specs live under `lua/plugins/` and
 are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new
 file to `lua/plugins/` is enough to activate new plugins.
 
-eader keys are set in `options.lua` because it loads first — a
+Leader keys are set in `options.lua` because it loads first — a
 `<leader>` mapping created before `vim.g.mapleader` is set silently and binds under the default.
-Don't reorder the `require`s, and don't set `<leader>` maps anywhere that loads
+Don't reorder the `require` lines, and don't set `<leader>` maps anywhere that loads
 before `options.lua`.
 
 Tests are run through the `Taskfile.yml` tasks (`task test`, `task test:unit`, `task test:integration`), not
@@ -108,6 +108,17 @@ prove anything.** Integration tests read only the throwaway fixtures the harness
 failed run can't leave your config broken. Do **not** "restore" an overwritten real file with `git checkout` — it
 silently discards uncommitted edits and can't recover untracked content. When a verification genuinely must mutate
 tracked files, do it in an isolated `git worktree` or snapshot the exact bytes first and restore from that.
+
+## Agentic Process
+
+Always delegate the tasks to following subagents:
+
+- `Plan` agent whenever the user asks to plan, design, architect, or research a task
+- `Explore` agent when you need to perform rapid local codebase explorations
+- `lua-docs-explorer` agent when you need to ground answers to Lua language documentation
+- `nvim-docs-explorer` agent when you need to ground answers to Neovim documentation
+
+General-purpose agent is suitable for all other tasks.
 
 ## Instructions
 
@@ -122,11 +133,13 @@ Detailed guidance lives under `.claude/instructions/` — read the relevant file
 | [`lsp.md`](.claude/instructions/lsp.md)                   | language servers (`plugins/lsp.lua`): servers table, mason install flow, blink.cmp, LspAttach keymaps, refactor menu, diagnostics coexistence                                                            |
 | [`dev-workflow.md`](.claude/instructions/dev-workflow.md) | Adding/fetching plugins, running tests, headless Lua verification                                                                                                                                        |
 
-Check `config.md`'s Global Keymap Registry before adding any new global keymap — eight files declare keys and
+Check `config.md` file Global Keymap Registry before adding any new global keymap — eight files declare keys and
 there's no other index.
 
 **Bindings must survive the terminal.** This config runs in Warp on macOS with a trackpad: the OS and terminal
-rewrite or swallow events before Neovim sees them (Ctrl+arrows go to Mission Control; Ctrl+click becomes a
-right-click and Warp strips the Ctrl modifier from mouse reports). Read `config.md`'s "Mouse/terminal caveat"
+rewrite or swallow events before Neovim sees them. Ctrl+arrows go to Mission Control. Ctrl+click becomes a
+right-click and Warp strips the Ctrl modifier from mouse reports.
+
+Read `config.md` file "Mouse/terminal caveat"
 before choosing any Ctrl-chord or mouse binding, and diagnose "dead" bindings with
 `:luafile scripts/debug-keys.lua` — `:map` only proves registration, not delivery.
