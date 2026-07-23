@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Task
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@v2
 
       - name: Install selene
         env:
@@ -53,20 +53,28 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+    env:
+      # gh-actions-lua builds Lua from source on macOS via `brew install`,
+      # and the runner image's pre-tapped aws/tap trips a tap-trust warning.
+      # No-op on Linux; silences the warning without adding Homebrew of our own.
+      HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Task
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@v2
 
       - name: Set up Lua
-        uses: leafo/gh-actions-lua@v10
+        uses: leafo/gh-actions-lua@v13
         with:
           luaVersion: "5.4"
+          # Skip the action's Lua-build cache: it warns on the GitHub cache
+          # service's transient 400s, and this repo builds uncached elsewhere.
+          buildCache: "false"
 
       - name: Set up LuaRocks
-        uses: leafo/gh-actions-luarocks@v4
+        uses: leafo/gh-actions-luarocks@v6
 
       - name: Install busted
         run: luarocks install busted
@@ -89,12 +97,16 @@ jobs:
     env:
       NVIM_VERSION: "v0.12.4"
       BUSTED_ROCKS_TREE: ${{ github.workspace }}/.luarocks
+      # gh-actions-lua builds Lua from source on macOS via `brew install`,
+      # and the runner image's pre-tapped aws/tap trips a tap-trust warning.
+      # No-op on Linux; silences the warning without adding Homebrew of our own.
+      HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Task
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@v2
 
       - name: Install Neovim
         run: |
@@ -105,12 +117,15 @@ jobs:
           echo "$RUNNER_TEMP/nvim-${os}-${arch}/bin" >> "$GITHUB_PATH"
 
       - name: Set up Lua 5.1
-        uses: leafo/gh-actions-lua@v10
+        uses: leafo/gh-actions-lua@v13
         with:
           luaVersion: "5.1"
+          # Skip the action's Lua-build cache: it warns on the GitHub cache
+          # service's transient 400s, and this repo builds uncached elsewhere.
+          buildCache: "false"
 
       - name: Set up LuaRocks
-        uses: leafo/gh-actions-luarocks@v4
+        uses: leafo/gh-actions-luarocks@v6
 
       - name: Install busted
         run: luarocks install busted
