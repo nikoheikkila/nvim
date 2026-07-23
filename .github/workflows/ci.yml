@@ -176,6 +176,40 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Next version: $version"
 
+      - name: Generate release notes
+        id: notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # The new tag isn't created yet, so the most recent existing tag is
+          # the previous release. GitHub's --generate-notes only lists merged
+          # PRs, so it comes up empty for commits pushed straight to main;
+          # build notes from the commit log instead.
+          prev="$(git tag --list --sort=-version:refname | head -n 1)"
+
+          if [[ -n "$prev" ]]; then
+            range="${prev}..${GITHUB_SHA}"
+            compare_base="$prev"
+          else
+            range="$GITHUB_SHA"
+            compare_base=""
+          fi
+
+          notes="$RUNNER_TEMP/release-notes.md"
+          {
+            echo "## Changes"
+            echo
+            git log --no-merges --reverse --pretty=format:'- %s (%h)' "$range"
+            echo
+            echo
+            if [[ -n "$compare_base" ]]; then
+              echo "**Full changelog:** ${{ github.server_url }}/${{ github.repository }}/compare/${compare_base}...${VERSION}"
+            fi
+          } > "$notes"
+
+          echo "notes=$notes" >> "$GITHUB_OUTPUT"
+          cat "$notes"
+
       - name: Package artifact
         id: package
         env:
@@ -194,11 +228,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
           ARTIFACT: ${{ steps.package.outputs.artifact }}
+          NOTES: ${{ steps.notes.outputs.notes }}
         run: |
           gh release create "$VERSION" "$ARTIFACT" \
             --title "$VERSION" \
             --target "$GITHUB_SHA" \
-            --generate-notes
+            --notes-file "$NOTES"
 
       - name: Write release summary
         env:
