@@ -6,16 +6,26 @@ on:
   pull_request:
     branches: [main]
 
+# Least-privilege default; the release job below overrides with contents: write.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set up Task
-        uses: go-task/setup-task@v2
+        uses: go-task/setup-task@01a4adf9db2d14c1de7a560f09170b6e0df736aa # v2
 
       - name: Install selene
         env:
@@ -36,7 +46,7 @@ jobs:
           echo "$RUNNER_TEMP/stylua" >> "$GITHUB_PATH"
 
       - name: Install markdownlint-cli2
-        run: npm install -g markdownlint-cli2
+        run: npm install -g markdownlint-cli2 # zizmor: ignore[adhoc-packages] no lockfile for a global CLI tool
 
       - name: Install shellcheck
         run: |
@@ -60,13 +70,15 @@ jobs:
       HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set up Task
-        uses: go-task/setup-task@v2
+        uses: go-task/setup-task@01a4adf9db2d14c1de7a560f09170b6e0df736aa # v2
 
       - name: Set up Lua
-        uses: leafo/gh-actions-lua@v13
+        uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
         with:
           luaVersion: "5.4"
           # Skip the action's Lua-build cache: it warns on the GitHub cache
@@ -74,7 +86,7 @@ jobs:
           buildCache: "false"
 
       - name: Set up LuaRocks
-        uses: leafo/gh-actions-luarocks@v6
+        uses: leafo/gh-actions-luarocks@35d062def313a7699a0d513e996bcf4352f05389 # v6
 
       - name: Install busted
         run: luarocks install busted
@@ -103,10 +115,12 @@ jobs:
       HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set up Task
-        uses: go-task/setup-task@v2
+        uses: go-task/setup-task@01a4adf9db2d14c1de7a560f09170b6e0df736aa # v2
 
       - name: Install Neovim
         run: |
@@ -117,7 +131,7 @@ jobs:
           echo "$RUNNER_TEMP/nvim-${os}-${arch}/bin" >> "$GITHUB_PATH"
 
       - name: Set up Lua 5.1
-        uses: leafo/gh-actions-lua@v13
+        uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
         with:
           luaVersion: "5.1"
           # Skip the action's Lua-build cache: it warns on the GitHub cache
@@ -125,7 +139,7 @@ jobs:
           buildCache: "false"
 
       - name: Set up LuaRocks
-        uses: leafo/gh-actions-luarocks@v6
+        uses: leafo/gh-actions-luarocks@35d062def313a7699a0d513e996bcf4352f05389 # v6
 
       - name: Install busted
         run: luarocks install busted
@@ -133,7 +147,7 @@ jobs:
       # Exercises the functional lint path; without it the suite would fall
       # back to the missing-binary guard path.
       - name: Install markdownlint-cli2
-        run: npm install -g markdownlint-cli2
+        run: npm install -g markdownlint-cli2 # zizmor: ignore[adhoc-packages] no lockfile for a global CLI tool
 
       # The suite loads the real config: stdpath("config") must resolve to
       # this checkout, and the lazy-lock.json plugins must exist on disk.
@@ -161,7 +175,7 @@ jobs:
     needs: [lint, unit-test, integration-test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
-      contents: write
+      contents: write # Needed to create the GitHub release and push its tag
     concurrency:
       group: release
       cancel-in-progress: false
@@ -170,9 +184,10 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Determine CalVer version
         id: version
@@ -195,6 +210,8 @@ jobs:
         id: notes
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           # The new tag isn't created yet, so the most recent existing tag is
           # the previous release. GitHub's --generate-notes only lists merged
@@ -218,7 +235,7 @@ jobs:
             echo
             echo
             if [[ -n "$compare_base" ]]; then
-              echo "**Full changelog:** ${{ github.server_url }}/${{ github.repository }}/compare/${compare_base}...${VERSION}"
+              echo "**Full changelog:** ${SERVER_URL}/${REPOSITORY}/compare/${compare_base}...${VERSION}"
             fi
           } > "$notes"
 
@@ -254,13 +271,15 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
           ARTIFACT: ${{ steps.package.outputs.artifact }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           {
             echo "## Release $VERSION"
             echo
             echo "- **Tag:** \`$VERSION\`"
             echo "- **Artifact:** \`$ARTIFACT\` ($(du -h "$ARTIFACT" | cut -f1))"
-            echo "- **Release:** ${{ github.server_url }}/${{ github.repository }}/releases/tag/$VERSION"
+            echo "- **Release:** ${SERVER_URL}/${REPOSITORY}/releases/tag/$VERSION"
             echo
             echo "<details><summary>Artifact contents</summary>"
             echo

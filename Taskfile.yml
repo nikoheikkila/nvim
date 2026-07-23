@@ -33,14 +33,15 @@ tasks:
 
   lint:
     desc: Lint codebase
-    cmds:
+    deps:
       - task: lint:lua
       - task: lint:md
       - task: lint:shell
+      - task: lint:ci
 
   format:
     desc: Format codebase
-    cmds:
+    deps:
       - task: format:lua
       - task: format:md
 
@@ -52,40 +53,65 @@ tasks:
 
   lint:lua:
     desc: Lint Lua sources and tests
+    if: command -v stylua && command -v selene
     sources:
       - ./**/*.lua
     cmds:
-      - selene {{ .CLI_ARGS | default "." }}
       - stylua --check {{ .CLI_ARGS | default "." }}
+      - selene {{ .CLI_ARGS | default "." }}
 
   lint:md:
     desc: Lint Markdown files
+    if: command -v markdownlint-cli2
     sources:
       - ./**/*.md
     cmd: markdownlint-cli2 {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}"**/*.md"{{end}}
 
   lint:shell:
     desc: Lint Shell scripts
+    if: command -v shellcheck
     sources:
       - ./**/*.sh
     cmd: '{{if .CLI_ARGS}}shellcheck {{ .CLI_ARGS }}{{else}}find . -type f -name "*.sh" -exec shellcheck {} \;{{end}}'
 
+  lint:ci:
+    desc: Lint GitHub Actions workflows
+    sources:
+      - .github/workflows/*.yml
+    cmds:
+      - task: actionlint
+      - task: zizmor
+
+  actionlint:
+    desc: Run actionlint
+    if: command -v actionlint
+    cmd: actionlint
+
+  zizmor:
+    desc: Run zizmor
+    if: command -v zizmor
+    cmd: zizmor --persona auditor .github/workflows
+
   format:lua:
     desc: Format Lua sources and tests
+    if: command -v stylua
     sources:
       - ./**/*.lua
     cmd: stylua {{ .CLI_ARGS | default "." }}
 
   format:md:
     desc: Fix auto-fixable Markdown lint issues
+    if: command -v markdownlint-cli2
     sources:
       - ./**/*.md
     cmd: markdownlint-cli2 --fix {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}"**/*.md"{{end}}
 
   test:unit:
     desc: Run unit tests
+    if: command -v busted
     cmd: busted --run=unit {{ .CLI_ARGS | default "" }}
 
   test:integration:
     desc: Run integration tests
+    if: command -v busted
     cmd: busted --run=integration {{ .CLI_ARGS | default "" }}
