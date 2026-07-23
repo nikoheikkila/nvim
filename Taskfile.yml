@@ -93,7 +93,7 @@ tasks:
     cmd: zizmor --persona auditor .github/workflows
     env:
       GITHUB_TOKEN:
-        sh: gh auth token
+        sh: '[[ -n "$GITHUB_TOKEN" ]] && echo "$GITHUB_TOKEN" || gh auth token'
 
   format:lua:
     desc: Format Lua sources and tests
