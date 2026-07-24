@@ -115,6 +115,12 @@ end)
 - **A modified scratch buffer hangs a headless `-c qa` forever** — there's no UI to answer the save prompt, and
   the process just wedges (times out in CI with no output). Quit test runners with `qa!`, and/or end scripts
   with `vim.bo.modified = false` / `:bwipeout!`.
+- **Testing `statuscolumn`/`foldexpr`/`foldtext` functions means faking Vim's evaluation context, and not every
+  `v:` variable is fakeable.** `v:lnum` is writable from Lua (`vim.api.nvim_set_vvar("lnum", n)`), but `v:virtnum`
+  is read-only and raises `Key is read-only` if you try — leave it unset and rely on its default (`0`) rather than
+  attempting to set it. When such a test flips a window-local option (e.g. `vim.wo.number`) to exercise a branch,
+  restore it in `after_each`, not as the last line of the `it` block — an assertion failure earlier in the block
+  skips an inline restore and leaks the changed value into every later spec sharing that window.
 - **A registered mapping is not a delivered keypress.** The OS and terminal rewrite or swallow events before
   Neovim sees them (macOS: Ctrl+arrows → Mission Control, Ctrl+click → right-click synthesis; Warp: strips Ctrl
   from mouse reports). `:map <key>` proves registration only — diagnose delivery with a `vim.on_key` logger

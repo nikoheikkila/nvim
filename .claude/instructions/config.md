@@ -36,6 +36,27 @@ and `options.lua` is loaded first — plus core editor options applied before la
 
 <!-- markdownlint-enable MD013 -->
 
+### Statuscolumn Ownership
+
+`vim.opt.number` is set here, but **the number column does not render on its own in most buffers** — it's
+overridden by `config/folding.lua`'s custom `statuscolumn`, installed via `M.enable()` on every markdown buffer and
+every LSP buffer whose server advertises `foldingRangeProvider`. That statuscolumn is a full replacement, not an
+addition: Neovim never composes its own gutter with a custom one, so anything the built-in gutter would normally
+draw (line numbers, relative numbers, sign column, `foldcolumn`) has to be hand-built inside
+`M.statuscolumn()`/`number_column()` or it silently disappears — this is exactly what shipped once (`number` was
+turned on but only the fold ▼/▶ glyphs showed).
+
+`number_column()` reproduces the built-in number column by composing `"%l"` (or `"%r"` for relative numbers) padded
+to `vim.wo.numberwidth - 1` so it right-aligns the way Neovim's own does — a bare `"%l "` with no width reservation
+drifts out of alignment once line counts pass a digit boundary (`9` → `10`). If you add another gutter concern
+(sign column, diagnostics), extend this same function rather than composing a second parallel one.
+
+**Testing it:** `v:lnum` can be set directly with `vim.api.nvim_set_vvar("lnum", n)` from a spec, but `v:virtnum`
+is read-only and cannot — leave it unset (defaults to `0`, i.e. "not a wrapped screen row") rather than trying to
+set it. `vim.wo.number` is a window-local option a test can flip, but the window is shared across specs in the same
+file, so an `after_each` must restore it (`vim.wo.number = true`, matching this file's default) — a test that
+throws before an inline restore line runs will otherwise leak `false` into every later spec in the process.
+
 ## Autocommands (`lua/config/autocmds.lua`)
 
 Two augroups, both created with `{ clear = true }` so reloads stay idempotent:

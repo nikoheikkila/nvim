@@ -67,13 +67,26 @@ local function labeled(icon)
   return "%@v:lua.require'config.folding'.on_click@%#FoldColumn#" .. icon .. "%*%X "
 end
 
+-- Custom statuscolumn replaces Neovim's built-in one entirely, so the number
+-- column has to be rebuilt here too — "%l" is the standard number-column item,
+-- padded to 'numberwidth' so it right-aligns the way Neovim's own does.
+local function number_column()
+  if not vim.wo.number then
+    return ""
+  end
+  return "%" .. (vim.wo.numberwidth - 1) .. "l "
+end
+
 function M.statuscolumn()
+  local suffix
   -- Wrapped/virtual screen rows repeat the same v:lnum; only label the first.
   if vim.v.virtnum and vim.v.virtnum ~= 0 then
-    return "  "
+    suffix = "  "
+  else
+    local icon = M.indicator(vim.api.nvim_get_current_buf(), vim.v.lnum)
+    suffix = icon and labeled(icon) or "  "
   end
-  local icon = M.indicator(vim.api.nvim_get_current_buf(), vim.v.lnum)
-  return icon and labeled(icon) or "  "
+  return number_column() .. suffix
 end
 
 -- Toggle the fold at `lnum` (open↔closed). Used by both the click handler and

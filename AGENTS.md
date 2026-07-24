@@ -136,6 +136,13 @@ Detailed guidance lives under `.claude/instructions/` — read the relevant file
 Check `config.md` file Global Keymap Registry before adding any new global keymap — eight files declare keys and
 there's no other index.
 
+**Before setting any editor option that affects the left gutter** (`number`, `relativenumber`, `signcolumn`,
+`foldcolumn`), read `config/folding.lua` first. Its custom `statuscolumn` fully replaces Neovim's built-in gutter
+rendering for every buffer where folding is enabled (markdown buffers, and any LSP buffer whose server advertises
+`foldingRangeProvider` — i.e. most buffers in practice), so a built-in option's default rendering does **not**
+apply automatically there. See `config.md`'s "Statuscolumn Ownership" section for what re-implementing it
+involves (e.g. `number` needed a manually-composed, `numberwidth`-padded `%l` item).
+
 **Bindings must survive the terminal.** This config runs in Warp on macOS with a trackpad: the OS and terminal
 rewrite or swallow events before Neovim sees them. Ctrl+arrows go to Mission Control. Ctrl+click becomes a
 right-click and Warp strips the Ctrl modifier from mouse reports.

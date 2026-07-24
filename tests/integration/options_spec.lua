@@ -10,4 +10,12 @@ describe("config.options", function()
   it("sets maplocalleader to backslash", function()
     assert.equal("\\", vim.g.maplocalleader)
   end)
+
+  it("enables absolute line numbers", function()
+    assert.is_true(vim.opt.number:get())
+  end)
+
+  it("does not enable relative line numbers", function()
+    assert.is_false(vim.opt.relativenumber:get())
+  end)
 end)

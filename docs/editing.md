@@ -1,5 +1,11 @@
 # Editing
 
+## Line Numbers
+
+Absolute line numbers show in the left column of every buffer. In folding-enabled buffers (Markdown, and any
+file whose language server supports folding) the number sits alongside the ▼/▶ fold indicator rather than
+replacing it.
+
 ## General Shortcuts
 
 The leader key is `Space`.

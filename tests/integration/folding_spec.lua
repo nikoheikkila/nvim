@@ -119,6 +119,27 @@ describe("folding", function()
       folding.toggle_at(1)
       assert.equal("▶", folding.indicator(buf, 1)) -- heading, closed
     end)
+
+    describe("number column", function()
+      -- 'number' is a window-local option, so restore it unconditionally —
+      -- config/options.lua turns it on globally and other specs assume that.
+      after_each(function()
+        vim.wo.number = true
+      end)
+
+      it("prepends a numberwidth-padded %l item to the statuscolumn when 'number' is set", function()
+        vim.wo.number = true
+        vim.wo.numberwidth = 4
+        vim.api.nvim_set_vvar("lnum", 1)
+        assert.truthy(folding.statuscolumn():find("^%%3l ", 1))
+      end)
+
+      it("omits the number item entirely when 'number' is off", function()
+        vim.wo.number = false
+        vim.api.nvim_set_vvar("lnum", 1)
+        assert.falsy(folding.statuscolumn():find("%%l"))
+      end)
+    end)
   end)
 
   -- The shared mechanism the LSP path reuses (plugins/lsp.lua calls this with
