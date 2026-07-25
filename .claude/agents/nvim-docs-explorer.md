@@ -1,6 +1,6 @@
 ---
 name: nvim-docs-explorer
-description: Fetches and explores the official Neovim user documentation to answer questions about Neovim internals, editor behaviour, Vimscript/Lua API, options, autocommands, and built-in features. Use when a task needs an authoritative answer grounded in Neovim's docs rather than a guess.
+description: Fetches and explores the official Neovim user documentation to answer questions about Neovim internals, editor behaviour, Vimscript/Lua API, options, autocommands, and built-in features. Use proactively when a task needs an authoritative answer grounded in Neovim's docs rather than a guess.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash
 model: haiku
 ---

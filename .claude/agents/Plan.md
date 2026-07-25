@@ -1,6 +1,6 @@
 ---
 name: Plan
-description: Software architect agent for designing implementation plans. Use this when you need to plan the implementation strategy for a task. Returns step-by-step plans, identifies critical files, and considers architectural trade-offs.
+description: Software architect agent for designing implementation plans. Use proactively when you need to plan the implementation strategy for a task, or when the users asks you to design, plan, or architect a new feature or a bug fix. Return step-by-step plans, identify critical files, and consider architectural trade-offs.
 tools: Bash, Read, Glob, Grep, WebFetch, WebSearch, Skill, TodoWrite
 model: sonnet
 ---

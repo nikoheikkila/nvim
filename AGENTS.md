@@ -111,14 +111,14 @@ tracked files, do it in an isolated `git worktree` or snapshot the exact bytes f
 
 ## Agentic Process
 
-Always delegate the tasks to following subagents:
+Proactively delegate the tasks to following subagents:
 
 - `Plan` agent whenever the user asks to plan, design, architect, or research a task
 - `Explore` agent when you need to perform rapid local codebase explorations
 - `lua-docs-explorer` agent when you need to ground answers to Lua language documentation
 - `nvim-docs-explorer` agent when you need to ground answers to Neovim documentation
 
-General-purpose agent is suitable for all other tasks.
+The `general-purpose` agent is suitable for all other tasks.
 
 ## Instructions
 
