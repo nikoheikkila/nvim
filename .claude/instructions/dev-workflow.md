@@ -68,6 +68,12 @@ Integration-suite mechanics worth knowing before writing specs:
   autocmds that captured them. Clean up buffers in `teardown` instead.
 - Files run sorted; tests within a file run in declaration order — some specs assert state their
   file's `setup()` created, so never run this suite with `--shuffle`.
+- A spec that manipulates windows must enumerate them with `nvim_tabpage_list_wins(0)`, not
+  `nvim_list_wins()` — the latter spans **all** tabpages, so a "close every other window" loop
+  silently closes the suite's original tab. Hand the session back as a single ordinary window on a
+  modifiable buffer, and assert that in `teardown`: a leaked plugin buffer (neo-tree, a picker)
+  surfaces as "Buffer is not 'modifiable'" in an unrelated spec file several files later, which is
+  painful to trace back. `tests/integration/explorer_spec.lua` does both.
 - Never verify async behavior with a blind `vim.wait(ms)` sleep. Latch on a completion signal
   (`DiagnosticChanged`, the `User MarkdownLintRun` sync point from `lint_buf()`,
   `#lint.get_running() == 0`) so the wait returns the moment the work finishes and the timeout is

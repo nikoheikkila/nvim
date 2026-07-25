@@ -12,8 +12,39 @@ Adds one new dependency, `MunifTanjim/nui.nvim`
 Netrw hijacking is explicitly disabled (`hijack_netrw_behavior = "disabled"`): lazy-loading means
 neo-tree could never hijack `nvim <dir>` at startup anyway, and disabling it keeps `:e <dir>`
 consistent after the plugin loads. `follow_current_file` keeps the tree cursor on the buffer being
-edited. `close_if_last_window = true` exits Neovim cleanly instead of leaving the sidebar as the last
-window.
+edited.
+
+## `close_if_last_window` must stay `false`
+
+It is not a cosmetic setting: neo-tree implements it as a `WinClosed` autocmd in
+`plugin/neo-tree.lua` (always loaded, even before the plugin itself) that ends in `vim.cmd("q!")`
+whenever the tree is the last non-floating window in the tab. The handler filters floats out of the
+pane _count_ but never bails when the window being closed **is itself a float** — so dismissing any
+float over a lone sidebar quits Neovim outright: the nui rename/add prompt, a snacks picker, lazygit,
+zen-mode. `vim.cmd` does not expand command-line abbreviations, so `commands.lua`'s `:q` →
+`:BufClose` override cannot intercept it; this is the one code path in the config that can still quit
+Neovim behind that override.
+
+That is upstream [#1818](https://github.com/nvim-neo-tree/neo-tree.nvim/issues/1818), fixed by
+[#1819](https://github.com/nvim-neo-tree/neo-tree.nvim/pull/1819) (`84c3df0`) with a
+`previous_window_floating` guard, which the [#1830](https://github.com/nvim-neo-tree/neo-tree.nvim/pull/1830)
+(`7eadf08`) rewrite then deleted — so the regression is live at the pinned commit and updating does
+not help. The originally reported symptom here was "rename a file from the sidebar, Neovim quits";
+it presents as a crash but is a plain `:q!`, so no crash report is ever written.
+
+Little is lost by disabling it, but not nothing. Bare `:q` was never affected — `commands.lua`
+rewrites it to `:BufClose`, which deletes the buffer and keeps the layout — so the option only ever
+fired for `:close`, `<C-w>c`/`<C-w>q` and `nvim_win_close`. Those now leave the sidebar as the only
+window instead of quitting; press `<leader>e` to close it, or `:qa` to quit. That is the intended
+trade: restoring the behaviour means owning a re-implementation of the handler (an own `WinClosed`
+autocmd returning early when `require("neo-tree.utils").is_floating(closing_win)`, closing the window
+rather than issuing `q!`) against upstream code that was rewritten twice in two PRs.
+
+`tests/integration/explorer_spec.lua` pins both the setting and the behaviour, and a regression there
+exits the editor rather than failing a test — so its `setup` re-asserts the option (via
+`ensure_config()`, the merged table the handler reads) before any window surgery. Two of its three
+specs are behavioural: the float-close spec is the class invariant, the rename spec the originally
+reported symptom.
 
 ## Global keymap
 
@@ -101,3 +132,19 @@ local fs = require("neo-tree.sources.filesystem.lib.fs_actions")
 
 The operations complete via async libuv callbacks — `vim.wait()` for the expected filesystem state
 instead of asserting immediately.
+
+Two neo-tree-specific hazards when a spec opens a real tree (see `explorer_spec.lua`):
+
+- **Close the tree with `:Neotree close`, never `nvim_win_close`.** Closing it behind the plugin's
+  back leaves a stale winid in its source state; once a later spec creates a window that reuses that
+  id, neo-tree renders the tree buffer into it. Source state is keyed by tabid, so doing the whole
+  thing in a throwaway `tabnew` keeps it out of the shared session too.
+- **File operations echo their own INFO messages** ("Renamed x successfully"), which pollute test
+  output. Silence them with `require("neo-tree.log").set_level({ file = <old>, console = "warn" })`
+  and restore in `teardown`. The **table** form is required: the scalar form clamps console to
+  `math.max(level, INFO)`, so it can never suppress INFO.
+- **Waiting for the filesystem is not enough for rename.** The buffer churn
+  (`bufadd`/`replace_buffer_in_windows`/`nvim_buf_delete`) starts an async `fs_scan`; one still in
+  flight at teardown lands in whatever window is current by then and has `renderer.acquire_window`
+  build a fresh tree window there. Wait for the new name to appear **in the tree buffer**. Skipping
+  this broke `markdown_keymaps_spec` with "Buffer is not 'modifiable'" three spec files later.

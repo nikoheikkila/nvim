@@ -63,6 +63,7 @@
     │   ├── helper.lua             # Busted helper: records vim.notify from session start (require("notify_log"))
     │   ├── autosave_spec.lua      # auto_save contract (InsertLeave-only trigger, nested write autocmds)
     │   ├── commands_spec.lua      # :BufClose/:BufWriteClose + :q/:x/:wq abbreviations, :Daily end-to-end
+    │   ├── explorer_spec.lua      # neo-tree: close_if_last_window off, survives float close + rename
     │   ├── folding_spec.lua       # Fold wiring (foldexpr/statuscolumn/<Tab>), toggling, ▼/▶ indicators
     │   ├── keymaps_spec.lua       # Global keymaps (<leader>nd, <leader>bn/bp, <leader>gg)
     │   ├── lsp_spec.lua           # LSP wiring (LspAttach keymaps, server configs) + guarded attach path

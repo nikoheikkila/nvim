@@ -15,9 +15,14 @@ return {
       { "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Toggle file tree" },
     },
     opts = {
-      -- Quitting the last real window exits Neovim instead of leaving the
-      -- sidebar stranded as the only remaining window.
-      close_if_last_window = true,
+      -- Pinned, not changed — false is also upstream's default, and it MUST stay
+      -- false: neo-tree implements this as a WinClosed autocmd that runs
+      -- `vim.cmd("q!")` when the tree is the last non-floating window, without
+      -- bailing when the *closing* window is a float. So dismissing any float
+      -- over a lone sidebar quits Neovim, and `vim.cmd` skips abbreviations, so
+      -- commands.lua's `:q` -> :BufClose override cannot intercept it. The
+      -- upstream fix was reverted, so updating does not help — see explorer.md.
+      close_if_last_window = false,
       window = {
         position = "right", -- neo-tree's default is left
         mappings = {
