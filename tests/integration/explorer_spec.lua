@@ -25,6 +25,11 @@ describe("neo-tree explorer", function()
       end
     end
 
+    local function tree_text()
+      local buf = vim.api.nvim_win_get_buf(tree_win)
+      return table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), "\n")
+    end
+
     setup(function()
       -- Must be the FIRST statement, and is deliberately a duplicate of the
       -- `it` above: it fires before any tab, window or tree exists, so a
@@ -61,7 +66,19 @@ describe("neo-tree explorer", function()
       vim.cmd("Neotree show dir=" .. dir)
       assert.is_true(vim.wait(5000, function()
         return tree_window() ~= nil
-      end, 50))
+      end, 25))
+      tree_win = tree_window()
+
+      -- Wait for the tree's FIRST render, not just for its window: `Neotree
+      -- show` creates the window synchronously but fills it from an async
+      -- fs_scan. Renaming before that scan renders lets its pre-rename result
+      -- land *after* the refresh in the rename spec, so the tree keeps showing
+      -- the old name and never redraws again. That is what made this file pass
+      -- on macOS (an incidental later refresh corrected it) and time out on
+      -- Linux.
+      assert.is_true(vim.wait(5000, function()
+        return tree_text():find("old.md", 1, true) ~= nil
+      end, 25))
 
       -- Guards the suite, at the only altitude that counts: ensure_config() is
       -- the merged table neo-tree's WinClosed handler actually reads, so this
@@ -70,7 +87,6 @@ describe("neo-tree explorer", function()
       -- as the last pane, which is the state the handler quits on.
       assert.equal(false, require("neo-tree").ensure_config().close_if_last_window)
 
-      tree_win = tree_window()
       for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
         if win ~= tree_win then
           vim.api.nvim_win_close(win, true)
@@ -148,24 +164,33 @@ describe("neo-tree explorer", function()
         inputs.input = real_input
       end)
 
-      require("neo-tree.sources.filesystem.lib.fs_actions").rename_node(file)
+      -- Pass the refresh callback, exactly as neo-tree's own `r` mapping does
+      -- (filesystem/commands.lua's `rename` wraps `fs._navigate_internal`).
+      -- Without it the tree redraws only incidentally, via the
+      -- buffer-add/delete subscription, at an ordering the spec cannot depend on
+      -- — that is what timed out on Ubuntu while passing on macOS. The callback
+      -- is a real completion signal, and driving the refresh explicitly also
+      -- leaves no fs_scan in flight at teardown: one that lands later has
+      -- renderer.acquire_window build a fresh tree window in whatever window is
+      -- current by then, wrecking a later spec file.
+      local fs = require("neo-tree.sources.filesystem")
+      local state = require("neo-tree.sources.manager").get_state("filesystem")
+      local refreshed = false
 
-      local renamed = vim.fs.joinpath(dir, "new.md")
+      require("neo-tree.sources.filesystem.lib.fs_actions").rename_node(file, function()
+        fs._navigate_internal(state, nil, nil, function()
+          refreshed = true
+        end, false)
+      end)
+
+      -- on_rename runs after uv.fs_rename completed, and the navigate callback
+      -- after the tree was redrawn, so both the disk and the tree are settled.
       assert.is_true(vim.wait(5000, function()
-        return vim.fn.filereadable(renamed) == 1
-      end, 50))
+        return refreshed
+      end, 10))
 
-      -- Wait for the new name in the tree buffer, not just on disk. The rename's
-      -- buffer churn starts an async fs_scan; one still in flight at teardown
-      -- lands in whatever window is current by then and has
-      -- renderer.acquire_window build a fresh tree window there, wrecking a
-      -- later spec file. These two waits pump the event loop far longer than a
-      -- scheduled `q!` needs to fire, so no extra flush is required here.
-      assert.is_true(vim.wait(5000, function()
-        local lines = vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(tree_win), 0, -1, false)
-        return table.concat(lines, "\n"):find("new.md", 1, true) ~= nil
-      end, 50))
-
+      assert.is_truthy(tree_text():find("new.md", 1, true))
+      assert.equal(1, vim.fn.filereadable(vim.fs.joinpath(dir, "new.md")))
       assert.equal(0, vim.fn.filereadable(file))
       assert.is_true(vim.api.nvim_win_is_valid(tree_win))
     end)

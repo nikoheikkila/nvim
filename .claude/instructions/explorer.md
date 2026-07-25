@@ -143,8 +143,16 @@ Two neo-tree-specific hazards when a spec opens a real tree (see `explorer_spec.
   output. Silence them with `require("neo-tree.log").set_level({ file = <old>, console = "warn" })`
   and restore in `teardown`. The **table** form is required: the scalar form clamps console to
   `math.max(level, INFO)`, so it can never suppress INFO.
-- **Waiting for the filesystem is not enough for rename.** The buffer churn
-  (`bufadd`/`replace_buffer_in_windows`/`nvim_buf_delete`) starts an async `fs_scan`; one still in
-  flight at teardown lands in whatever window is current by then and has `renderer.acquire_window`
-  build a fresh tree window there. Wait for the new name to appear **in the tree buffer**. Skipping
-  this broke `markdown_keymaps_spec` with "Buffer is not 'modifiable'" three spec files later.
+- **Wait for the tree's first render, not just for its window.** `:Neotree show` creates the window
+  synchronously but fills it from an async `fs_scan`, so the buffer is still empty when the window
+  appears. Acting on the tree before that scan renders lets its stale result land after your own
+  refresh, leaving the tree showing pre-operation contents indefinitely. Latch on the fixture name
+  appearing in the tree buffer.
+- **Pass the refresh callback that the real mapping passes.** `fs_actions.rename_node(path)` on its
+  own leaves the redraw to an incidental buffer-event subscription whose ordering is not dependable —
+  it worked on macOS and timed out on Ubuntu CI. Mirror `filesystem/commands.lua`:
+  `rename_node(path, function() fs._navigate_internal(state, nil, nil, done, false) end)`, and latch
+  on `done`. That is a real completion signal, and it leaves no `fs_scan` in flight at teardown — one
+  that lands later has `renderer.acquire_window` build a fresh tree window in whatever window is
+  current by then, which broke `markdown_keymaps_spec` with "Buffer is not 'modifiable'" three spec
+  files later.
