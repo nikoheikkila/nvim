@@ -1,0 +1,16 @@
+name: Download Release Package
+description: Downloads the release tarball and notes built by the package job.
+
+inputs:
+  path:
+    description: Directory to extract the downloaded artifact into
+    required: false
+    default: artifact
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        name: release-package
+        path: ${{ inputs.path }}

@@ -1,0 +1,22 @@
+name: Install Neovim
+description: Downloads a pinned Neovim release for the current runner and adds it to PATH.
+
+inputs:
+  version:
+    description: Neovim release tag to install
+    required: false
+    default: "v0.12.4"
+
+runs:
+  using: composite
+  steps:
+    - name: Install Neovim
+      shell: bash
+      env:
+        NVIM_VERSION: ${{ inputs.version }}
+      run: |
+        os=$([ "$RUNNER_OS" = "macOS" ] && echo "macos" || echo "linux")
+        arch=$([ "$RUNNER_ARCH" = "ARM64" ] && echo "arm64" || echo "x86_64")
+        curl -sSLO "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-${os}-${arch}.tar.gz"
+        tar -xzf "nvim-${os}-${arch}.tar.gz" -C "$RUNNER_TEMP"
+        echo "$RUNNER_TEMP/nvim-${os}-${arch}/bin" >> "$GITHUB_PATH"
