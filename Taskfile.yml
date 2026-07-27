@@ -77,7 +77,7 @@ tasks:
   lint:ci:
     desc: Lint GitHub Actions workflows
     sources:
-      - .github/workflows/*.yml
+      - .github/**/*.yml
     cmds:
       - task: actionlint
       - task: zizmor
@@ -90,7 +90,7 @@ tasks:
   zizmor:
     desc: Run zizmor
     if: command -v zizmor
-    cmd: zizmor --persona auditor .github/workflows
+    cmd: zizmor --persona auditor .
     env:
       GITHUB_TOKEN:
         sh: '[[ -n "$GITHUB_TOKEN" ]] && echo "$GITHUB_TOKEN" || gh auth token'
