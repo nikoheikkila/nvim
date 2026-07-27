@@ -14,7 +14,7 @@ runs:
       shell: bash
       env:
         NVIM_VERSION: ${{ inputs.version }}
-      run: |
+      run: | # zizmor: ignore[github-env] os/arch/RUNNER_TEMP come from the runner, not attacker-controlled input
         os=$([ "$RUNNER_OS" = "macOS" ] && echo "macos" || echo "linux")
         arch=$([ "$RUNNER_ARCH" = "ARM64" ] && echo "arm64" || echo "x86_64")
         curl -sSLO "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-${os}-${arch}.tar.gz"
