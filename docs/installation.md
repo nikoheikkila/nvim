@@ -32,6 +32,10 @@ curl -sSL https://raw.githubusercontent.com/nikoheikkila/nvim/refs/heads/main/sc
   sh -s -- --out ~/path/to/nvim
 ```
 
+If the download fails with `HTTP 403`, GitHub is rate limiting requests from your IP address — a shared office,
+VPN, or CI address can exhaust the limit even on your first attempt. The script retries with backoff, so wait a
+few minutes and run it again, or use the [Manual Install](#manual-install-from-source) below.
+
 Neovim only loads configuration from its standard locations, so a custom directory must be launched with
 `XDG_CONFIG_HOME` and `NVIM_APPNAME` pointing at it — the script prints the exact command when it finishes.
 

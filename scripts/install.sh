@@ -7,6 +7,11 @@
 # (curl or wget, tar, grep, sed, cut, mktemp) -- no jq, no bash. Piped runs
 # also mean stdin is the script itself, so nothing here may prompt.
 #
+# The release asset is fetched from github.com's releases/latest/download/
+# endpoint rather than the REST API, whose unauthenticated rate limit is charged
+# to the caller's IP address and returns 403 once drained. Downloads retry with
+# backoff on top of that.
+#
 # Usage: install.sh [-o|--out <dir>]
 # Without a flag the config lands in $XDG_CONFIG_HOME/nvim (when that base
 # directory exists) or $HOME/.config/nvim (created if missing). An existing
@@ -16,6 +21,10 @@ set -eu
 
 REPO="nikoheikkila/nvim"
 MIN_VERSION="0.12.4"
+# Stable, version-agnostic asset name attached to every release alongside the
+# CalVer-stamped tarball, so the download URL never needs resolving. Renaming it
+# here means renaming it in the package job of .github/workflows/ci.yml too.
+ASSET="nvim-config.tar.gz"
 
 fail() {
   echo "install.sh: $*" >&2
@@ -27,11 +36,45 @@ usage() {
   exit 1
 }
 
+# --retry skips 4xx by design, and GitHub answers a rate limit with 403, so
+# --retry-all-errors (curl >= 7.71) is what makes a 403 retryable at all -- and
+# only in combination with -f. It's feature-probed because macOS system curl
+# ranges from 7.64 to 8.4+ depending on the release. No --retry-delay: curl's
+# default backoff is exponential and honours a Retry-After header, which is what
+# GitHub's own best-practices guide asks for. The cost is that a genuine 404
+# burns all five attempts before failing.
+download_with_curl() {
+  retry_all=""
+  if curl --help all 2>/dev/null | grep -q -- --retry-all-errors; then
+    retry_all=--retry-all-errors
+  fi
+
+  # Unquoted on purpose: an empty retry_all must expand to no argument at all.
+  # shellcheck disable=SC2086
+  curl -fsSL --connect-timeout 10 --max-time 300 \
+    --retry 5 --retry-max-time 120 --retry-connrefused \
+    $retry_all -o "$2" "$1"
+}
+
+# wget already retries 20 times by default but treats every 4xx as fatal, so a
+# 403 needs --retry-on-http-error to be retried at all. Its backoff is linear
+# rather than exponential, and it has no --retry-max-time equivalent. BusyBox
+# wget supports none of this, hence the probe.
+download_with_wget() {
+  retry_http=""
+  if wget --help 2>&1 | grep -q -- --retry-on-http-error; then
+    retry_http=--retry-on-http-error=403,429,500,502,503,504
+  fi
+
+  # shellcheck disable=SC2086
+  wget -q --tries=5 --waitretry=5 --timeout=30 $retry_http -O "$2" "$1"
+}
+
 download() {
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL -o "$2" "$1"
+    download_with_curl "$1" "$2"
   elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$2" "$1"
+    download_with_wget "$1" "$2"
   else
     fail "neither curl nor wget is available; install one and retry"
   fi
@@ -81,16 +124,18 @@ fi
 workdir=$(mktemp -d)
 trap 'rm -rf "$workdir"' EXIT
 
-echo "Resolving the latest release of $REPO..."
-download "https://api.github.com/repos/$REPO/releases/latest" "$workdir/release.json"
-asset_url=$(
-  grep -o '"browser_download_url": *"[^"]*\.tar\.gz"' "$workdir/release.json" |
-    head -n1 | sed 's/.*"\(https[^"]*\)"/\1/'
-)
-[ -n "$asset_url" ] || fail "no .tar.gz asset found in the latest release of $REPO"
+# This endpoint on github.com redirects straight to the asset without touching
+# api.github.com, whose unauthenticated limit is 60 requests per hour shared
+# across every caller on the same IP address -- the source of the intermittent
+# 403s this avoids. Each retry re-follows the redirect from here, so the
+# short-lived signature on the final CDN URL is never reused.
+asset_url="https://github.com/$REPO/releases/latest/download/$ASSET"
 
 echo "Downloading $asset_url..."
-download "$asset_url" "$workdir/nvim-config.tar.gz"
+download "$asset_url" "$workdir/$ASSET" || fail "could not download $asset_url.
+GitHub answers with HTTP 403 when requests from your IP address are rate limited
+(shared office, VPN, and CI addresses hit this). Wait a few minutes and retry, or
+install from source -- see docs/installation.md."
 
 if [ -d "$out" ] && [ -n "$(ls -A "$out" 2>/dev/null)" ]; then
   backup="$out.bak.$(date +%Y%m%d%H%M%S)"
@@ -99,7 +144,7 @@ if [ -d "$out" ] && [ -n "$(ls -A "$out" 2>/dev/null)" ]; then
 fi
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
-tar -xzf "$workdir/nvim-config.tar.gz" -C "$out"
+tar -xzf "$workdir/$ASSET" -C "$out"
 echo "Extracted configuration into $out"
 
 # Neovim resolves its config as $XDG_CONFIG_HOME/$NVIM_APPNAME regardless of

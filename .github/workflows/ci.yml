@@ -175,6 +175,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       artifact: ${{ steps.package.outputs.artifact }}
+      alias: ${{ steps.package.outputs.alias }}
       notes: ${{ steps.notes.outputs.notes }}
 
     steps:
@@ -246,7 +247,17 @@ jobs:
           rsync -a --filter='merge .nvimignore' ./ "$stage/"
           artifact="nvim-${VERSION}.tar.gz"
           tar -czf "$artifact" -C "$stage" .
+
+          # A copy under a stable, version-agnostic name lets scripts/install.sh
+          # download from releases/latest/download/ instead of resolving the
+          # asset through the REST API, whose unauthenticated rate limit is
+          # charged to the caller's IP address and answers 403 once drained.
+          # Renaming it here means renaming ASSET in scripts/install.sh too.
+          alias="nvim-config.tar.gz"
+          cp "$artifact" "$alias"
+
           echo "artifact=$artifact" >> "$GITHUB_OUTPUT"
+          echo "alias=$alias" >> "$GITHUB_OUTPUT"
           tar -tzf "$artifact"
 
       - name: Upload release package
@@ -255,6 +266,7 @@ jobs:
           name: release-package
           path: |
             ${{ steps.package.outputs.artifact }}
+            ${{ steps.package.outputs.alias }}
             ${{ steps.notes.outputs.notes }}
           retention-days: 1
 
@@ -326,9 +338,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.package.outputs.version }}
           ARTIFACT: artifact/${{ needs.package.outputs.artifact }}
+          ALIAS: artifact/${{ needs.package.outputs.alias }}
           NOTES: artifact/${{ needs.package.outputs.notes }}
         run: |
-          gh release create "$VERSION" "$ARTIFACT" \
+          # The alias is the same tarball under a stable name; scripts/install.sh
+          # downloads it from releases/latest/download/.
+          gh release create "$VERSION" "$ARTIFACT" "$ALIAS" \
             --title "$VERSION" \
             --target "$GITHUB_SHA" \
             --notes-file "$NOTES"
