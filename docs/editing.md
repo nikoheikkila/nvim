@@ -17,6 +17,7 @@ The leader key is `Space`.
 | `Space` `e`                       | Toggle the file tree sidebar                                                       |
 | `Space` `g` `g`                   | Open Lazygit for the current file's repository (quit with `q`)                     |
 | `Space` `n` `d`                   | Open today's vault note (see [Obsidian Vault](obsidian.md))                        |
+| `Space` `o`                       | Obsidian command menu (see [Obsidian Vault](obsidian.md#commands))                 |
 | `Shift+H` / `Shift+L`             | Previous / next buffer tab                                                         |
 | `Ctrl+Z`                          | Toggle Zen Mode                                                                    |
 | `Alt+Up` / `Alt+Down`             | Move current line or selection up / down                                           |

@@ -53,6 +53,18 @@ The plugin sets exactly three, all buffer-local to vault notes, all normal-mode,
 `<CR>` (smart action), `]o` and `[o` (link navigation). They are in the registry in
 [`config.md`](config.md).
 
+This file's `keys` table adds one global map: `<leader>o` → bare `:Obsidian`, the context-filtered subcommand
+menu. That menu is a `vim.ui.select` call, and snacks.picker's `ui_select` default replaces `vim.ui.select` with
+its own picker — but **only from snacks' `UIEnter` handler, which never fires headless**, so in any spec or
+`headless-lua.sh` probe `vim.ui.select` is still Neovim's built-in. Don't chase that as a bug; assert
+`ui_select` and the registered `UIEnter` autocmd instead, as `obsidian_spec.lua` does. It is a **bare
+single-key leader map**, so it is pause-free only while no `<leader>o…` chord exists — see the prefix caveat in
+[`config.md`](config.md), and don't hang new Obsidian shortcuts off `<leader>o`. `obsidian_spec.lua` asserts both
+the mapping and the absence of any competing chord.
+
+`<leader>nd` stays in `config/keymaps.lua` rather than moving here: it is a core entry point that predates the
+plugin, and its `<cmd>Obsidian today<cr>` string rhs resolves at press time.
+
 To disable them, upstream offers `vim.g.obsidian_default_keymap = false` (a Vim global, checked with `~= false`,
 deliberately not a config key) or `vim.keymap.del` on the `User ObsidianNoteEnter` autocmd.
 

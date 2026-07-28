@@ -46,6 +46,7 @@ These are active only in notes inside the vault.
 | `g` `f`         | Follow the link under the cursor (built-in, taught to resolve wiki-links)                    |
 | `g` `x`         | Open the link under the cursor in the browser (built-in)                                     |
 | `Space` `n` `d` | Open today's daily note (`:Obsidian today`)                                                  |
+| `Space` `o`     | Open the Obsidian command menu — every command below, in a picker                            |
 
 `Enter` picks its behavior from what is under the cursor, so it covers link-following, checkbox toggling, and
 heading folds with one key. In Insert mode `Enter` still continues the current list item.
@@ -55,8 +56,10 @@ Notes also get the standard [LSP shortcuts](lsp.md) — obsidian ships an in-pro
 
 ## Commands
 
-Everything is a subcommand of `:Obsidian`. Press `:Obsidian` and `Tab` to complete them, or run `:Obsidian`
-on its own for a menu. The list is context-sensitive: note actions appear only inside a note.
+**`Space` `o` is the quickest way in** — it runs bare `:Obsidian`, which lists every command in a picker so you
+can fuzzy-find one instead of remembering its name. You can also type `:Obsidian` and press `Tab` to complete
+subcommands. The list is context-sensitive: note actions appear only inside a note, and the visual-mode ones only
+with a selection (for those, use `:Obsidian` from visual mode rather than `Space` `o`).
 
 | Command                  | Action                                                                       |
 | ------------------------ | ---------------------------------------------------------------------------- |
@@ -96,7 +99,8 @@ that links written for the Obsidian app work here too. It renders images with th
 which means it works in kitty, Ghostty, and WezTerm (in a floating window), and inside `tmux` with
 pass through enabled.
 
-> [!WARNING] > **Warp is not supported.** Warp does not implement the kitty graphics protocol, so inline image viewing
+> [!WARNING]
+> **Warp is not supported.** Warp does not implement the kitty graphics protocol, so inline image viewing
 > is disabled there — pasting and linking work fine, the image just is not drawn in the buffer. Run
 > `:checkhealth snacks` to see what your terminal was detected as.
 

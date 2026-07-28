@@ -190,6 +190,7 @@ own files (`markdown.md`, `explorer.md`), not here; the design details behind th
 | `<leader>nd`                      | n                                | Open today's vault note (`:Obsidian today`)                                                                                                                          | `config/keymaps.lua`      |
 | `<CR>`                            | n _(vault notes)_                | Obsidian smart action: follow link / toggle checkbox / cycle heading fold — buffer-local, plugin default. Insert-mode `<CR>` stays markdown-plus's list continuation | `plugins/obsidian.lua`    |
 | `]o` / `[o`                       | n _(vault notes)_                | Next / previous link — buffer-local, plugin default                                                                                                                  | `plugins/obsidian.lua`    |
+| `<leader>o`                       | n                                | Obsidian command menu — bare `:Obsidian`, a context-filtered subcommand picker. Bare single-key map: keep `<leader>o` free of chords or it gains a timeoutlen pause  | `plugins/obsidian.lua`    |
 | `<leader>cd`                      | n                                | Show line diagnostics (full text) in a wrapping float (`vim.diagnostic.open_float`)                                                                                  | `config/keymaps.lua`      |
 | `<leader>gg`                      | n                                | Lazygit (current file's repo)                                                                                                                                        | `plugins/git.lua`         |
 | `<F2>`                            | n, i                             | Rename symbol (LSP) — markdown's buffer-local image-rename map shadows it there                                                                                      | `plugins/lsp.lua`         |
@@ -230,3 +231,8 @@ avoid single-key mappings that prefix an existing chord family. (This is why the
 buffer-cycle maps moved to `<leader>bn`/`<leader>bp` when `<leader>nd` was added, and why lazygit moved from
 bare `<leader>g` to `<leader>gg` when the buffer-local LSP goto chords `<leader>gd`/`<leader>gr` arrived.)
 `<leader>g` and `<leader>c` are chord prefixes too (LSP `gd`/`gr`/`gg` and `cr`).
+
+The inverse applies to the bare single-key maps, `<leader>o` (Obsidian menu) and `<leader>r` (refactor menu): they are
+only pause-free because nothing extends them. **Adding any `<leader>o…`/`<leader>r…` chord would silently put a
+~1s pause on every press of the bare map** — put new Obsidian shortcuts somewhere else, or move the bare map first.
+`obsidian_spec.lua` asserts no `<leader>o` chord exists.

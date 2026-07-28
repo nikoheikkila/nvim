@@ -77,6 +77,31 @@ describe("plugins.obsidian", function()
       assert.is_not_nil(cmds.Obsidian)
     end)
 
+    -- Bare :Obsidian opens the subcommand menu. <leader>o is a bare single-key
+    -- leader map, which is only safe because no <leader>o… chord family exists —
+    -- adding one later would put a timeoutlen pause on every press.
+    it("binds <leader>o to the bare :Obsidian menu", function()
+      assert.equal("<Cmd>Obsidian<CR>", vim.fn.maparg(vim.g.mapleader .. "o", "n"))
+    end)
+
+    it("has no other <leader>o chord that would delay it", function()
+      for _, m in ipairs(vim.api.nvim_get_keymap("n")) do
+        local lhs = m.lhs or ""
+        if lhs:sub(1, 2) == vim.g.mapleader .. "o" then
+          assert.equal(vim.g.mapleader .. "o", lhs, "unexpected <leader>o chord: " .. lhs)
+        end
+      end
+    end)
+
+    -- The menu itself is a vim.ui.select call, which snacks replaces with its
+    -- picker. That swap happens in snacks' UIEnter handler, and UIEnter never
+    -- fires in a headless process — so assert the two preconditions instead of
+    -- vim.ui.select's identity, which is always the built-in here.
+    it("keeps the snacks ui_select swap armed, so the menu is a picker", function()
+      assert.is_true(require("snacks.picker.config").get().ui_select)
+      assert.equal(1, #vim.api.nvim_get_autocmds({ group = "snacks", event = "UIEnter" }))
+    end)
+
     -- legacy_commands = false, so the deprecated :ObsidianFoo aliases upstream
     -- drops in 4.0.0 are never registered.
     it("registers no legacy :Obsidian* aliases", function()

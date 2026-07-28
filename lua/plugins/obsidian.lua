@@ -30,6 +30,16 @@ return {
     -- lazy.nvim load snacks first, which costs a little startup time and is the
     -- price of `picker.name` below actually taking effect.
     dependencies = { "folke/snacks.nvim" },
+    -- Bare `:Obsidian` (no subcommand) opens a vim.ui.select menu of every
+    -- subcommand available right now — obsidian filters the list by context, so
+    -- note actions only appear inside a note. snacks.picker's ui_select default
+    -- replaces vim.ui.select, so this lands in the same picker as everything
+    -- else. `<leader>o` is safe as a bare single-key leader map: no `<leader>o…`
+    -- chord family exists, so there's no timeoutlen pause (see the prefix caveat
+    -- in .claude/instructions/config.md).
+    keys = {
+      { "<leader>o", "<cmd>Obsidian<cr>", desc = "Obsidian command menu" },
+    },
     ---@module 'obsidian'
     ---@type obsidian.config
     opts = {
