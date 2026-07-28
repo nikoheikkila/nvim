@@ -16,7 +16,7 @@ The leader key is `Space`.
 | `Space` `.`                       | Live grep across the project                                                       |
 | `Space` `e`                       | Toggle the file tree sidebar                                                       |
 | `Space` `g` `g`                   | Open Lazygit for the current file's repository (quit with `q`)                     |
-| `Space` `n` `d`                   | Open today's daily note (see [Daily Notes](markdown.md#daily-notes))               |
+| `Space` `n` `d`                   | Open today's vault note (see [Obsidian Vault](obsidian.md))                        |
 | `Shift+H` / `Shift+L`             | Previous / next buffer tab                                                         |
 | `Ctrl+Z`                          | Toggle Zen Mode                                                                    |
 | `Alt+Up` / `Alt+Down`             | Move current line or selection up / down                                           |

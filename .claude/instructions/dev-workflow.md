@@ -51,7 +51,7 @@ project root:
   module. Pure Lua, runs under the plain `busted` binary (homebrew Lua, no Neovim). The `package.path`
   preamble in each spec makes `lib.*` importable without Neovim.
 - **Integration** (`task test:integration`) — `tests/integration/*_spec.lua`,
-  the config-level contract: leader keys, `:Daily` end-to-end, the `:q`/`:x`/`:wq` abbreviations, global
+  the config-level contract: leader keys, the `:q`/`:x`/`:wq` abbreviations, global
   keymaps, auto-save, and plugin wiring (multicursor, markdown lint). `task test:integration` re-executes
   busted under `scripts/busted-nvim.sh`, an interpreter shim that boots a **fully-loaded headless Neovim**
   (`nvim -u init.lua -l`), so specs assert against the real `vim` API. **Extend these specs when
@@ -172,10 +172,10 @@ true)` — `.buffer == 1` proves the mapping registered, `.desc` usually names t
   `<leader>` map created before `vim.g.mapleader` is set silently binds under the default `\` and `maparg(" nd", ...)`
   returns `""` — exactly how the `<leader>nd` load-order bug was caught (leaders now live in `config/options.lua`, the
   first module `init.lua` loads; never create `<leader>` maps before it).
-- **Env-var-driven commands** (e.g. `:Daily` reading `NVIM_NOTES_DIR`): read the variable **at call time** inside the
-  command, not at module load — then a headless script can just set `vim.env.NVIM_NOTES_DIR = dir` in-process before
-  invoking, no shell wrapper needed. Compare resulting buffer names through `vim.fn.resolve()` — on macOS `tempname()`
-  returns `/var/...` while buffer names resolve through the `/var -> /private/var` symlink.
+- **Env-var-driven commands**: read the variable **at call time** inside the command, not at module load — then a
+  headless script can just set `vim.env.VAR = dir` in-process before invoking, no shell wrapper needed. Compare
+  resulting buffer names through `vim.fn.resolve()` — on macOS `tempname()` returns `/var/...` while buffer names
+  resolve through the `/var -> /private/var` symlink.
 - **`print()` output interleaving**: in headless mode, message lines can visually run together after buffer-switching
   commands (`:edit`, `:enew`). End prints with an explicit `"\n"`, and treat the exit code (`cquit 1`) as the
   authoritative result, not the printed text.

@@ -1,11 +1,16 @@
 config:
-  daily:
-    directory: "$HOME/Notes"
-    filenamePattern: "%Y-%m-%d.md"
+  # Obsidian vault (obsidian.nvim). See docs/obsidian.md.
+  obsidian:
+    # Vault root
+    vault: "$HOME/Vaults"
+    # Daily notes (`:Obsidian today`, Space n d). `folder` is relative to the
+    # vault root; `dateFormat` is a Moment.js pattern, and a "/" in it creates
+    # subdirectories (e.g. "YYYY/MM/DD" -> folder/2026/07/28.md).
+    dailyNotes:
+      folder: "000 - Inbox/Journal"
+      dateFormat: "YYYY-MM-DD"
   # Harper grammar/spell checker (harper-ls). See docs for the full option list:
   # https://writewithharper.com/docs/integrations/neovim
-  # NOTE: trailing comments after a value are unsupported by the YAML parser —
-  # keep option notes on their own comment line, as below.
   harper:
     # dialect: American | British | Australian | Canadian
     dialect: "American"

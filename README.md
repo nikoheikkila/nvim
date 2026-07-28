@@ -23,6 +23,7 @@ The script installs the latest [release](https://github.com/nikoheikkila/nvim/re
 - [Editing](docs/editing.md) — general shortcuts, buffer tabs, multiple cursors
 - [Code Intelligence (LSP)](docs/lsp.md) — language servers, completion, diagnostics, refactoring, grammar
 - [Markdown Features](docs/markdown.md) — Markdown shortcuts, formatting, linting, rendering, daily notes
+- [Obsidian Vault](docs/obsidian.md) — wiki-links, backlinks, daily notes, image attachments
 - [File Explorer](docs/explorer.md) — the file-tree sidebar
 - [Terminal Setup](docs/terminal.md) — enabling wavy underline support in the terminal
 

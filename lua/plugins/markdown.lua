@@ -1,5 +1,4 @@
 local mu = require("lib.markdown_utils")
-local pu = require("lib.path_utils")
 local folding = require("config.folding")
 
 -- Markdown folds come from the pure lib.markdown_fold levels (headings, list
@@ -83,47 +82,6 @@ local function rename_image_at_cursor()
   end)
 end
 
-local function open_link_at_cursor()
-  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-  col = col + 1 -- convert 0-based to 1-based
-  local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
-
-  local target = mu.find_link_at(line, col)
-
-  if not target or target == "" then
-    vim.notify("No link under cursor", vim.log.levels.WARN)
-    return
-  end
-
-  local kind = pu.classify_link(target)
-
-  if kind == "external" then
-    vim.ui.open(target)
-    return
-  end
-
-  if kind == "ignored" then
-    return
-  end
-
-  -- internal: open the file, dropping any #anchor, resolving relative to the buffer dir
-  local path = pu.strip_anchor(target)
-  local full_path
-
-  if path:sub(1, 1) == "/" then
-    full_path = path
-  else
-    local buf_file = vim.api.nvim_buf_get_name(0)
-    if buf_file == "" then
-      vim.notify("Buffer has no file — save it first", vim.log.levels.ERROR)
-      return
-    end
-    full_path = resolve_path(vim.fn.fnamemodify(buf_file, ":h"), path)
-  end
-
-  vim.cmd.edit(vim.fn.fnameescape(full_path))
-end
-
 local function setup_keymaps(buf)
   -- Bold: plugin uses ** correctly
   vim.keymap.set({ "n", "x" }, "<C-b>", "<Plug>(MarkdownPlusBold)", { buffer = buf, desc = "Toggle bold" })
@@ -162,8 +120,9 @@ local function setup_keymaps(buf)
   vim.keymap.set("x", "<C-S-I>", "<Plug>(MarkdownPlusSelectionToImage)", { buffer = buf, desc = "Selection to image" })
   vim.keymap.set("n", "<F2>", rename_image_at_cursor, { buffer = buf, desc = "Rename image at cursor" })
 
-  -- Follow the link under the cursor: browser for URLs, :e for files, ignore mailto/tel/anchors
-  vim.keymap.set("n", "<leader>gl", open_link_at_cursor, { buffer = buf, desc = "Open link under cursor" })
+  -- No link-following map here: obsidian.nvim binds <CR> (smart action) in vault
+  -- notes and sets 'includeexpr' so the built-in gf resolves wiki-links, while
+  -- plain markdown files keep built-in gf for paths and gx for URLs.
 end
 
 return {

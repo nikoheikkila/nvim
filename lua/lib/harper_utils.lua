@@ -4,7 +4,7 @@ local M = {}
 -- https://writewithharper.com/docs/integrations/neovim. Parsed `config.harper`
 -- (config.yml) overrides these per field; a missing/malformed/wrong-typed field
 -- keeps the default. Free of vim/os calls so the module stays unit-testable
--- under plain busted, mirroring lib/daily_utils.lua.
+-- under plain busted, like every other resolver in lua/lib/.
 local DEFAULTS = {
   linters = {
     SpellCheck = true,
@@ -33,8 +33,9 @@ local OPTIONAL_PATHS = { "userDictPath", "workspaceDictPath", "fileDictPath", "i
 
 -- Deep-merge `overrides` over `defaults`, accepting an override leaf only when
 -- its Lua type matches the default's (recursing into nested maps). This is the
--- daily_utils type-guard generalised: a wrong-typed or absent field silently
--- falls back, so a malformed config.yml never yields an unexpected shape.
+-- per-field type guard the other resolvers apply, generalised to nested tables:
+-- a wrong-typed or absent field silently falls back, so a malformed config.yml
+-- never yields an unexpected shape.
 local function merge(defaults, overrides)
   if type(overrides) ~= "table" then
     overrides = {}

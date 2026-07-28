@@ -89,24 +89,23 @@ validates the file exists, prompts for a new name via `vim.ui.input`, renames th
 
 #### Buffer-local keymaps (markdown buffers only)
 
-| Key          | Mode  | Action                              |
-| ------------ | ----- | ----------------------------------- |
-| `<C-b>`      | n + x | Toggle bold                         |
-| `<C-i>`      | x     | Toggle italic (`_`) — visual only   |
-| `<C-k>`      | n + x | Insert / wrap link                  |
-| `<C-l>`      | n + i | Toggle checklist item (single line) |
-| `<C-l>`      | x     | Toggle checklist range              |
-| `<C-S-I>`    | n + x | Insert / wrap image                 |
-| `<F2>`       | n     | Rename image file at cursor         |
-| `<leader>gl` | n     | Follow link under cursor            |
-| `<Tab>`      | n     | Toggle fold (see Folding below)     |
+| Key       | Mode  | Action                              |
+| --------- | ----- | ----------------------------------- |
+| `<C-b>`   | n + x | Toggle bold                         |
+| `<C-i>`   | x     | Toggle italic (`_`) — visual only   |
+| `<C-k>`   | n + x | Insert / wrap link                  |
+| `<C-l>`   | n + i | Toggle checklist item (single line) |
+| `<C-l>`   | x     | Toggle checklist range              |
+| `<C-S-I>` | n + x | Insert / wrap image                 |
+| `<F2>`    | n     | Rename image file at cursor         |
+| `<Tab>`   | n     | Toggle fold (see Folding below)     |
 
-`<leader>gl` (`open_link_at_cursor`) acts on both inline `[text](target)` and image `![alt](target)` spans
-via `mu.find_link_at`, then dispatches on `pu.classify_link`: external `scheme://…` URLs open in the browser
-through `vim.ui.open` (on macOS this shells to `open <URL>`); relative/absolute file paths open in a buffer with
-`:e` (relative paths resolved against the buffer's directory, trailing `#anchor` dropped, mirroring
-`rename_image_at_cursor`); `mailto:`/`tel:`/other single-colon schemes and bare `#anchor` targets are ignored
-with a notification.
+Plugin obsidian.nvim
+(`plugins/obsidian.lua`) binds `<CR>` in vault notes and sets `includeexpr` so the built-in `gf` resolves
+wiki-links, while plain markdown files use built-in `gf` for paths and `gx` for URLs.
+
+`lib/path_utils.lua` exists for `has_uri_scheme`, which `config/autocmds.lua` and `lib/save_utils.lua` use
+to skip non-file buffers — that is unrelated to link navigation.
 
 **Terminal compatibility:** `<C-S-I>` (Ctrl+Shift+I) requires the Kitty keyboard protocol. Supported terminals:
 kitty, WezTerm, Ghostty, and recent versions of foot. In terminals that do not support it the mapping is

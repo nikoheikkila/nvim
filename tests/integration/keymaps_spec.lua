@@ -3,8 +3,8 @@
 describe("global keymaps", function()
   local leader = vim.g.mapleader
 
-  it("binds <leader>nd to :Daily", function()
-    assert.truthy(vim.fn.maparg(leader .. "nd", "n"):find("Daily"))
+  it("binds <leader>nd to :Obsidian today", function()
+    assert.truthy(vim.fn.maparg(leader .. "nd", "n"):find("Obsidian today", 1, true))
   end)
 
   it("binds <leader>bn to Next Buffer", function()

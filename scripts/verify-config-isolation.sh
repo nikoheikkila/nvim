@@ -39,13 +39,13 @@ for f in "${files[@]}"; do
 done
 
 # Corrupt each real file in a distinct way: invalid JSON, a bogus theme variant,
-# and a sentinel daily dir. If any spec still read a real file, it would break.
-# The literal `$HOME` is written verbatim on purpose (the YAML consumer expands
-# it), so single quotes are correct here.
+# and a nonexistent vault path. If any spec still read a real file, it would
+# break. The literal `$HOME` is written verbatim on purpose (the YAML consumer
+# expands it), so single quotes are correct here.
 printf '{ "default": false, this is not valid json ]]]' > .markdownlint.jsonc
 printf 'theme:\n  variant: this_variant_does_not_exist\n' > theme.yml
 # shellcheck disable=SC2016
-printf 'config:\n  daily:\n    directory: "$HOME/config-isolation-sentinel"\n' > config.yml
+printf 'config:\n  obsidian:\n    vault: "$HOME/config-isolation-sentinel"\n' > config.yml
 
 echo "Real config files corrupted in place; running integration tests..."
 echo "(they must PASS -- specs use the NVIM_CONFIG_ROOT fixtures, not these files)"

@@ -51,6 +51,20 @@ to `vim.wo.numberwidth - 1` so it right-aligns the way Neovim's own does — a b
 drifts out of alignment once line counts pass a digit boundary (`9` → `10`). If you add another gutter concern
 (sign column, diagnostics), extend this same function rather than composing a second parallel one.
 
+### Fold-source Ownership
+
+`M.enable()` refuses to switch a buffer that already has `vim.b.fold_engine == "markdown"` over to
+`engine = "lsp"`. Markdown's fold source is `lib/markdown_fold.lua`, and the ▼/▶ indicator reads its authoritative
+`">N"` markers (see `is_fold_start`), which LSP folding ranges do not produce — so a language server attaching to a
+markdown buffer would silently degrade both folds and indicator. This is not hypothetical: obsidian.nvim runs an
+in-process LSP (`obsidian-ls`) advertising `foldingRangeProvider`, so `plugins/lsp.lua`'s `LspAttach` handler really
+does reach `enable()` with `engine = "lsp"` for every vault note. Upstream obsidian says the same thing — "pick one
+folding source and set it for markdown buffers".
+
+Keep this as one invariant inside `folding.lua` rather than a filetype check at each call site; it then also covers
+any future markdown server (marksman, harper_ls). `tests/integration/folding_spec.lua` asserts it at the seam and
+`obsidian_spec.lua` asserts it end-to-end in a vault note.
+
 **Testing it:** `v:lnum` can be set directly with `vim.api.nvim_set_vvar("lnum", n)` from a spec, but `v:virtnum`
 is read-only and cannot — leave it unset (defaults to `0`, i.e. "not a wrapped screen row") rather than trying to
 set it. `vim.wo.number` is a window-local option a test can flip, but the window is shared across specs in the same
@@ -90,16 +104,16 @@ the group. Extend those specs when changing the behavior.
 Global, non-plugin keymaps loaded from `init.lua` before lazy.nvim. Holds the line-move bindings, which move the current
 line (or a visual selection) up/down using the `:m[ove]` command with `==` to reindent, and the daily-note map:
 
-| Key          | Mode | Action                                               |
-| ------------ | ---- | ---------------------------------------------------- |
-| `<M-Up>`     | n    | Move current line up                                 |
-| `<M-Down>`   | n    | Move current line down                               |
-| `<M-Up>`     | i    | Move current line up (returns to insert via `gi`)    |
-| `<M-Down>`   | i    | Move current line down (returns to insert via `gi`)  |
-| `<M-Up>`     | x    | Move selection up (stays selected via `gv=gv`)       |
-| `<M-Down>`   | x    | Move selection down (stays selected via `gv=gv`)     |
-| `<leader>nd` | n    | Open today's note (`:Daily`; mnemonic "new → daily") |
-| `<leader>cd` | n    | Show line diagnostics in a wrapping float            |
+| Key          | Mode | Action                                                              |
+| ------------ | ---- | ------------------------------------------------------------------- |
+| `<M-Up>`     | n    | Move current line up                                                |
+| `<M-Down>`   | n    | Move current line down                                              |
+| `<M-Up>`     | i    | Move current line up (returns to insert via `gi`)                   |
+| `<M-Down>`   | i    | Move current line down (returns to insert via `gi`)                 |
+| `<M-Up>`     | x    | Move selection up (stays selected via `gv=gv`)                      |
+| `<M-Down>`   | x    | Move selection down (stays selected via `gv=gv`)                    |
+| `<leader>nd` | n    | Open today's vault note (`:Obsidian today`; mnemonic "new → daily") |
+| `<leader>cd` | n    | Show line diagnostics in a wrapping float                           |
 
 **Terminal compatibility:** `<M-…>` is the Alt/Option key. On macOS the Option key does not send a Meta modifier by
 default — the terminal must be configured to (Kitty/Ghostty/WezTerm via the Kitty keyboard protocol, or
@@ -141,19 +155,12 @@ nothing is eager-loaded. On a modified buffer, snacks prompts Yes (save+close) /
 `BufWriteClose` writes first (`:update`, or `:write!` with a bang) so the buffer is already unmodified and the prompt is
 skipped.
 
-## User Commands (`lua/config/commands.lua`)
+## Daily Notes
 
-`:Daily` opens today's Markdown note. The directory and filename format come from `config.yml`
-(`config.daily.directory` and `config.daily.filenamePattern`, the latter an `os.date` pattern), read via
-`lib/yaml_utils.lua` and resolved by `lib/daily_utils.lua`. A missing or malformed `config.yml` falls back to
-hardcoded defaults (`$HOME/Notes`, `%Y-%m-%d.md`). `NVIM_NOTES_DIR`, when set and non-empty, overrides the directory
-(precedence: `NVIM_NOTES_DIR` → `config.yml` → default). The directory is created on first use; the file is created by
-`:edit` and reopened on every later `:Daily` the same day.
-
-Filetype detection sets `markdown` from the `.md` name, so the markdown plugins activate normally. The resolved
-directory (from either source) is run through `vim.fn.expand`, so `$HOME`, other env vars, and `~` are all expanded.
-Unlike `:q`/`:x`/`:wq` above, this is an ordinary uppercase user command and needs no `cnoreabbrev` machinery. Bound to
-`<leader>nd` in `keymaps.lua`.
+Daily notes come from obsidian.nvim (`:Obsidian today`), which writes into
+the vault; `<leader>nd` in `keymaps.lua` is a plain `<cmd>Obsidian today<cr>` string rhs, resolved at press time,
+so `keymaps.lua` loading before lazy.nvim is fine. Placement is `config.yml`'s `config.obsidian.dailyNotes` —
+see [`obsidian.md`](obsidian.md).
 
 ## Global Keymap Registry
 
@@ -170,40 +177,42 @@ own files (`markdown.md`, `explorer.md`), not here; the design details behind th
 
 <!-- markdownlint-disable MD013 -->
 
-| Key                               | Mode                             | Action                                                                                                                                                 | Source                    |
-| --------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
-| `<M-Up>` / `<M-Down>`             | n, i, v                          | Move line / selection up/down                                                                                                                          | `config/keymaps.lua`      |
-| `<S-h>` / `<S-l>`                 | n                                | Prev / next buffer tab                                                                                                                                 | `plugins/ui.lua`          |
-| `[b` / `]b`                       | n                                | Prev / next buffer tab                                                                                                                                 | `plugins/ui.lua`          |
-| `[B` / `]B`                       | n                                | Move buffer tab left / right                                                                                                                           | `plugins/ui.lua`          |
-| `<leader>bn` / `<leader>bp`       | n                                | Next / prev buffer tab (duplicates `]b`/`[b`)                                                                                                          | `plugins/ui.lua`          |
-| `<leader>bP`                      | n                                | Delete non-pinned buffers                                                                                                                              | `plugins/ui.lua`          |
-| `<leader>br` / `<leader>bl`       | n                                | Delete buffers to the right / left                                                                                                                     | `plugins/ui.lua`          |
-| `<leader>bj`                      | n                                | Pick buffer                                                                                                                                            | `plugins/ui.lua`          |
-| `<leader>nd`                      | n                                | Open today's note (`:Daily`)                                                                                                                           | `config/keymaps.lua`      |
-| `<leader>cd`                      | n                                | Show line diagnostics (full text) in a wrapping float (`vim.diagnostic.open_float`)                                                                    | `config/keymaps.lua`      |
-| `<leader>gg`                      | n                                | Lazygit (current file's repo)                                                                                                                          | `plugins/git.lua`         |
-| `<F2>`                            | n, i                             | Rename symbol (LSP) — markdown's buffer-local image-rename map shadows it there                                                                        | `plugins/lsp.lua`         |
-| `<F12>`                           | n, i                             | Go to definition (LSP)                                                                                                                                 | `plugins/lsp.lua`         |
-| `<S-F12>` / `<F24>`               | n, i                             | List references (LSP; `<F24>` catches terminals that report Shift+F12 as F24)                                                                          | `plugins/lsp.lua`         |
-| `<leader>cr`                      | n                                | Rename symbol (LSP)                                                                                                                                    | `plugins/lsp.lua`         |
-| `<leader>gd` / `<leader>gr`       | n                                | Go to definition / list references (LSP)                                                                                                               | `plugins/lsp.lua`         |
-| `<leader>r`                       | n, x                             | Refactor menu (LSP)                                                                                                                                    | `plugins/lsp.lua`         |
-| `<leader><leader>`                | n                                | Fuzzy file picker (project)                                                                                                                            | `plugins/picker.lua`      |
-| `<leader>.`                       | n                                | Project grep                                                                                                                                           | `plugins/picker.lua`      |
-| `<leader>e`                       | n                                | Toggle file tree sidebar                                                                                                                               | `plugins/explorer.lua`    |
-| `<C-z>`                           | n                                | Toggle Zen Mode                                                                                                                                        | `plugins/zen.lua`         |
-| `<Tab>`                           | n _(folding buffers)_            | Toggle the fold under the cursor — buffer-local in markdown & LSP-foldable buffers; also binds `<C-i>` (same keycode)                                  | `config/folding.lua`      |
-| `<M-S-Up>` / `<M-S-Down>`         | n, x, i                          | Duplicate cursor to line above/below, same column                                                                                                      | `plugins/multicursor.lua` |
-| `I` / `A`                         | x                                | Multi-cursor insert at start / append at end of selected lines                                                                                         | `plugins/multicursor.lua` |
-| `<C-LeftMouse>`                   | n, i                             | Add/remove cursor at mouse click (replaces built-in mouse jump-to-tag)                                                                                 | `plugins/multicursor.lua` |
-| `<C-RightMouse>` / `<RightMouse>` | n, i                             | Same as `<C-LeftMouse>` — catches macOS's Ctrl+click→right-click synthesis, including terminals that strip the Ctrl modifier from mouse reports (Warp) | `plugins/multicursor.lua` |
-| `<Esc>`                           | n _(while cursors active)_       | Reset to a single cursor — plugin whitelist map, exists only in multi-cursor mode                                                                      | `plugins/multicursor.lua` |
-| `<LeftMouse>`                     | n, i, x _(while cursors active)_ | Reset cursors, then perform the normal click — buffer-local via `pre_hook`/`post_hook`                                                                 | `plugins/multicursor.lua` |
-| `ys{motion}{char}` / `yss`        | n                                | Add surround around motion (`yss` = whole line); nvim-surround defaults                                                                                | `plugins/surround.lua`    |
-| `ds{char}` / `cs{old}{new}`       | n                                | Delete / change the surrounding pair                                                                                                                   | `plugins/surround.lua`    |
-| `S{char}`                         | x                                | Surround the visual selection                                                                                                                          | `plugins/surround.lua`    |
-| `<C-g>s` / `<C-g>S`               | i                                | Insert-mode surround (and its line-wise variant)                                                                                                       | `plugins/surround.lua`    |
+| Key                               | Mode                             | Action                                                                                                                                                               | Source                    |
+| --------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `<M-Up>` / `<M-Down>`             | n, i, v                          | Move line / selection up/down                                                                                                                                        | `config/keymaps.lua`      |
+| `<S-h>` / `<S-l>`                 | n                                | Prev / next buffer tab                                                                                                                                               | `plugins/ui.lua`          |
+| `[b` / `]b`                       | n                                | Prev / next buffer tab                                                                                                                                               | `plugins/ui.lua`          |
+| `[B` / `]B`                       | n                                | Move buffer tab left / right                                                                                                                                         | `plugins/ui.lua`          |
+| `<leader>bn` / `<leader>bp`       | n                                | Next / prev buffer tab (duplicates `]b`/`[b`)                                                                                                                        | `plugins/ui.lua`          |
+| `<leader>bP`                      | n                                | Delete non-pinned buffers                                                                                                                                            | `plugins/ui.lua`          |
+| `<leader>br` / `<leader>bl`       | n                                | Delete buffers to the right / left                                                                                                                                   | `plugins/ui.lua`          |
+| `<leader>bj`                      | n                                | Pick buffer                                                                                                                                                          | `plugins/ui.lua`          |
+| `<leader>nd`                      | n                                | Open today's vault note (`:Obsidian today`)                                                                                                                          | `config/keymaps.lua`      |
+| `<CR>`                            | n _(vault notes)_                | Obsidian smart action: follow link / toggle checkbox / cycle heading fold — buffer-local, plugin default. Insert-mode `<CR>` stays markdown-plus's list continuation | `plugins/obsidian.lua`    |
+| `]o` / `[o`                       | n _(vault notes)_                | Next / previous link — buffer-local, plugin default                                                                                                                  | `plugins/obsidian.lua`    |
+| `<leader>cd`                      | n                                | Show line diagnostics (full text) in a wrapping float (`vim.diagnostic.open_float`)                                                                                  | `config/keymaps.lua`      |
+| `<leader>gg`                      | n                                | Lazygit (current file's repo)                                                                                                                                        | `plugins/git.lua`         |
+| `<F2>`                            | n, i                             | Rename symbol (LSP) — markdown's buffer-local image-rename map shadows it there                                                                                      | `plugins/lsp.lua`         |
+| `<F12>`                           | n, i                             | Go to definition (LSP)                                                                                                                                               | `plugins/lsp.lua`         |
+| `<S-F12>` / `<F24>`               | n, i                             | List references (LSP; `<F24>` catches terminals that report Shift+F12 as F24)                                                                                        | `plugins/lsp.lua`         |
+| `<leader>cr`                      | n                                | Rename symbol (LSP)                                                                                                                                                  | `plugins/lsp.lua`         |
+| `<leader>gd` / `<leader>gr`       | n                                | Go to definition / list references (LSP)                                                                                                                             | `plugins/lsp.lua`         |
+| `<leader>r`                       | n, x                             | Refactor menu (LSP)                                                                                                                                                  | `plugins/lsp.lua`         |
+| `<leader><leader>`                | n                                | Fuzzy file picker (project)                                                                                                                                          | `plugins/picker.lua`      |
+| `<leader>.`                       | n                                | Project grep                                                                                                                                                         | `plugins/picker.lua`      |
+| `<leader>e`                       | n                                | Toggle file tree sidebar                                                                                                                                             | `plugins/explorer.lua`    |
+| `<C-z>`                           | n                                | Toggle Zen Mode                                                                                                                                                      | `plugins/zen.lua`         |
+| `<Tab>`                           | n _(folding buffers)_            | Toggle the fold under the cursor — buffer-local in markdown & LSP-foldable buffers; also binds `<C-i>` (same keycode)                                                | `config/folding.lua`      |
+| `<M-S-Up>` / `<M-S-Down>`         | n, x, i                          | Duplicate cursor to line above/below, same column                                                                                                                    | `plugins/multicursor.lua` |
+| `I` / `A`                         | x                                | Multi-cursor insert at start / append at end of selected lines                                                                                                       | `plugins/multicursor.lua` |
+| `<C-LeftMouse>`                   | n, i                             | Add/remove cursor at mouse click (replaces built-in mouse jump-to-tag)                                                                                               | `plugins/multicursor.lua` |
+| `<C-RightMouse>` / `<RightMouse>` | n, i                             | Same as `<C-LeftMouse>` — catches macOS's Ctrl+click→right-click synthesis, including terminals that strip the Ctrl modifier from mouse reports (Warp)               | `plugins/multicursor.lua` |
+| `<Esc>`                           | n _(while cursors active)_       | Reset to a single cursor — plugin whitelist map, exists only in multi-cursor mode                                                                                    | `plugins/multicursor.lua` |
+| `<LeftMouse>`                     | n, i, x _(while cursors active)_ | Reset cursors, then perform the normal click — buffer-local via `pre_hook`/`post_hook`                                                                               | `plugins/multicursor.lua` |
+| `ys{motion}{char}` / `yss`        | n                                | Add surround around motion (`yss` = whole line); nvim-surround defaults                                                                                              | `plugins/surround.lua`    |
+| `ds{char}` / `cs{old}{new}`       | n                                | Delete / change the surrounding pair                                                                                                                                 | `plugins/surround.lua`    |
+| `S{char}`                         | x                                | Surround the visual selection                                                                                                                                        | `plugins/surround.lua`    |
+| `<C-g>s` / `<C-g>S`               | i                                | Insert-mode surround (and its line-wise variant)                                                                                                                     | `plugins/surround.lua`    |
 
 <!-- markdownlint-enable MD013 -->
 

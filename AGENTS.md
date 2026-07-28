@@ -19,7 +19,7 @@
 ├── vim.yml                    # Vendored selene std: declares the `vim` global
 ├── busted.yml                 # Vendored selene std: busted test globals (describe/it/luassert)
 ├── theme.yml                  # Theme configuration (sourced by plugins/theme.lua; see docs/theming.md)
-├── config.yml                 # Editor configuration (:Daily note dir + filename format; Harper harper-ls options)
+├── config.yml                 # Editor configuration (Obsidian vault + daily notes; Harper harper-ls options)
 ├── docs/                      # User documentation, linked from README.md's table of contents; ships in the release
 ├── scripts/
 │   ├── busted-nvim.sh         # Busted interpreter shim: integration specs in a headless nvim; fixtures via NVIM_CONFIG_ROOT
@@ -31,7 +31,7 @@
 └── lua/
     ├── config/
     │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save; auto-save on InsertLeave)
-    │   ├── commands.lua       # Command-line overrides (:q/:x/:wq close current buffer) + :Daily note command (reads config.yml)
+    │   ├── commands.lua       # Command-line overrides (:q/:x/:wq close the current buffer)
     │   ├── folding.lua        # Shared fold UX: <Tab> toggle, ▼/▶ statuscolumn indicator, click-to-toggle
     │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line, <leader>nd daily note)
     │   ├── lazy.lua           # lazy.nvim bootstrap + setup
@@ -39,10 +39,10 @@
     │   ├── options.lua        # Leader keys + core editor options (wrap, textwidth, mouse, mousemodel)
     │   └── paths.lua          # Config-file path seam (config_root/config_file); NVIM_CONFIG_ROOT redirects to fixtures
     ├── lib/
-    │   ├── daily_utils.lua    # Pure-Lua :Daily config resolver (config.yml over defaults, NVIM_NOTES_DIR override)
     │   ├── harper_utils.lua   # Pure-Lua harper-ls settings resolver (config.harper over harper's defaults)
     │   ├── markdown_fold.lua  # Pure-Lua fold-level computation (headings, list items, fenced code blocks)
     │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
+    │   ├── obsidian_utils.lua # Pure-Lua obsidian.nvim config resolver + single-workspace builder (reads config.yml)
     │   ├── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
     │   ├── save_utils.lua     # Pure-Lua auto-save predicate (which buffers are safe to write)
     │   ├── search_utils.lua   # Pure-Lua case-insensitive substring matcher (grep fallback)
@@ -53,7 +53,8 @@
         ├── lsp.lua            # Language servers (nvim-lspconfig + mason) + completion (blink.cmp)
         ├── markdown.lua       # All markdown plugin specs
         ├── multicursor.lua    # Real-time multiple cursors (multiple-cursors.nvim)
-        ├── picker.lua         # Fuzzy file picker + project grep (snacks.nvim, picker module only)
+        ├── obsidian.lua       # Obsidian vault (obsidian.nvim) + the snacks.image opts fragment
+        ├── picker.lua         # Fuzzy file picker + project grep (snacks.nvim picker; image module in obsidian.lua)
         ├── theme.lua          # Colorscheme — spec built from theme.yml merged over defaults (github-nvim-theme)
         ├── treesitter.lua     # nvim-treesitter (main branch) — highlight queries for code-fence syntax highlighting
         ├── ui.lua             # UI plugins (bufferline.nvim, lualine.nvim)
@@ -62,20 +63,21 @@
     ├── integration/               # Busted specs run INSIDE a fully-loaded headless Neovim (real vim API)
     │   ├── helper.lua             # Busted helper: records vim.notify from session start (require("notify_log"))
     │   ├── autosave_spec.lua      # auto_save contract (InsertLeave-only trigger, nested write autocmds)
-    │   ├── commands_spec.lua      # :BufClose/:BufWriteClose + :q/:x/:wq abbreviations, :Daily end-to-end
+    │   ├── commands_spec.lua      # :BufClose/:BufWriteClose + :q/:x/:wq abbreviations
     │   ├── explorer_spec.lua      # neo-tree: close_if_last_window off, survives float close + rename
-    │   ├── folding_spec.lua       # Fold wiring (foldexpr/statuscolumn/<Tab>), toggling, ▼/▶ indicators
+    │   ├── folding_spec.lua       # Fold wiring (foldexpr/statuscolumn/<Tab>), toggling, indicators, engine guard
     │   ├── keymaps_spec.lua       # Global keymaps (<leader>nd, <leader>bn/bp, <leader>gg)
     │   ├── lsp_spec.lua           # LSP wiring (LspAttach keymaps, server configs) + guarded attach path
     │   ├── markdown_lint_spec.lua # nvim-lint wiring + functional/missing-binary guard paths
     │   ├── multicursor_spec.lua   # multiple-cursors.nvim maps, commands, virtual-cursor core loop
+    │   ├── obsidian_spec.lua      # obsidian.nvim wiring (workspace, coexistence opts, vault-note contract)
     │   ├── options_spec.lua       # Leader keys (load-order regression guard)
     │   └── theme_spec.lua         # theme.yml sourcing (variant applied, plugin name, italic comments)
     └── unit/                      # Pure-Lua Busted specs for lua/lib/ (no Neovim involved)
-        ├── daily_utils_spec.lua
         ├── harper_utils_spec.lua
         ├── markdown_fold_spec.lua
         ├── markdown_utils_spec.lua
+        ├── obsidian_utils_spec.lua
         ├── path_utils_spec.lua
         ├── save_utils_spec.lua
         ├── search_utils_spec.lua
@@ -127,9 +129,10 @@ Detailed guidance lives under `.claude/instructions/` — read the relevant file
 
 | File                                                      | Covers                                                                                                                                                                                                   |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`config.md`](.claude/instructions/config.md)             | lazy.nvim bootstrap, plugin globals vs `require`, editor options, core keymaps, `:q`/`:x`/`:wq` overrides, `:Daily` note command, autocommands (auto-create dirs, auto-save), the global keymap registry |
+| [`config.md`](.claude/instructions/config.md)             | lazy.nvim bootstrap, plugin globals vs `require`, editor options, core keymaps, `:q`/`:x`/`:wq` overrides, autocommands (auto-create dirs, auto-save), fold-source ownership, the global keymap registry |
 | [`markdown.md`](.claude/instructions/markdown.md)         | `lib/markdown_utils.lua`, `plugins/markdown.lua` (markdown-plus, render-markdown, conform, nvim-lint live linting), `<C-S-I>` terminal caveat                                                            |
 | [`plugins.md`](.claude/instructions/plugins.md)           | theme, bufferline/lualine, zen-mode, lazygit, snacks.nvim picker                                                                                                                                         |
+| [`obsidian.md`](.claude/instructions/obsidian.md)         | Obsidian vault (`plugins/obsidian.lua`): config.yml plumbing, the single-workspace decision, coexistence opts, snacks.image                                                                              |
 | [`explorer.md`](.claude/instructions/explorer.md)         | neo-tree file-tree sidebar                                                                                                                                                                               |
 | [`lsp.md`](.claude/instructions/lsp.md)                   | language servers (`plugins/lsp.lua`): servers table, mason install flow, blink.cmp, LspAttach keymaps, refactor menu, diagnostics coexistence                                                            |
 | [`dev-workflow.md`](.claude/instructions/dev-workflow.md) | Adding/fetching plugins, running tests, headless Lua verification                                                                                                                                        |

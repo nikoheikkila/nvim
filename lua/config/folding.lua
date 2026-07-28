@@ -115,6 +115,17 @@ end
 -- indicator's fold-start detection; `opts.foldexpr`/`opts.foldtext` are the
 -- Vimscript option strings for the chosen source. Idempotent.
 function M.enable(buf, opts)
+  -- Markdown owns its fold source: lib.markdown_fold understands headings, list
+  -- nesting and fenced blocks, and its ">N" markers are what the ▼/▶ indicator
+  -- reads (see is_fold_start). A language server attaching to a markdown buffer
+  -- must not replace that — obsidian.nvim runs an in-process LSP (obsidian-ls)
+  -- advertising foldingRangeProvider, which would otherwise downgrade every
+  -- vault note the moment it attached. Upstream agrees: "This plugin will not
+  -- override your fold options. Pick one folding source for markdown buffers."
+  if opts.engine == "lsp" and vim.b[buf].fold_engine == "markdown" then
+    return
+  end
+
   local win = vim.api.nvim_get_current_win()
   if vim.api.nvim_win_get_buf(win) ~= buf then
     win = vim.fn.bufwinid(buf)

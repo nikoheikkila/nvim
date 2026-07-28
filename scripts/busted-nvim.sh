@@ -61,15 +61,24 @@ theme:
         style: undercurl
 EOF
 
-# config.yml — daily.directory is a sentinel (distinct from the real $HOME/Notes)
-# so commands_spec proves NVIM_NOTES_DIR overrides it; filenamePattern stays
-# %Y-%m-%d.md to match that spec's expected filename. Harper values are sentinels
-# (lsp_spec only type-checks them).
+# A throwaway vault for obsidian.nvim to resolve its single workspace against:
+# .obsidian/ is the marker it walks up for, and the directory must exist before
+# nvim starts because plugins/obsidian.lua is lazy = false. Removed by the trap
+# with the rest of $cfgroot.
+mkdir -p "$NVIM_CONFIG_ROOT/fixture-vault/.obsidian"
+
+# config.yml — obsidian.vault is written as the literal $NVIM_CONFIG_ROOT
+# string, not the expanded path: the quoted heredoc keeps it verbatim and
+# vim.fn.expand resolves env vars, so obsidian_spec can recompute the same path.
+# The values are sentinels distinct from the real config.yml. Harper values are
+# sentinels too (lsp_spec only type-checks them).
 cat > "$NVIM_CONFIG_ROOT/config.yml" <<'EOF'
 config:
-  daily:
-    directory: "$HOME/nvim-fixture-notes"
-    filenamePattern: "%Y-%m-%d.md"
+  obsidian:
+    vault: "$NVIM_CONFIG_ROOT/fixture-vault"
+    dailyNotes:
+      folder: "fixture-journal"
+      dateFormat: "YYYY-MM-DD"
   harper:
     dialect: "British"
     diagnosticSeverity: "warning"

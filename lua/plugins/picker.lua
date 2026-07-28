@@ -101,12 +101,16 @@ return {
       },
     },
     opts = {
-      -- Only the fuzzy file picker is wanted. Every other snacks.nvim module
-      -- (dashboard, notifier, zen, terminal, explorer, ...) is opt-in by
+      -- This file wants only the fuzzy file picker. Every other snacks.nvim
+      -- module (dashboard, notifier, zen, terminal, explorer, ...) is opt-in by
       -- snacks.nvim's own design, so it's simply omitted rather than listed
       -- with enabled = false. zen-mode.nvim (lua/plugins/zen.lua) already
       -- covers distraction-free writing, so snacks' own zen module is
       -- deliberately left off.
+      --
+      -- One exception lives elsewhere: plugins/obsidian.lua adds a second
+      -- snacks spec enabling the `image` module (lazy.nvim merges the opts),
+      -- because its path resolver has to call into obsidian.
       picker = {
         enabled = true,
       },

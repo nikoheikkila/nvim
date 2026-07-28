@@ -207,8 +207,10 @@ return {
           setup_lsp_keymaps(ev.buf)
 
           -- Non-markdown folding: drive <Tab>/indicator from the server's
-          -- foldingRange support. Markdown has its own foldexpr (plugins/
-          -- markdown.lua) and no server here, so it never reaches this branch.
+          -- foldingRange support. Markdown keeps its own foldexpr (plugins/
+          -- markdown.lua) even when a server does attach and advertise
+          -- foldingRange — obsidian.nvim's obsidian-ls does — because
+          -- folding.enable() refuses to downgrade a markdown-engine buffer.
           -- ev.data is absent when a spec fires LspAttach synthetically.
           local client = ev.data and vim.lsp.get_client_by_id(ev.data.client_id)
           if client and client.server_capabilities.foldingRangeProvider then

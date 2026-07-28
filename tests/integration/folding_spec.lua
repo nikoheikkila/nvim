@@ -163,4 +163,32 @@ describe("folding", function()
       assert.truthy(vim.wo.statuscolumn:find("folding", 1, true))
     end)
   end)
+
+  -- Regression guard: obsidian.nvim runs an in-process LSP (obsidian-ls) that
+  -- advertises foldingRangeProvider, so plugins/lsp.lua's LspAttach handler
+  -- does reach enable() with engine = "lsp" for vault notes. Markdown's own
+  -- fold source must survive that. Calling enable() directly is the same
+  -- synchronous seam the autocmd uses, so no live server is needed.
+  describe("enable() cannot downgrade a markdown buffer to the LSP engine", function()
+    local buf
+    setup(function()
+      buf = markdown_buf()
+    end)
+    teardown(function()
+      vim.cmd("bwipeout! " .. buf)
+    end)
+
+    it("keeps the markdown engine, foldexpr and foldtext", function()
+      folding.enable(buf, { engine = "lsp", foldexpr = "0", foldtext = "v:lua.vim.lsp.foldtext()" })
+
+      assert.equal("markdown", vim.b[buf].fold_engine)
+      assert.truthy(vim.wo.foldexpr:find("markdown_foldexpr", 1, true))
+      assert.equal("", vim.wo.foldtext)
+    end)
+
+    it("still computes markdown fold levels afterwards", function()
+      assert.equal(1, vim.fn.foldlevel(1)) -- # Title
+      assert.equal(2, vim.fn.foldlevel(2)) -- - parent
+    end)
+  end)
 end)

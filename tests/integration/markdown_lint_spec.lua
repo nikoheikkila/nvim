@@ -165,7 +165,7 @@ describe("live markdown linting", function()
         })
         -- The catch-up lint when nvim-lint first ft-loaded already notified
         -- once (recorded from session start by tests/integration/helper.lua,
-        -- possibly during another spec's :Daily); this second run must not
+        -- possibly during another spec's markdown buffer); this second run must not
         -- notify again, and nothing may be spawned.
         vim.api.nvim_exec_autocmds("TextChanged", { group = "markdown_lint" })
         assert.is_true(

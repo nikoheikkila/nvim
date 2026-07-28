@@ -6,7 +6,8 @@ local M = {}
 -- (scripts/busted-nvim.sh) can point every config read at throwaway fixtures in
 -- a temp dir instead of the real, user-editable files — a test never depends on
 -- what those files happen to contain. An empty value is treated as unset
--- (an exported "" is a truthy Lua string), mirroring daily_utils.effective_directory.
+-- (an exported "" is a truthy Lua string), the same rule the config resolvers in
+-- lua/lib/ apply to their own optional string fields.
 function M.config_root()
   local override = vim.env.NVIM_CONFIG_ROOT
   if override ~= nil and override ~= "" then

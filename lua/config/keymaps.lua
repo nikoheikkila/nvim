@@ -8,10 +8,11 @@ vim.keymap.set("i", "<M-Down>", "<esc><cmd>m .+1<CR>==gi", { desc = "Move line d
 vim.keymap.set("v", "<M-Up>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 vim.keymap.set("v", "<M-Down>", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
 
--- Open today's Markdown note (mnemonic: "new -> daily"). The `:Daily` command
--- is defined in config/commands.lua and resolved at press time, so the
--- keymaps-before-commands load order in init.lua does not matter.
-vim.keymap.set("n", "<leader>nd", "<cmd>Daily<cr>", { desc = "Open today's note" })
+-- Open today's vault note (mnemonic: "new -> daily"). `:Obsidian` comes from
+-- obsidian.nvim (plugins/obsidian.lua) and the string rhs is resolved at press
+-- time, so this file loading before lazy.nvim does not matter. Where the note
+-- lands is config.yml's config.obsidian.dailyNotes — see docs/obsidian.md.
+vim.keymap.set("n", "<leader>nd", "<cmd>Obsidian today<cr>", { desc = "Open today's note" })
 
 -- Show the full diagnostic(s) for the current line in a floating window. Line
 -- diagnostics (virtual text on the right) can't wrap and get truncated on long

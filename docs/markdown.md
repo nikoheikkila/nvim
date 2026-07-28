@@ -115,15 +115,14 @@ These `<localleader>` bindings (`\` by default) are always available in Markdown
 
 ## Daily Notes
 
-`:Daily` (or `Space` `n` `d`) opens today's Markdown note, which is a file named `YYYY-MM-DD.md`. Running it again the
-same day reopens the same note, so it works as a running daily scratchpad; all the Markdown features on this
-page are active in it.
+`Space` `n` `d` (or `:Obsidian today`) opens today's note. Running it again the same day reopens the same note,
+so it works as a running daily scratchpad, and every feature on this page is active in it.
 
-Notes are stored in `$NVIM_NOTES_DIR`, or `~/Notes` if the variable is unset. The directory is created
-automatically on first use. To use a custom location, export an **absolute** path (a literal `~` in the value
-is not expanded):
+Daily notes live in your Obsidian vault, so where they land and what they are named is configured alongside the
+vault — see [Obsidian Vault](obsidian.md#configuring-the-vault).
 
-```sh
-set -gx NVIM_NOTES_DIR "$HOME/Documents/notes"   # fish
-export NVIM_NOTES_DIR="$HOME/Documents/notes"    # bash/zsh
-```
+## Link Navigation
+
+In vault notes, `Enter` follows the link under the cursor. Everywhere else use the built-ins: `g` `f` opens the
+file a relative link points at, and `g` `x` opens a URL in the browser. See
+[Obsidian Vault](obsidian.md#keyboard-shortcuts) for the full set.
