@@ -67,11 +67,12 @@ EOF
 # with the rest of $cfgroot.
 mkdir -p "$NVIM_CONFIG_ROOT/fixture-vault/.obsidian"
 
-# config.yml — obsidian.vault is written as the literal $NVIM_CONFIG_ROOT
-# string, not the expanded path: the quoted heredoc keeps it verbatim and
-# vim.fn.expand resolves env vars, so obsidian_spec can recompute the same path.
+# config.yml — obsidian.vault and harper.userDictPath are written as the literal
+# $NVIM_CONFIG_ROOT string, not the expanded path: the quoted heredoc keeps them
+# verbatim and vim.fn.expand resolves env vars, so obsidian_spec and lsp_spec can
+# recompute the same paths (and lsp_spec can prove the expansion happens at all).
 # The values are sentinels distinct from the real config.yml. Harper values are
-# sentinels too (lsp_spec only type-checks them).
+# sentinels too (lsp_spec otherwise only type-checks them).
 cat > "$NVIM_CONFIG_ROOT/config.yml" <<'EOF'
 config:
   obsidian:
@@ -84,6 +85,7 @@ config:
     diagnosticSeverity: "warning"
     isolateEnglish: true
     maxFileLength: 5000
+    userDictPath: "$NVIM_CONFIG_ROOT/fixture-dictionary.txt"
     codeActions:
       ForceStable: true
     markdown:

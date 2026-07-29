@@ -13,6 +13,17 @@ local paths = require("config.paths")
 -- harper's defaults.
 local config = yaml_utils.read_file(paths.config_file("config.yml"))
 
+-- harper-ls resolves "~" and workspace-relative paths itself, but not "$VAR" —
+-- and config.yml uses that style elsewhere (config.obsidian.vault). Expand here,
+-- at the vim-side seam, so harper and :HarperDict always name the same file.
+-- harper_utils stays free of vim, like every other resolver in lua/lib/.
+local harper = harper_utils.resolve_config(config)
+for _, key in ipairs(harper_utils.OPTIONAL_PATHS) do
+  if harper[key] then
+    harper[key] = vim.fn.expand(harper[key])
+  end
+end
+
 return {
   ts_ls = {}, -- JavaScript + TypeScript; exposes tsserver refactor.* code actions (extract/inline)
   basedpyright = {}, -- Python (maintained pyright fork)
@@ -32,6 +43,6 @@ return {
   -- string literals). Options come from config.yml (`config.harper.*`) via
   -- lib/harper_utils.lua, falling back to harper's defaults when absent.
   harper_ls = {
-    settings = { ["harper-ls"] = harper_utils.resolve_config(config) },
+    settings = { ["harper-ls"] = harper },
   },
 }

@@ -60,10 +60,19 @@ project root:
 
 Integration-suite mechanics worth knowing before writing specs:
 
-- `tests/integration/helper.lua` hooks `vim.notify` at session start and exposes the log as a
-  module (`require("notify_log")`) — needed because once-per-session guards (e.g. the markdownlint
-  missing-binary notification) can fire in whichever spec file first ft-loads the plugin, not the
-  one asserting.
+- **The suite must never write to standard output.** Its stdout is the test report — busted's dot
+  line, counts, and failure diagnostics — so a stray message buries that and reads as a broken run in
+  CI logs. Nothing in a spec should `print()`; assert instead, and let the exit code be the result.
+- Notifications are **captured by default, not echoed**: `tests/integration/helper.lua` _replaces_
+  `vim.notify` at session start — it does not wrap it — and exposes the recorded messages as a module,
+  `require("notify_log")`. Assert against that log — a spec that triggers a warning needs no stub of
+  its own, and none should re-emit. Capturing from session start is also what makes once-per-session
+  guards testable at all (e.g. the markdownlint missing-binary notification fires in whichever spec
+  file first ft-loads the plugin, not the one asserting on it). To see notifications while debugging,
+  temporarily print the log at the end of the run rather than restoring the passthrough.
+- The same rule applies to anything a spec shells out to or drives headlessly: route output into a
+  variable or a temp file and assert on it. `vim.system():wait()` returns `stdout`/`stderr` on the
+  result — use them instead of letting a child process inherit the suite's.
 - File insulation is off (`["auto-insulate"] = false` in `.busted`): the editor process is shared
   global state, and restoring `package.loaded` between files would detach plugin modules from the
   autocmds that captured them. Clean up buffers in `teardown` instead.

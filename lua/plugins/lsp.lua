@@ -38,6 +38,7 @@ return {
       -- Required here (not at spec-collection time) so lsp_servers.lua's
       -- config.yml read for harper_ls happens on plugin load, not every startup.
       local servers = require("config.lsp_servers")
+      local harper_utils = require("lib.harper_utils")
 
       require("mason").setup() -- must run before mason-lspconfig.setup(); prepends mason/bin to PATH
 
@@ -102,6 +103,42 @@ return {
         { label = "Inline", only = { "refactor.inline" } },
         { label = "All refactorings…", only = { "refactor" } },
       }
+
+      -- <leader>ca quick-fix menu: plain code actions, plus the client-side half
+      -- of Harper's dictionary support. Two things make it more than a bare
+      -- vim.lsp.buf.code_action() call:
+      --
+      -- 1. No `context.only` filter, ever. Harper emits "Add "x" to the …
+      --    dictionary." as kind-less lsp.Commands, and Neovim's own action_filter
+      --    drops every kind-less action as soon as `only` is set — which is why
+      --    the refactor menu above can never show them.
+      -- 2. Harper only answers a request whose range sits inside a lint span, so
+      --    with the cursor elsewhere on the line the request has to be snapped
+      --    into one; see lib/harper_utils.quick_fix_position for the measurements.
+      --
+      -- Everything after that is Neovim's: the workspace edit for a replacement,
+      -- workspace/executeCommand for the dictionary commands (harper-ls does the
+      -- file write itself), and aggregation across attached servers.
+      local function quick_fix()
+        local buf = vim.api.nvim_get_current_buf()
+        local spans = {}
+        for _, client in ipairs(vim.lsp.get_clients({ bufnr = buf, name = "harper_ls" })) do
+          local ns = vim.lsp.diagnostic.get_namespace(client.id)
+          vim.list_extend(spans, vim.diagnostic.get(buf, { namespace = ns }))
+        end
+
+        local cursor = vim.api.nvim_win_get_cursor(0)
+        local pos = harper_utils.quick_fix_position({ lnum = cursor[1] - 1, col = cursor[2] }, spans)
+        if not pos then
+          return vim.lsp.buf.code_action()
+        end
+        -- opts.range is mark-indexed (1-based row, 0-based byte col) and
+        -- make_given_range_params converts to the client's utf-16 offsets, so the
+        -- byte columns from vim.diagnostic.get() go in as they are. The cursor
+        -- deliberately stays put: dismissing the menu must not move it.
+        local range = { start = { pos.lnum + 1, pos.col }, ["end"] = { pos.lnum + 1, pos.col } }
+        vim.lsp.buf.code_action({ range = range })
+      end
 
       local function refactor_menu()
         vim.ui.select(refactor_actions, {
@@ -199,6 +236,9 @@ return {
         end
 
         map({ "n", "x" }, "<leader>r", refactor_menu, "Refactor menu")
+        -- Normal mode only: in visual mode the selection is already an explicit
+        -- range, and Neovim's built-in `gra` covers that case unsnapped.
+        map("n", "<leader>ca", quick_fix, "Quick fix menu")
       end
 
       vim.api.nvim_create_autocmd("LspAttach", {

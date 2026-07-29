@@ -101,3 +101,111 @@ describe("resolve_config", function()
     assert.are.same({ "*.min.js", "vendor" }, M.resolve_config(yaml_utils.parse(text)).excludePatterns)
   end)
 end)
+
+describe("quick_fix_position", function()
+  -- One span on line 2, covering columns 25..39 (end_col is exclusive).
+  local function span(lnum, col, end_col)
+    return { lnum = lnum, col = col, end_lnum = lnum, end_col = end_col }
+  end
+
+  local spans = { span(2, 25, 40) }
+
+  it("stays on the cursor when it is inside a span", function()
+    assert.is_nil(M.quick_fix_position({ lnum = 2, col = 30 }, spans))
+  end)
+
+  it("stays on the cursor at the span's first column", function()
+    assert.is_nil(M.quick_fix_position({ lnum = 2, col = 25 }, spans))
+  end)
+
+  it("stays on the cursor at the last column of the span", function()
+    assert.is_nil(M.quick_fix_position({ lnum = 2, col = 39 }, spans))
+  end)
+
+  it("snaps from the left of the only span on the line", function()
+    assert.are.same({ lnum = 2, col = 25 }, M.quick_fix_position({ lnum = 2, col = 0 }, spans))
+  end)
+
+  it("snaps from the right of the only span on the line", function()
+    assert.are.same({ lnum = 2, col = 25 }, M.quick_fix_position({ lnum = 2, col = 80 }, spans))
+  end)
+
+  -- end_col itself is one past the word: harper-ls returns zero actions there,
+  -- so it must snap rather than be treated as inside the span.
+  it("snaps when the cursor sits on the exclusive end column", function()
+    assert.are.same({ lnum = 2, col = 25 }, M.quick_fix_position({ lnum = 2, col = 40 }, spans))
+  end)
+
+  it("picks the nearer of two spans on the line", function()
+    local two = { span(2, 10, 15), span(2, 90, 99) }
+    assert.are.same({ lnum = 2, col = 90 }, M.quick_fix_position({ lnum = 2, col = 80 }, two))
+    assert.are.same({ lnum = 2, col = 10 }, M.quick_fix_position({ lnum = 2, col = 20 }, two))
+  end)
+
+  it("picks the leftmost span when two are equidistant", function()
+    -- Cursor at 20: three columns past the first span's last column (17), and
+    -- three columns short of the second span's start.
+    local two = { span(2, 10, 18), span(2, 23, 30) }
+    assert.are.same({ lnum = 2, col = 10 }, M.quick_fix_position({ lnum = 2, col = 20 }, two))
+  end)
+
+  it("ignores spans on other lines", function()
+    assert.is_nil(M.quick_fix_position({ lnum = 5, col = 30 }, spans))
+  end)
+
+  it("returns nil when there is nothing to snap to", function()
+    assert.is_nil(M.quick_fix_position({ lnum = 2, col = 0 }, {}))
+  end)
+
+  it("treats a multi-line span as covering the lines between its ends", function()
+    local wide = { { lnum = 1, col = 40, end_lnum = 3, end_col = 5 } }
+    assert.is_nil(M.quick_fix_position({ lnum = 2, col = 0 }, wide))
+  end)
+end)
+
+describe("user_dict_path", function()
+  it("uses harper's macOS default", function()
+    assert.are.equal(
+      "/Users/me/Library/Application Support/harper-ls/dictionary.txt",
+      M.user_dict_path({ mac = true, home = "/Users/me" })
+    )
+  end)
+
+  it("uses XDG_CONFIG_HOME off macOS", function()
+    assert.are.equal(
+      "/home/me/xdg/harper-ls/dictionary.txt",
+      M.user_dict_path({ home = "/home/me", xdg_config_home = "/home/me/xdg" })
+    )
+  end)
+
+  it("falls back to ~/.config when XDG_CONFIG_HOME is unset or empty", function()
+    assert.are.equal("/home/me/.config/harper-ls/dictionary.txt", M.user_dict_path({ home = "/home/me" }))
+    assert.are.equal(
+      "/home/me/.config/harper-ls/dictionary.txt",
+      M.user_dict_path({ home = "/home/me", xdg_config_home = "" })
+    )
+  end)
+
+  it("prefers a configured path on every platform", function()
+    assert.are.equal("/dict.txt", M.user_dict_path({ configured = "/dict.txt", mac = true, home = "/Users/me" }))
+    assert.are.equal("/dict.txt", M.user_dict_path({ configured = "/dict.txt", home = "/home/me" }))
+  end)
+
+  it("treats an empty configured path as unset", function()
+    assert.are.equal(
+      "/Users/me/Library/Application Support/harper-ls/dictionary.txt",
+      M.user_dict_path({ configured = "", mac = true, home = "/Users/me" })
+    )
+  end)
+end)
+
+describe("workspace_dict_path", function()
+  it("defaults to .harper-dictionary.txt in the root", function()
+    assert.are.equal("/repo/.harper-dictionary.txt", M.workspace_dict_path({ root = "/repo" }))
+  end)
+
+  it("prefers a configured path", function()
+    assert.are.equal("/ws.txt", M.workspace_dict_path({ configured = "/ws.txt", root = "/repo" }))
+    assert.are.equal("/repo/.harper-dictionary.txt", M.workspace_dict_path({ configured = "", root = "/repo" }))
+  end)
+end)

@@ -12,13 +12,20 @@ config:
   # Harper grammar/spell checker (harper-ls). See docs for the full option list:
   # https://writewithharper.com/docs/integrations/neovim
   harper:
-    # dialect: American | British | Australian | Canadian
+    # dialect: American | British | Australian | Canadian | Indian
     dialect: "American"
     # diagnosticSeverity: hint | information | warning | error
     diagnosticSeverity: "hint"
     isolateEnglish: false
     maxFileLength: 120000
-    # Dictionary/ignore paths: empty means "use harper's default location".
+    # Dictionary/ignore paths: empty means "use harper's default location", which
+    # for the user dictionary is ~/Library/Application Support/harper-ls/
+    # dictionary.txt on macOS and $XDG_CONFIG_HOME/harper-ls/dictionary.txt on
+    # Linux, and .harper-dictionary.txt in the project root for the workspace one.
+    # `:HarperDict` / `:HarperDict project` open those two for editing.
+    # userDictPath and workspaceDictPath name a FILE; fileDictPath and
+    # ignoredLintsPath name a DIRECTORY. "~", "$VARS", and paths relative to the
+    # project root all work.
     userDictPath: ""
     workspaceDictPath: ""
     fileDictPath: ""

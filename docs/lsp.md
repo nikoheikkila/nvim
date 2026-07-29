@@ -14,6 +14,7 @@ These shortcuts become active in a buffer once its language server attaches:
 | `F12` or `Space` `g` `d`       | Go to definition (a picker opens when there are several)        |
 | `Shift+F12` or `Space` `g` `r` | List all references in a modal picker                           |
 | `Space` `r`                    | Refactoring menu — rename, extract function/constant, inline, … |
+| `Space` `c` `a`                | Quick Fix menu — corrections for the problem under the cursor   |
 | `Space` `c` `d`                | Show the line's full diagnostics in a wrapping popup            |
 
 Completion pops up automatically while typing, with the first suggestion preselected: `Enter` accepts it,
@@ -35,6 +36,32 @@ underline** to set it apart from code diagnostics.
 Options — dialect, which lints run, dictionary paths, `excludePatterns`, and more — live under
 `config.harper` in `config.yml`; the file documents each field. If the underline renders flat instead of
 wavy, the terminal needs undercurl support — see [Terminal Setup](terminal.md).
+
+### Teaching Harper a word
+
+Harper flags jargon, product names, and internal terms as misspellings. To teach it one, put the cursor on
+the flagged word — or anywhere on its line — and press `Space` `c` `a`:
+
+| Action                                     | Effect                                                       |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| `Replace with: “…”`                        | Accept Harper's correction                                   |
+| `Add "…" to the user dictionary.`          | Accept the word everywhere, on this machine                  |
+| `Add "…" to the workspace dictionary.`     | Accept it in this project — `.harper-dictionary.txt` at the repo root, so it can be committed |
+| `Add "…" to the file dictionary.`          | Accept it in this one file                                   |
+| `Ignore Harper error.`                     | Silence this one occurrence, without learning the word       |
+
+Pick one and the underline goes away. If the buffer has unsaved changes the flag may linger for a keystroke —
+Harper re-reads the file from disk when it updates the dictionary — so just keep typing or save.
+
+Not every flag offers the dictionary entries: Harper only offers them for **spelling** complaints. Style ones —
+"This sentence does not start with a capital letter", "An Oxford comma is necessary here" — offer a
+correction and `Ignore Harper error.` only.
+
+The dictionaries are plain text, one word per line (no comments — a `#` line becomes a literal word). To
+remove a word you added by mistake, `:HarperDict` opens the user dictionary and `:HarperDict project` the
+project one; delete the line, save, and the flag returns. Unless `config.yml` overrides the paths, the user
+dictionary is at `~/Library/Application Support/harper-ls/dictionary.txt` on macOS and
+`~/.config/harper-ls/dictionary.txt` on Linux.
 
 ## Notes
 

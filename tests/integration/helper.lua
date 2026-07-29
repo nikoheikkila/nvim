@@ -7,11 +7,15 @@
 -- buffer (e.g. folding_spec's scratch notes) — not necessarily the spec that
 -- asserts on it (markdown_lint_spec). Specs read the log with
 -- require("notify_log").
+--
+-- Capturing REPLACES vim.notify rather than wrapping it: the suite's stdout is
+-- the test report, and a passed-through notification prints into it. That noise
+-- reads as a failing run in CI logs and buries busted's own output, so the
+-- default is silence and the log is the only way to observe a notification.
+-- Assert on the log; nothing in the suite should ever reach the terminal.
 local log = {}
 package.loaded["notify_log"] = log
 
-local orig_notify = vim.notify
-vim.notify = function(msg, ...)
+vim.notify = function(msg)
   table.insert(log, tostring(msg))
-  return orig_notify(msg, ...)
 end
