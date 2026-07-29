@@ -22,6 +22,50 @@ The leader key is `Space`.
 | `Ctrl+Z`                          | Toggle Zen Mode                                                                    |
 | `Alt+Up` / `Alt+Down`             | Move current line or selection up / down                                           |
 | `Alt+Shift+Up` / `Alt+Shift+Down` | Add a cursor on the line above / below (see [Multiple Cursors](#multiple-cursors)) |
+| `g` `t` + a motion                | Title-case the text the motion covers (see [Title Case](#title-case))              |
+| Select text, then `t`             | Title-case the selection (see [Title Case](#title-case))                           |
+
+## Title Case
+
+Rewrites headings and titles to follow the [AMA title case rules](https://titlecapitalize.com/ama-title-case-rules/):
+major words get a capital, while articles, coordinating conjunctions and short prepositions stay lowercase in the
+middle of a title.
+
+| Action                     | Result                                                     |
+| -------------------------- | ---------------------------------------------------------- |
+| `g` `t` `i` `w`            | Title-case the word under the cursor                       |
+| `g` `t` `$`                | Title-case from the cursor to the end of the line          |
+| `g` `t` `j`                | Title-case this line and the next                          |
+| Select text, then `t`      | Title-case the selection (charwise, linewise or block)     |
+| `.`                        | Repeat the last title-casing on wherever the cursor now is |
+| `u`                        | Undo the whole title-casing in one step                    |
+
+`g` `t` takes any motion or text object, the same way `d` and `y` do. Each **line** is treated as its own title, so
+its first and last word are always capitalized.
+
+What it does:
+
+| Before                                          | After                                           |
+| ----------------------------------------------- | ----------------------------------------------- |
+| `journal of clinical epidemiology`              | `Journal of Clinical Epidemiology`              |
+| `oncology: immunotherapy with anti-PD-1 agents` | `Oncology: Immunotherapy With Anti-PD-1 Agents` |
+| `pharmacology of β-blocker therapy`             | `Pharmacology of β-Blocker Therapy`             |
+| `diseases we care for`                          | `Diseases We Care For`                          |
+| `meta-analysis methods for evidence synthesis`  | `Meta-Analysis Methods for Evidence Synthesis`  |
+
+Notes:
+
+- **Abbreviations are never touched.** Any word already carrying a capital beyond its first letter is left exactly as
+  typed, which is what keeps `DNA`, `SARS-CoV-2`, `HbA1c`, `eGFR` and `PD-1` intact. Greek letters are left alone too.
+- **The flip side:** an ALL-CAPS title counts as "already capitalized" and is left untouched. Lowercase it first, then
+  title-case it: `guu` then `g` `t` `$`, or select the line with `V` and press `u` then `t`. (`gu` is itself an operator,
+  so it needs its own motion — `gugt$` does not work.) A lowercase abbreviation can't be recognised either, so `dna`
+  becomes `Dna`.
+- Prepositions of four letters or more (`With`, `Between`, `Through`) **are** capitalized — that is AMA's rule, not an
+  oversight.
+- `g` `t` replaces Neovim's built-in "go to next tab page". This config uses buffers as tabs, so nothing is really
+  lost; `gT` and `:tabnext` still move between tab pages if you ever open one.
+- In visual mode `t` replaces the built-in `t{char}` "till" motion. Use `f{char}` or `/` to extend a selection instead.
 
 ## Buffers
 

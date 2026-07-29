@@ -114,6 +114,26 @@ line (or a visual selection) up/down using the `:m[ove]` command with `==` to re
 | `<M-Down>`   | x    | Move selection down (stays selected via `gv=gv`)                    |
 | `<leader>nd` | n    | Open today's vault note (`:Obsidian today`; mnemonic "new → daily") |
 | `<leader>cd` | n    | Show line diagnostics in a wrapping float                           |
+| `gt{motion}` | n    | Title-case the motion (AMA rules)                                   |
+| `t`          | x    | Title-case the selection (AMA rules)                                |
+
+**Title casing:** the AMA rules live in `lib/title_case.lua` — pure Lua, unit-tested in
+`tests/unit/title_case_spec.lua`, and the place to change what gets capitalized (its `MINOR_WORDS` table is the
+articles/conjunctions/short-prepositions set). `config/title_case.lua` is buffer plumbing only: it turns a motion or a
+selection into a range and writes the result back. Three things there are easy to break:
+
+- `gt` is an `<expr>` map returning `"g@"`, which is what hands the motion back to Vim and buys dot-repeat and counts.
+  Setting `'operatorfunc'` to `v:lua.require'config.title_case'.opfunc` keeps the callback off `_G`, which selene wants.
+- The visual map presses `<Esc>` before calling: the `<`/`>` marks and `visualmode()` only describe the selection once
+  visual mode has ended.
+- Mark columns are **inclusive** byte offsets, but `nvim_buf_get_text` wants an exclusive end. `exclusive_end()` walks
+  to the end of the final codepoint via `vim.str_utf_end` and clamps to the line length — without the walk a multibyte
+  character (`β`) is sliced mid-sequence, and without the clamp the huge sentinel column that linewise and `$`-extended
+  ranges report overruns the line.
+
+`gt` deliberately shadows the built-in "go to next tab page": buffers are the tabs in this config and nothing here binds
+tab pages, so `gT` and `:tabnext` are left as the way to reach them. Because `gt` is an operator, it waits for a motion
+rather than pausing for `timeoutlen`, so the prefix caveat below does not apply to it.
 
 **Terminal compatibility:** `<M-…>` is the Alt/Option key. On macOS the Option key does not send a Meta modifier by
 default — the terminal must be configured to (Kitty/Ghostty/WezTerm via the Kitty keyboard protocol, or
@@ -213,6 +233,8 @@ own files (`markdown.md`, `explorer.md`), not here; the design details behind th
 | `ds{char}` / `cs{old}{new}`       | n                                | Delete / change the surrounding pair                                                                                                                                 | `plugins/surround.lua`    |
 | `S{char}`                         | x                                | Surround the visual selection                                                                                                                                        | `plugins/surround.lua`    |
 | `<C-g>s` / `<C-g>S`               | i                                | Insert-mode surround (and its line-wise variant)                                                                                                                     | `plugins/surround.lua`    |
+| `gt{motion}`                      | n                                | Title-case the motion under the AMA rules — an `<expr>`/`g@` operator, so it dot-repeats. Shadows the built-in next-tab page; `gT` still works                       | `config/keymaps.lua`      |
+| `t`                               | x                                | Title-case the selection under the AMA rules. Shadows the built-in visual `t{char}` "till" motion                                                                    | `config/keymaps.lua`      |
 
 <!-- markdownlint-enable MD013 -->
 

@@ -21,3 +21,18 @@ vim.keymap.set("n", "<leader>nd", "<cmd>Obsidian today<cr>", { desc = "Open toda
 vim.keymap.set("n", "<leader>cd", function()
   vim.diagnostic.open_float(nil, { border = "rounded", source = true })
 end, { desc = "Show line diagnostics" })
+
+-- Title-case text under the AMA rules: lib/title_case.lua owns the rules,
+-- config/title_case.lua the buffer work, and "Title casing" in
+-- .claude/instructions/config.md the details. Returning "g@" from an <expr> map
+-- makes `gt` a real operator, so it takes any motion and dot-repeats. This
+-- deliberately shadows the built-in `gt` (next tab page): buffers are the tabs
+-- here, and `gT` plus `:tabnext` remain.
+vim.keymap.set("n", "gt", function()
+  vim.o.operatorfunc = "v:lua.require'config.title_case'.opfunc"
+  return "g@"
+end, { expr = true, desc = "Title case (operator)" })
+
+-- <Esc> first: the < and > marks only describe the selection once visual mode
+-- has ended, and <Cmd> then runs without changing mode again.
+vim.keymap.set("x", "t", "<Esc><Cmd>lua require('config.title_case').visual()<CR>", { desc = "Title case selection" })
