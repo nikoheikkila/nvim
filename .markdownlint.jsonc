@@ -8,5 +8,6 @@
     // Prettier (conform.nvim, on save) re-pads table cells to align pipes and
     // offers no way to turn that off — exempt tables from line-length checks.
     "tables": false
-  }
+  },
+  "MD060": false
 }
