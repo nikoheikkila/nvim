@@ -38,7 +38,8 @@ or call the plugin's health module directly: `require("plugin_name.health").chec
 
 ## Testing
 
-Tests are run through the tasks in `Taskfile.yml`, **NEVER** invoke `busted` directly.
+Tests are run through the tasks in `Taskfile.yml`. Invoking `busted` directly skips the interpreter and
+rocks-tree wiring the tasks set up (see Install below), so the integration suite won't resolve.
 
 `task test` runs the
 full pipeline (`test:unit` then `test:integration`), and each is runnable individually.

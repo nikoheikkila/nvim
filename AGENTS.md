@@ -2,155 +2,56 @@
 
 `CLAUDE.md` is a symlink to this file — `AGENTS.md` is the single source of truth for project instructions.
 
-## Directory Structure
+## Layout
 
-```text
-~/.config/nvim/
-├── init.lua                   # Entry point — requires config.options, autocmds, keymaps, commands, then config.lazy
-├── AGENTS.md                  # This file — project instructions (single source of truth)
-├── CLAUDE.md                  # Symlink -> AGENTS.md
-├── CONTRIBUTING.md            # Contributor guide (setup, tests, style, PR workflow); excluded from releases
-├── lazy-lock.json             # Plugin version lockfile (commit-pinned)
-├── Taskfile.yml                # Task runner: `task lint`, `task format` (stylua + markdownlint --fix), `task test`
-├── .busted                    # Busted config: `unit` task (tests/unit) + `integration` task (tests/integration)
-├── .markdownlint.jsonc        # Base markdownlint config for live linting (MD013 aligned to textwidth=120)
-├── selene.toml                # Lua linter config (std = "busted+lua51+vim")
-├── stylua.toml                # Lua formatter config (2-space indent, 120 columns; used by `task format` + conform.nvim)
-├── vim.yml                    # Vendored selene std: declares the `vim` global
-├── busted.yml                 # Vendored selene std: busted test globals (describe/it/luassert)
-├── theme.yml                  # Theme configuration (sourced by plugins/theme.lua; see docs/theming.md)
-├── config.yml                 # Editor configuration (Obsidian vault + daily notes; Harper harper-ls options)
-├── docs/                      # User documentation, linked from README.md's table of contents; ships in the release
-├── scripts/
-│   ├── busted-nvim.sh         # Busted interpreter shim: integration specs in a headless nvim; fixtures via NVIM_CONFIG_ROOT
-│   ├── check.sh               # Everything CI runs, in order: lint, unit, integration, guard path
-│   ├── debug-keys.lua         # :luafile it to log which key/mouse events actually reach Neovim
-│   ├── headless-lua.sh        # Run a Lua script in a fully-loaded headless nvim (`nvim -l` skips user config)
-│   ├── test-without-binary.sh # Run a command with one binary hidden from PATH (test executable-guard fallbacks)
-│   └── verify-config-isolation.sh # Proves integration tests ignore the real config files (corrupt + byte-restore via trap)
-└── lua/
-    ├── config/
-    │   ├── autocmds.lua       # Editor autocommands (auto-create parent dirs on save; auto-save on InsertLeave)
-    │   ├── commands.lua       # Command-line overrides (:q/:x/:wq close the current buffer)
-    │   ├── folding.lua        # Shared fold UX: <Tab> toggle, ▼/▶ statuscolumn indicator, click-to-toggle
-    │   ├── keymaps.lua        # Core (non-plugin) keymaps (Alt+Up/Down move line, <leader>nd daily note)
-    │   ├── lazy.lua           # lazy.nvim bootstrap + setup
-    │   ├── lsp_servers.lua    # Language-server table (single source; plugins/lsp.lua + lsp_spec; harper_ls ← config.yml)
-    │   ├── options.lua        # Leader keys + core editor options (wrap, textwidth, mouse, mousemodel)
-    │   └── paths.lua          # Config-file path seam (config_root/config_file); NVIM_CONFIG_ROOT redirects to fixtures
-    ├── lib/
-    │   ├── harper_utils.lua   # Pure-Lua harper-ls settings resolver (config.harper over harper's defaults)
-    │   ├── markdown_fold.lua  # Pure-Lua fold-level computation (headings, list items, fenced code blocks)
-    │   ├── markdown_utils.lua # Pure-Lua utility functions for markdown editing
-    │   ├── obsidian_utils.lua # Pure-Lua obsidian.nvim config resolver + single-workspace builder (reads config.yml)
-    │   ├── path_utils.lua     # Pure-Lua path helpers (URI-scheme detection)
-    │   ├── save_utils.lua     # Pure-Lua auto-save predicate (which buffers are safe to write)
-    │   ├── search_utils.lua   # Pure-Lua case-insensitive substring matcher (grep fallback)
-    │   └── yaml_utils.lua     # Pure-Lua minimal YAML-subset parser incl. block sequences (reads theme.yml + config.yml)
-    └── plugins/
-        ├── explorer.lua       # File-tree sidebar (neo-tree.nvim)
-        ├── git.lua            # Lazygit integration (lazygit.nvim)
-        ├── lsp.lua            # Language servers (nvim-lspconfig + mason) + completion (blink.cmp)
-        ├── markdown.lua       # All markdown plugin specs
-        ├── multicursor.lua    # Real-time multiple cursors (multiple-cursors.nvim)
-        ├── obsidian.lua       # Obsidian vault (obsidian.nvim) + the snacks.image opts fragment
-        ├── picker.lua         # Fuzzy file picker + project grep (snacks.nvim picker; image module in obsidian.lua)
-        ├── theme.lua          # Colorscheme — spec built from theme.yml merged over defaults (github-nvim-theme)
-        ├── treesitter.lua     # nvim-treesitter (main branch) — highlight queries for code-fence syntax highlighting
-        ├── ui.lua             # UI plugins (bufferline.nvim, lualine.nvim)
-        └── zen.lua            # Distraction-free writing (zen-mode.nvim)
-└── tests/
-    ├── integration/               # Busted specs run INSIDE a fully-loaded headless Neovim (real vim API)
-    │   ├── helper.lua             # Busted helper: records vim.notify from session start (require("notify_log"))
-    │   ├── autosave_spec.lua      # auto_save contract (InsertLeave-only trigger, nested write autocmds)
-    │   ├── commands_spec.lua      # :BufClose/:BufWriteClose + :q/:x/:wq abbreviations
-    │   ├── explorer_spec.lua      # neo-tree: close_if_last_window off, survives float close + rename
-    │   ├── folding_spec.lua       # Fold wiring (foldexpr/statuscolumn/<Tab>), toggling, indicators, engine guard
-    │   ├── keymaps_spec.lua       # Global keymaps (<leader>nd, <leader>bn/bp, <leader>gg)
-    │   ├── lsp_spec.lua           # LSP wiring (LspAttach keymaps, server configs) + guarded attach path
-    │   ├── markdown_lint_spec.lua # nvim-lint wiring + functional/missing-binary guard paths
-    │   ├── multicursor_spec.lua   # multiple-cursors.nvim maps, commands, virtual-cursor core loop
-    │   ├── obsidian_spec.lua      # obsidian.nvim wiring (workspace, coexistence opts, vault-note contract)
-    │   ├── options_spec.lua       # Leader keys (load-order regression guard)
-    │   └── theme_spec.lua         # theme.yml sourcing (variant applied, plugin name, italic comments)
-    └── unit/                      # Pure-Lua Busted specs for lua/lib/ (no Neovim involved)
-        ├── harper_utils_spec.lua
-        ├── markdown_fold_spec.lua
-        ├── markdown_utils_spec.lua
-        ├── obsidian_utils_spec.lua
-        ├── path_utils_spec.lua
-        ├── save_utils_spec.lua
-        ├── search_utils_spec.lua
-        └── yaml_utils_spec.lua
-```
+- `init.lua` requires, in order: `config.options`, `config.autocmds`, `config.keymaps`, `config.commands`,
+  `config.lazy`. Leader keys are set in `config/options.lua` because it loads first — a `<leader>` map created
+  before `vim.g.mapleader` is set silently binds under the default `\`. Don't reorder those requires, and don't
+  create `<leader>` maps in anything that loads before `options.lua`.
+- `lua/plugins/*.lua` return lazy.nvim specs and are auto-imported via `spec = { { import = "plugins" } }` in
+  `config/lazy.lua` — adding a file there is all it takes to activate a plugin.
+- `lua/lib/*.lua` is pure Lua with no `vim` dependency, unit-tested outside Neovim (`tests/unit/`). Logic that can
+  live there generally should: `tests/integration/` boots a real headless Neovim, and is slower and more coupled.
+- `theme.yml` and `config.yml` are the user-facing configuration surface, parsed by `lib/yaml_utils.lua`. New
+  user-tunable settings belong there rather than hardcoded in Lua — extend the parser if the shape doesn't fit.
+- `scripts/` holds the test and verification harnesses. `Taskfile.yml` (`task -a`) is the entry point for
+  lint, format, and test.
 
-`init.lua` calls the entry point that calls the following files:
+## Invariants
 
-- `config.options`
-- `config.autocmd`
-- `config.keymaps`
-- `config.commands`
-- `config.lazy`
-
-All plugin specs live under `lua/plugins/` and
-are auto-imported by lazy.nvim via `spec = { { import = "plugins" } }` in `lua/config/lazy.lua`. Adding a new
-file to `lua/plugins/` is enough to activate new plugins.
-
-Leader keys are set in `options.lua` because it loads first — a
-`<leader>` mapping created before `vim.g.mapleader` is set silently and binds under the default.
-Don't reorder the `require` lines, and don't set `<leader>` maps anywhere that loads
-before `options.lua`.
-
-Tests are run through the `Taskfile.yml` tasks (`task test`, `task test:unit`, `task test:integration`), not
-by invoking `busted` directly — see [`dev-workflow.md`](.claude/instructions/dev-workflow.md).
-
-**Never corrupt the real config files (`theme.yml`, `config.yml`, `.markdownlint.jsonc`) in place to test or
-prove anything.** Integration tests read only the throwaway fixtures the harness injects via `NVIM_CONFIG_ROOT`
-(`scripts/busted-nvim.sh`), so touching the real files is never required. To prove that isolation, run
-`scripts/verify-config-isolation.sh` — it corrupts and then byte-restores them under a `trap`, so an interrupted or
-failed run can't leave your config broken. Do **not** "restore" an overwritten real file with `git checkout` — it
-silently discards uncommitted edits and can't recover untracked content. When a verification genuinely must mutate
-tracked files, do it in an isolated `git worktree` or snapshot the exact bytes first and restore from that.
-
-## Agentic Process
-
-Proactively delegate the tasks to following subagents:
-
-- `Plan` agent whenever the user asks to plan, design, architect, or research a task
-- `Explore` agent when you need to perform rapid local codebase explorations
-- `lua-docs-explorer` agent when you need to ground answers to Lua language documentation
-- `nvim-docs-explorer` agent when you need to ground answers to Neovim documentation
-
-The `general-purpose` agent is suitable for all other tasks.
+- Tests run through `Taskfile.yml` (`task test`, `task test:unit`, `task test:integration`). Invoking `busted`
+  directly resolves the wrong rocks tree — see [`dev-workflow.md`](.claude/instructions/dev-workflow.md).
+- Don't edit the real `theme.yml`, `config.yml`, or `.markdownlint.jsonc` to test or prove something. Integration
+  specs read throwaway fixtures injected via `NVIM_CONFIG_ROOT` (`scripts/busted-nvim.sh`), so mutating the real
+  files is never required — and `git checkout` won't restore uncommitted or untracked content afterwards.
+  `scripts/verify-config-isolation.sh` demonstrates the isolation safely (corrupt + byte-restore under a `trap`).
+- Check the Global Keymap Registry in `config.md` before choosing a key for a new mapping, and add a row when you
+  create one. Keymaps are otherwise scattered across `keys` tables in a dozen files with no other index.
+- `config/folding.lua` owns `statuscolumn` in markdown buffers and in any LSP buffer whose server advertises
+  `foldingRangeProvider` — i.e. most buffers. It fully replaces Neovim's gutter rendering there, so `number`,
+  `relativenumber`, `signcolumn`, and `foldcolumn` do not draw on their own. Read it, and "Statuscolumn Ownership"
+  in `config.md`, before setting any gutter option.
+- Bindings have to survive the terminal. This config runs in Warp on macOS with a trackpad, where the OS and
+  terminal rewrite or swallow events before Neovim sees them: Ctrl+arrows go to Mission Control, and Ctrl+click
+  arrives as a right-click with the modifier stripped. Read "Mouse/terminal caveat" in `config.md` before choosing
+  a Ctrl-chord or mouse binding. `:map` proves registration, not delivery — `:luafile scripts/debug-keys.lua`
+  proves delivery.
 
 ## Instructions
 
-Detailed guidance lives under `.claude/instructions/` — read the relevant file before touching that area:
+Detailed guidance lives under `.claude/instructions/`. Read the file covering an area before changing it.
 
-| File                                                      | Covers                                                                                                                                                                                                   |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`config.md`](.claude/instructions/config.md)             | lazy.nvim bootstrap, plugin globals vs `require`, editor options, core keymaps, `:q`/`:x`/`:wq` overrides, autocommands (auto-create dirs, auto-save), fold-source ownership, the global keymap registry |
-| [`markdown.md`](.claude/instructions/markdown.md)         | `lib/markdown_utils.lua`, `plugins/markdown.lua` (markdown-plus, render-markdown, conform, nvim-lint live linting), `<C-S-I>` terminal caveat                                                            |
-| [`plugins.md`](.claude/instructions/plugins.md)           | theme, bufferline/lualine, zen-mode, lazygit, snacks.nvim picker                                                                                                                                         |
-| [`obsidian.md`](.claude/instructions/obsidian.md)         | Obsidian vault (`plugins/obsidian.lua`): config.yml plumbing, the single-workspace decision, coexistence opts, snacks.image                                                                              |
-| [`explorer.md`](.claude/instructions/explorer.md)         | neo-tree file-tree sidebar                                                                                                                                                                               |
-| [`lsp.md`](.claude/instructions/lsp.md)                   | language servers (`plugins/lsp.lua`): servers table, mason install flow, blink.cmp, LspAttach keymaps, refactor menu, diagnostics coexistence                                                            |
-| [`dev-workflow.md`](.claude/instructions/dev-workflow.md) | Adding/fetching plugins, running tests, headless Lua verification                                                                                                                                        |
-
-Check `config.md` file Global Keymap Registry before adding any new global keymap — eight files declare keys and
-there's no other index.
-
-**Before setting any editor option that affects the left gutter** (`number`, `relativenumber`, `signcolumn`,
-`foldcolumn`), read `config/folding.lua` first. Its custom `statuscolumn` fully replaces Neovim's built-in gutter
-rendering for every buffer where folding is enabled (markdown buffers, and any LSP buffer whose server advertises
-`foldingRangeProvider` — i.e. most buffers in practice), so a built-in option's default rendering does **not**
-apply automatically there. See `config.md`'s "Statuscolumn Ownership" section for what re-implementing it
-involves (e.g. `number` needed a manually-composed, `numberwidth`-padded `%l` item).
-
-**Bindings must survive the terminal.** This config runs in Warp on macOS with a trackpad: the OS and terminal
-rewrite or swallow events before Neovim sees them. Ctrl+arrows go to Mission Control. Ctrl+click becomes a
-right-click and Warp strips the Ctrl modifier from mouse reports.
-
-Read `config.md` file "Mouse/terminal caveat"
-before choosing any Ctrl-chord or mouse binding, and diagnose "dead" bindings with
-`:luafile scripts/debug-keys.lua` — `:map` only proves registration, not delivery.
+- [`config.md`](.claude/instructions/config.md) — `lua/config/`: options, autocommands, core keymaps,
+  `:q`/`:x`/`:wq` overrides, statuscolumn and fold-source ownership, the Global Keymap Registry, the
+  mouse/terminal caveat
+- [`markdown.md`](.claude/instructions/markdown.md) — `lib/markdown_utils.lua` and the markdown plugin stack:
+  markdown-plus, render-markdown, conform, nvim-lint live linting, folding
+- [`plugins.md`](.claude/instructions/plugins.md) — theme, treesitter, bufferline/lualine, zen-mode, lazygit,
+  multicursor, snacks.nvim picker
+- [`obsidian.md`](.claude/instructions/obsidian.md) — Obsidian vault: `config.yml` plumbing, the
+  single-workspace decision, coexistence opts, snacks.image
+- [`explorer.md`](.claude/instructions/explorer.md) — neo-tree file-tree sidebar
+- [`lsp.md`](.claude/instructions/lsp.md) — language servers: the servers table, mason install flow, blink.cmp,
+  LspAttach keymaps, refactor menu, diagnostics coexistence
+- [`dev-workflow.md`](.claude/instructions/dev-workflow.md) — adding and fetching plugins, running the test
+  suites, headless Lua verification

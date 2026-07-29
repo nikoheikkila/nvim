@@ -168,9 +168,8 @@ Every **global** (non-buffer-local) keymap in this config, in one place — plus
 "LSP"): those maps are buffer-local via `LspAttach`, but they occupy their keys in effectively every code
 buffer, so they belong in this index rather than an exception paragraph.
 
-**Check the table below before choosing a key for a
-new mapping, and add a row when you create one** — keymaps are otherwise scattered across `keys` tables in six files and
-finding a free key requires a grep sweep.
+Check the table below before choosing a key for a new mapping, and add a row when you create one — keymaps are
+otherwise scattered across `keys` tables in a dozen plugin specs, and finding a free key requires a grep sweep.
 
 Filetype- and buffer-specific maps (markdown `<C-*>` keys, the neo-tree tree buffer) are documented in their
 own files (`markdown.md`, `explorer.md`), not here; the design details behind the LSP rows live in `lsp.md`.

@@ -109,12 +109,11 @@ blocking boolean return when `callback` is nil.
 
 ## Transparency
 
-No highlight patching is needed (unlike `RenderMarkdownCode`, see `markdown.md`): laserwave's
-`transparent = true` clears `Normal`'s background, `NormalNC` links to `Normal`, and laserwave's own
-`groups/plugins/neotree.lua` deliberately leaves `NeoTreeNormal`/`NeoTreeNormalNC`/`NeoTreeEndOfBuffer`
-undefined, so neo-tree's link-to-`Normal` defaults inherit the transparency (laserwave does ship
-fg-only `NeoTreeGit*` status colors). If a future update introduces an opaque region, follow the
-`markdown.lua` `ColorScheme`-autocmd precedent, clearing only `bg` and preserving `fg`.
+`explorer.lua` patches no highlight groups, unlike `RenderMarkdownCode` (see `markdown.md`). neo-tree
+leaves `NeoTreeNormal`/`NeoTreeNormalNC`/`NeoTreeEndOfBuffer` linked to `Normal` unless the colorscheme
+defines them, so the sidebar inherits whatever background the theme sets. If a theme change introduces
+an opaque region, follow the `markdown.lua` `ColorScheme`-autocmd precedent, clearing only `bg` and
+preserving `fg`.
 
 ## Verifying file operations headlessly
 
