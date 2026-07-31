@@ -13,7 +13,7 @@ config:
   # https://writewithharper.com/docs/integrations/neovim
   harper:
     # dialect: American | British | Australian | Canadian | Indian
-    dialect: "American"
+    dialect: "British"
     # diagnosticSeverity: hint | information | warning | error
     diagnosticSeverity: "hint"
     isolateEnglish: false

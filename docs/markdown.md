@@ -66,7 +66,7 @@ If `prettier` is not installed, saving works normally and a one-time warning is 
 
 While you write, `markdownlint-cli2` checks the buffer including unsaved changes and marks every
 offending line with a dark yellow background and the exact warning at the end of the line, for example
-`MD022/blanks-around-headings Headings should be surrounded by blank lines`. Warnings appear about 300 ms
+`MD022/blanks-around-headings Headings should be surrounded by blank lines`. Warnings appear about 300 milliseconds
 after you stop typing and disappear as soon as the issue is fixed.
 
 Rule defaults live in `.markdownlint.jsonc` in this repository; the line-length limit (MD013) is aligned
@@ -101,14 +101,15 @@ Left-clicking the marker toggles that fold. Everything starts expanded when a fi
 Folding for non-Markdown files is driven by the language server instead — any range it reports as
 collapsible — with the same `Tab` toggle and gutter markers.
 
-## Additional Shortcuts (from markdown-plus.nvim defaults)
+## Additional Shortcuts (from Plugin Defaults)
 
-These `<localleader>` bindings (`\` by default) are always available in Markdown buffers alongside the Ctrl shortcuts:
+These `<localleader>` bindings (`\` by default) are always available in Markdown buffers
+alongside the Control-prefixed shortcuts:
 
 | Key    | Action                                            |
 | ------ | ------------------------------------------------- |
 | `\ms`  | Toggle heading style (ATX `#` / setext underline) |
-| `\mS`  | Toggle ~~strikethrough~~                          |
+| `\mS`  | Toggle ~~strike through~~                         |
 | `\m\`` | Toggle `inline code`                              |
 | `\mr`  | Renumber ordered list items                       |
 | `\mh`  | Insert horizontal rule                            |
@@ -123,6 +124,9 @@ vault — see [Obsidian Vault](obsidian.md#configuring-the-vault).
 
 ## Link Navigation
 
-In vault notes, `Enter` follows the link under the cursor. Everywhere else use the built-ins: `g` `f` opens the
-file a relative link points at, and `g` `x` opens a URL in the browser. See
-[Obsidian Vault](obsidian.md#keyboard-shortcuts) for the full set.
+In vault notes, `Enter` follows the link under the cursor. Everywhere else use the built-in key bindings:
+
+- `g` `f` opens the file a relative link points at
+- `g` `x` opens a URL in the browser
+
+See [Obsidian Vault](obsidian.md#keyboard-shortcuts) for the full set.

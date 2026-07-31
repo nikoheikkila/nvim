@@ -1,7 +1,7 @@
 # Obsidian Vault
 
-[obsidian.nvim](https://github.com/obsidian-nvim/obsidian.nvim) turns Neovim into a full editor for an
-Obsidian vault: wiki-links, backlinks, tags, templates, daily notes, and image attachments. It activates
+[`obsidian.nvim`](https://github.com/obsidian-nvim/obsidian.nvim) turns Neovim into a full editor for an
+Obsidian vault: wiki-links, back links, tags, templates, daily notes, and image attachments. It activates
 automatically in Markdown files that live inside your vault, and stays out of the way everywhere else.
 
 Everything on the [Markdown Features](markdown.md) page — formatting shortcuts, folding, live linting,
@@ -24,7 +24,7 @@ config:
 | ----------------------- | ---------------------------------------------------------------------- |
 | `vault`                 | Vault root. `$HOME`, `~`, and other environment variables are expanded |
 | `dailyNotes.folder`     | Where daily notes go, relative to the vault root                       |
-| `dailyNotes.dateFormat` | Daily-note filename, as a Moment.js pattern                            |
+| `dailyNotes.dateFormat` | Daily-note filename, as a Moment.JS pattern                            |
 
 A `/` in `dateFormat` creates subdirectories, so `"YYYY/MM/DD"` writes
 `<folder>/2026/07/28.md`.
@@ -48,11 +48,11 @@ These are active only in notes inside the vault.
 | `Space` `n` `d` | Open today's daily note (`:Obsidian today`)                                                  |
 | `Space` `o`     | Open the Obsidian command menu — every command below, in a picker                            |
 
-`Enter` picks its behavior from what is under the cursor, so it covers link-following, checkbox toggling, and
+`Enter` picks its behaviour from what is under the cursor, so it covers link-following, checkbox toggling, and
 heading folds with one key. In Insert mode `Enter` still continues the current list item.
 
-Notes also get the standard [LSP shortcuts](lsp.md) — obsidian ships an in-process language server, so
-`Space` `c` `r` renames a note and updates every backlink to it, and `Space` `g` `r` lists the backlinks.
+Notes also get the standard [LSP shortcuts](lsp.md) — Obsidian ships an in-process language server, so
+`Space` `c` `r` renames a note and updates every backlink to it, and `Space` `g` `r` lists the back links.
 
 ## Commands
 
@@ -94,15 +94,10 @@ Markdown image link to it. On macOS this needs `pngpaste`:
 brew install pngpaste
 ```
 
-Viewing images inline is handled by `snacks.image`, which resolves vault attachment paths through obsidian so
+Viewing images inline is handled by `snacks.image`, which resolves vault attachment paths through Obsidian so
 that links written for the Obsidian app work here too. It renders images with the **kitty graphics protocol**,
 which means it works in kitty, Ghostty, and WezTerm (in a floating window), and inside `tmux` with
 pass through enabled.
-
-> [!WARNING]
-> **Warp is not supported.** Warp does not implement the kitty graphics protocol, so inline image viewing
-> is disabled there — pasting and linking work fine, the image just is not drawn in the buffer. Run
-> `:checkhealth snacks` to see what your terminal was detected as.
 
 Converting anything other than PNG needs ImageMagick:
 
@@ -112,9 +107,9 @@ brew install imagemagick
 
 ## Rendering
 
-Markdown rendering is owned by [render-markdown.nvim](markdown.md), so obsidian's own conceal-based UI is
-turned off. That avoids two plugins decorating the same buffer, and matches where obsidian.nvim is heading —
-upstream plans to drop its UI module in favor of dedicated rendering plugins.
+Markdown rendering is owned by [`render-markdown.nvim`](markdown.md), so Obsidian's own conceal-based UI is
+turned off. That avoids two plugins decorating the same buffer, and matches where `obsidian.nvim` is heading —
+upstream plans to drop its UI module in favour of dedicated rendering plugins.
 
 Folding also stays with the Markdown implementation described in [Markdown Features](markdown.md#folding):
 `Tab` folds headings, list items, and fenced code blocks in vault notes exactly as it does anywhere else.

@@ -1,0 +1,6 @@
+Ghostty
+MD013
+WezTerm
+catppuccin
+colorscheme
+setext

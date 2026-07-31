@@ -31,14 +31,14 @@ Rewrites headings and titles to follow the [AMA title case rules](https://titlec
 major words get a capital, while articles, coordinating conjunctions and short prepositions stay lowercase in the
 middle of a title.
 
-| Action                     | Result                                                     |
-| -------------------------- | ---------------------------------------------------------- |
-| `g` `t` `i` `w`            | Title-case the word under the cursor                       |
-| `g` `t` `$`                | Title-case from the cursor to the end of the line          |
-| `g` `t` `j`                | Title-case this line and the next                          |
-| Select text, then `t`      | Title-case the selection (charwise, linewise or block)     |
-| `.`                        | Repeat the last title-casing on wherever the cursor now is |
-| `u`                        | Undo the whole title-casing in one step                    |
+| Action                | Result                                                     |
+| --------------------- | ---------------------------------------------------------- |
+| `g` `t` `i` `w`       | Title-case the word under the cursor                       |
+| `g` `t` `$`           | Title-case from the cursor to the end of the line          |
+| `g` `t` `j`           | Title-case this line and the next                          |
+| Select text, then `t` | Title-case the selection (charwise, linewise or block)     |
+| `.`                   | Repeat the last title-casing on wherever the cursor now is |
+| `u`                   | Undo the whole title-casing in one step                    |
 
 `g` `t` takes any motion or text object, the same way `d` and `y` do. Each **line** is treated as its own title, so
 its first and last word are always capitalized.
@@ -57,12 +57,11 @@ Notes:
 
 - **Abbreviations are never touched.** Any word already carrying a capital beyond its first letter is left exactly as
   typed, which is what keeps `DNA`, `SARS-CoV-2`, `HbA1c`, `eGFR` and `PD-1` intact. Greek letters are left alone too.
-- **The flip side:** an ALL-CAPS title counts as "already capitalized" and is left untouched. Lowercase it first, then
+- **The flipside:** an ALL-CAPS title counts as "already capitalized" and is left untouched. Lowercase it first, then
   title-case it: `guu` then `g` `t` `$`, or select the line with `V` and press `u` then `t`. (`gu` is itself an operator,
   so it needs its own motion — `gugt$` does not work.) A lowercase abbreviation can't be recognised either, so `dna`
   becomes `Dna`.
-- Prepositions of four letters or more (`With`, `Between`, `Through`) **are** capitalized — that is AMA's rule, not an
-  oversight.
+- Prepositions of four letters or more (`With`, `Between`, `Through`) **are** capitalized according to AMA rules.
 - `g` `t` replaces Neovim's built-in "go to next tab page". This config uses buffers as tabs, so nothing is really
   lost; `gT` and `:tabnext` still move between tab pages if you ever open one.
 - In visual mode `t` replaces the built-in `t{char}` "till" motion. Use `f{char}` or `/` to extend a selection instead.
@@ -105,5 +104,3 @@ Notes:
 - **Why right-click adds a cursor:** on a Mac trackpad, `Ctrl+Click` _is_ a right-click by the time it reaches
   the terminal, and some terminals (Warp) drop the `Ctrl` modifier entirely. Thus, the right button is bound too.
   Neovim's right-click popup menu is disabled to make room for this (`mousemodel=extend`).
-- If a binding seems dead, check what your terminal actually delivers: `:luafile scripts/debug-keys.lua`, then
-  press the key — each received event is shown as a notification. Run it again to stop.
