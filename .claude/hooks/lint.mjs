@@ -12,12 +12,12 @@ if (!filePath || !fs.existsSync(filePath)) process.exit(0);
 const ext = path.extname(filePath).slice(1);
 const run = $({ nothrow: true, quiet: true });
 
-const selene = (path) => run`selene --display-style Json2 ${path}`;
-const stylua = (path) => run`stylua --check --output-format Json ${path}`;
+const selene = (path) => run`selene ${path}`;
+const stylua = (path) => run`stylua --check ${path}`;
 const markdownLint = (path) => run`markdownlint-cli2 ${path}`;
-const shellCheck = (path) => run`shellcheck --format json1 ${path}`;
-const actionlint = (path) => run`actionlint -format '{{json .}}' ${path}`;
-const zizmor = (path) => run`zizmor --persona auditor --format json ${path}`;
+const shellCheck = (path) => run`shellcheck ${path}`;
+const actionlint = (path) => run`actionlint ${path}`;
+const zizmor = (path) => run`zizmor --persona auditor ${path}`;
 
 // Each check emits machine-readable output: JSON where the tool supports it,
 // otherwise the tool's terse one-finding-per-line text (markdownlint-cli2 has
