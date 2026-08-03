@@ -1,6 +1,7 @@
 # Config Layer (`lua/config/`)
 
-Covers `lazy.lua`, `options.lua`, `autocmds.lua`, `keymaps.lua`, `commands.lua` — the non-plugin core of this config.
+Covers `lazy.lua`, `options.lua`, `autocmds.lua`, `keymaps.lua`, `commands.lua`, `project.lua` — the non-plugin core of
+this config.
 
 ## Plugin Manager
 
@@ -73,7 +74,12 @@ throws before an inline restore line runs will otherwise leak `false` into every
 
 ## Autocommands (`lua/config/autocmds.lua`)
 
-Two augroups, both created with `{ clear = true }` so reloads stay idempotent:
+Three augroups, all created with `{ clear = true }` so reloads stay idempotent:
+
+**`startup_dir`** — on `VimEnter` (`once = true`), makes a directory argument (`nvim <directory>`) Neovim's working
+directory via `nvim_set_current_dir`. Neovim opens the directory in a buffer but leaves the cwd wherever the shell was,
+so everything cwd-driven — netrw, `:e` completion, neo-tree, obsidian.nvim's workspace lookup, the cwd the `lazygit` job
+inherits — pointed at the launch directory instead. Details and constraints in "Project Root Resolution" below.
 
 **`auto_create_dir`** — on `BufWritePre`, creates the target file's missing parent directories so `:e
 /new/nested/path/file` + `:w` succeeds without a manual `mkdir`. Skips URI-scheme buffer names (`oil://`, `term://`, …)
@@ -174,6 +180,48 @@ lazy.nvim auto-loads it on the first `require` of a submodule, so the deferred `
 nothing is eager-loaded. On a modified buffer, snacks prompts Yes (save+close) / No (discard+close) / Cancel (abort).
 `BufWriteClose` writes first (`:update`, or `:write!` with a bang) so the buffer is already unmodified and the prompt is
 skipped.
+
+## Project Root Resolution (`lua/config/project.lua`)
+
+The directory a project-scoped tool should work in. `config.project.root()` is a lazy `or` chain over three signals, in
+descending priority:
+
+1. **The directory argument** — `nvim <directory>`, via `M.startup_dir()`.
+2. **The Git root of the current buffer** — `vim.fs.root(0, { ".git" })`, the historical sole behaviour.
+3. **Neovim's cwd** — `vim.uv.cwd()`, the last resort.
+
+Consumers: the two `lua/plugins/picker.lua` keymaps (`<leader><leader>`, `<leader>.`). Two neighbours deliberately do not
+use it: `lua/config/commands.lua`'s Harper dictionary lookup needs the LSP client's `root_dir` and a
+`.harper-dictionary.txt` marker, and `lua/plugins/git.lua`'s `<leader>gg` lets `:LazyGitCurrentFile` resolve its own repo
+from the buffer, then the cwd — which the `startup_dir` chdir has already aimed at the directory argument. Both are
+correct without this module; resist routing them through it.
+
+**The directory argument outranks the Git root on purpose.** Naming a directory states which tree to work in, so
+`nvim ~/monorepo/packages/api` searches the package rather than the whole monorepo. The cwd cannot stand in for this
+tier: launched bare inside that same package, cwd is also the package, but there the enclosing-repo answer is the one to
+keep — only the argument distinguishes "named deliberately" from "inherited from the shell". The consequence to know
+about: a directory argument pins the root for the session, so after `nvim <directory>`, opening a file from an unrelated
+repo with `:e` leaves the picker scoped to that directory.
+
+Mechanics worth knowing before editing:
+
+- **`M.startup_dir()` is memoised to pin the scope, not to survive the chdir.** Neovim re-expands arglist entries against
+  the new cwd, so `fnamemodify(argv(0), ":p")` gives the same answer before and after `startup_dir` chdirs (verified,
+  including after a later manual `:cd`). What the memo buys is stability: `:args`/`:argadd` rewrite the arglist, and the
+  project should not move out from under the picker when they do. Only `argv(0)` is read — the first argument is the one
+  Neovim opens first, so `nvim ~/dir1 ~/dir2` scopes to `~/dir1`.
+- **`M.detect()` does not call `vim.fn.resolve`.** A symlinked directory keeps the name that was typed. `:cd` is resolved
+  by the OS regardless, so after the chdir `getcwd()` reports the physical path while `root()` reports the symlinked one
+  — that asymmetry is deliberate. Anything comparing the two must resolve both sides (obsidian.nvim's `Workspace.find`
+  already does).
+- A file argument, a path that does not exist yet, and no argument at all each leave `startup_dir()` `nil` and fall
+  through to the Git root — `nvim README.md` behaves exactly as it did before this module existed.
+- **Testing it:** `scripts/busted-nvim.sh` runs `nvim -l` with no positional arguments, so `argv(0)` is `""` and the memo
+  fixes `startup_dir()` at `nil` for the process. `tests/integration/project_spec.lua` still reaches the real capture
+  with `:argadd` (it writes the same arglist `argv(0)` reads) and covers the precedence by overriding
+  `M.startup_dir`/`M.root` on the module table. Because `VimEnter` fires even under `nvim -l`, the `once` chdir autocmd
+  has already removed itself by the time specs run — an empty `nvim_get_autocmds` list for the group is the evidence it
+  ran.
 
 ## Daily Notes
 

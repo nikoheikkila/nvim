@@ -1,5 +1,22 @@
 local path_utils = require("lib.path_utils")
 
+-- Make a directory argument (`nvim <directory>`) Neovim's working directory.
+-- Neovim opens the directory in a buffer but leaves the cwd where the shell was,
+-- stranding everything cwd-driven at the launch directory. VimEnter, because the
+-- arglist has become buffers by then; nvim_set_current_dir over `:cd`, because it
+-- takes a plain string and so needs no escaping for spaces. Rationale and the
+-- full consumer list are in config.md, "Project Root Resolution".
+vim.api.nvim_create_autocmd("VimEnter", {
+  group = vim.api.nvim_create_augroup("startup_dir", { clear = true }),
+  once = true,
+  callback = function()
+    local dir = require("config.project").startup_dir()
+    if dir then
+      vim.api.nvim_set_current_dir(dir)
+    end
+  end,
+})
+
 -- Create the target file's parent directory on save if it doesn't exist yet,
 -- so `:e /new/nested/path/file` followed by `:w` succeeds without a manual mkdir.
 vim.api.nvim_create_autocmd("BufWritePre", {

@@ -17,6 +17,19 @@ return {
             vim.notify("lazygit not found on PATH", vim.log.levels.ERROR)
             return
           end
+
+          -- :LazyGitCurrentFile resolves the repo from the current buffer and
+          -- falls back to the cwd, which the `startup_dir` autocmd
+          -- (config/autocmds.lua) has already pointed at a directory argument --
+          -- so `nvim <directory>` needs nothing extra here. This guard only
+          -- replaces lazygit's own "not a git repository" init prompt with a
+          -- clean message; it predicts that outcome because vim.fs.root falls
+          -- back to the cwd for the unnamed buffer netrw leaves on a directory.
+          if not vim.fs.root(0, { ".git" }) then
+            vim.notify("No Git repository here", vim.log.levels.WARN)
+            return
+          end
+
           vim.cmd("LazyGitCurrentFile")
         end,
         desc = "Lazygit (current file repo)",

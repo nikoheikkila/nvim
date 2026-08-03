@@ -12,7 +12,7 @@ The leader key is `Space`.
 
 | Key                               | Action                                                                             |
 | --------------------------------- | ---------------------------------------------------------------------------------- |
-| `Space` `Space`                   | Fuzzy file picker (project-scoped)                                                 |
+| `Space` `Space`                   | Fuzzy file picker (project-scoped, see [Project Scope](#project-scope))            |
 | `Space` `.`                       | Live grep across the project                                                       |
 | `Space` `e`                       | Toggle the file tree sidebar                                                       |
 | `Space` `g` `g`                   | Open Lazygit for the current file's repository (quit with `q`)                     |
@@ -24,6 +24,20 @@ The leader key is `Space`.
 | `Alt+Shift+Up` / `Alt+Shift+Down` | Add a cursor on the line above / below (see [Multiple Cursors](#multiple-cursors)) |
 | `g` `t` + a motion                | Title-case the text the motion covers (see [Title Case](#title-case))              |
 | Select text, then `t`             | Title-case the selection (see [Title Case](#title-case))                           |
+
+## Project Scope
+
+`Space` `Space`, `Space` `.` and `Space` `g` `g` all search one directory — the "project". It is chosen like this:
+
+1. **The folder you opened.** Start Neovim on a directory (`nvim <directory>`) and that directory is the project, even
+   when it sits inside a bigger Git repository — `nvim ~/monorepo/packages/api` searches the package, not the monorepo.
+   Neovim's working directory follows it, so the file tree (`Space` `e`) and `:e` completion agree.
+2. **The Git repository of the file you are editing**, when you did not name a directory.
+3. **The current working directory**, when the file is not in a repository at all.
+
+Naming a directory fixes the scope for the whole session: after `nvim <directory>`, opening a file from another repository
+does not move the picker. `Space` `g` `g` is the exception — Lazygit always follows the current file's repository, since
+a repository is repository-wide anyway.
 
 ## Title Case
 

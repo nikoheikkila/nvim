@@ -89,8 +89,18 @@ Opens Lazygit in a floating window ("modal") over the current buffer. Lazy-loade
 `cmd` triggers; depends on `nvim-lua/plenary.nvim` for path handling.
 
 - `<leader>gg` (global keymap) runs `:LazyGitCurrentFile`, scoping Lazygit to the **current file's Git
-  repository** (falling back to the project/cwd Git root). Quit Lazygit with `q` to return to the
-  buffer.
+  repository**, then the cwd. Quit Lazygit with `q` to return to the buffer.
+- **`nvim <directory>` works here without any root logic of its own**, and that is worth understanding
+  before "fixing" it again. The command resolves the repo from `expand("%:p:h")`, which for the unnamed
+  buffer netrw leaves on a directory is the cwd; when its own `git rev-parse` finds nothing it omits `-p`
+  and the `lazygit` job inherits Neovim's cwd. Both paths land on the cwd — which `config/autocmds.lua`'s
+  `startup_dir` augroup has already pointed at the directory argument. (This binding did once resolve the
+  repo by hand and pass it as `lazygit -p <repo>`; that was redundant once the chdir existed. Note
+  `fnamemodify(<dir>, ":p:h")` is the directory itself, not its parent — `:p` appends the slash that `:h`
+  then strips.)
+- A second guard calls `vim.fs.root(0, { ".git" })` purely to replace lazygit's own "not a git
+  repository" init prompt with a `vim.notify` warning. It predicts that outcome because `vim.fs.root`
+  falls back to the cwd for unnamed buffers, the same signal lazygit ends up using.
 - A **PATH guard** checks `vim.fn.executable("lazygit")` first and emits a clean `vim.notify` error
   instead of a raw stack trace when the binary is missing.
 - Floating-window options are set in `init` (`winblend = 0`, `scaling_factor = 0.9`) to stay consistent
@@ -147,9 +157,11 @@ Fuzzy file finder and project grep, scoped to the current project.
   warning and falls back to a native-Lua search: prompt for a term via `vim.ui.input`, walk the project
   once with `vim.fs.dir`, match lines with `lib/search_utils.lua`, and open the same picker UI
   (`Snacks.picker.pick({ items = ... })`) with the static results.
-- **Project scoping**: `cwd` is computed via `vim.fs.root(0, { ".git" })`, walking up from the current
-  buffer to the enclosing Git repo root, falling back to Neovim's cwd outside a repo — the same
-  pattern already used by `lua/plugins/git.lua`'s Lazygit binding.
+- **Project scoping**: `cwd` comes from `config.project.root()` — a directory argument given to `nvim`
+  first, then `vim.fs.root(0, { ".git" })` (walking up from the current buffer to the enclosing Git repo
+  root), then Neovim's cwd. These two keymaps are its only callers; see "Project Root Resolution" in
+  [`config.md`](config.md) for the precedence rationale and for why `git.lua` and `commands.lua`
+  deliberately resolve their own roots instead.
 - No external binary is required for `files` — it opportunistically shells out to `fd`/`ripgrep` if
   present for faster scanning, otherwise falls back to a pure-Lua directory walker. `grep` has no such
   built-in fallback in snacks itself (`rg` is hardcoded in its source, confirmed by reading

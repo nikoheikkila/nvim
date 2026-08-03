@@ -1,4 +1,5 @@
 local search_utils = require("lib.search_utils")
+local project = require("config.project")
 
 local SKIP_DIRS = {
   [".git"] = true,
@@ -80,14 +81,14 @@ return {
         function()
           -- hidden = true surfaces dotfiles/dot-dirs; .gitignore stays honoured
           -- (ignored defaults to false) and .git/ is always excluded by snacks.
-          require("snacks").picker.files({ cwd = vim.fs.root(0, { ".git" }), hidden = true })
+          require("snacks").picker.files({ cwd = project.root(), hidden = true })
         end,
         desc = "Find Files (Project)",
       },
       {
         "<leader>.",
         function()
-          local cwd = vim.fs.root(0, { ".git" })
+          local cwd = project.root()
 
           if vim.fn.executable("rg") == 1 then
             require("snacks").picker.grep({ cwd = cwd, hidden = true })
@@ -95,7 +96,7 @@ return {
           end
 
           vim.notify("rg not found on PATH, falling back to native Lua search", vim.log.levels.WARN)
-          native_grep(cwd or vim.uv.cwd())
+          native_grep(cwd)
         end,
         desc = "Grep Project (Text Search)",
       },

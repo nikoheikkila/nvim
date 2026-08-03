@@ -182,6 +182,14 @@ true)` — `.buffer == 1` proves the mapping registered, `.desc` usually names t
   `<leader>` map created before `vim.g.mapleader` is set silently binds under the default `\` and `maparg(" nd", ...)`
   returns `""` — exactly how the `<leader>nd` load-order bug was caught (leaders now live in `config/options.lua`, the
   first module `init.lua` loads; never create `<leader>` maps before it).
+- **Startup state a spec cannot recreate** (the directory argument in `config/project.lua`, memoised once per process
+  from an `argv(0)` the harness never passes): override the accessor **on the required module's table** and restore it
+  with `finally` — `require` returns a singleton, so every consumer sees the fake. This is the same swap-a-fake trick as
+  `package.loaded["snacks"]`, one level in. It only works if the consumer looks the field up at call time
+  (`project.root()`); a captured local alias (`local root = project.root`) is immune to the override, so keep call sites
+  in that form. `tests/integration/picker_spec.lua` and `project_spec.lua` both rely on this. Reach for it only for state
+  that is genuinely unreachable: the arglist, for one, is writable in-process (`:argadd <dir>` makes `argv(0)` return it,
+  `:%argdelete` restores), so prefer driving the real code path where such a lever exists.
 - **Env-var-driven commands**: read the variable **at call time** inside the command, not at module load — then a
   headless script can just set `vim.env.VAR = dir` in-process before invoking, no shell wrapper needed. Compare
   resulting buffer names through `vim.fn.resolve()` — on macOS `tempname()` returns `/var/...` while buffer names
