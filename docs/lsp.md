@@ -7,23 +7,23 @@ interactive launch. Run `:Mason` inside Neovim to watch the progress or inspect 
 
 These shortcuts become active in a buffer once its language server attaches:
 
-| Key                            | Action                                                          |
-| ------------------------------ | --------------------------------------------------------------- |
-| `F2` or `Space` `c` `r`        | Rename the symbol under the cursor across the project           |
-| `F12` or `Space` `g` `d`       | Go to definition (a picker opens when there are several)        |
-| `Shift+F12` or `Space` `g` `r` | List all references in a modal picker                           |
-| `Space` `r`                    | Refactoring menu — rename, extract function/constant, inline, … |
-| `Space` `c` `a`                | Quick Fix menu — corrections for the problem under the cursor   |
-| `Space` `c` `d`                | Show the line's full diagnostics in a wrapping popup            |
+| Key                                              | Action                                                          |
+| -------------------------------------------------- | ------------------------------------------------------------------- |
+| <kbd>F2</kbd> or <kbd>Space c r</kbd>             | Rename the symbol under the cursor across the project           |
+| <kbd>F12</kbd> or <kbd>Space g d</kbd>            | Go to definition (a picker opens when there are several)        |
+| <kbd>Shift+F12</kbd> or <kbd>Space g r</kbd>      | List all references in a modal picker                           |
+| <kbd>Space r</kbd>                                | Refactoring menu — rename, extract function/constant, inline, … |
+| <kbd>Space c a</kbd>                              | Quick Fix menu — corrections for the problem under the cursor   |
+| <kbd>Space c d</kbd>                               | Show the line's full diagnostics in a wrapping popup            |
 
-Completion pops up automatically while typing, with the first suggestion selected: `Enter` accepts it,
-`Ctrl+N` / `Ctrl+P` or the arrow keys pick another candidate, `Ctrl+E` closes the menu (for when you want a
-plain newline instead), and `Ctrl+Space` opens the menu manually.
+Completion pops up automatically while typing, with the first suggestion selected: <kbd>Enter</kbd> accepts it,
+<kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd> or the arrow keys pick another candidate, <kbd>Ctrl+E</kbd> closes the menu
+(for when you want a plain newline instead), and <kbd>Ctrl+Space</kbd> opens the menu manually.
 
 Diagnostics appear as virtual text at the
 end of the line and as counts in the buffer tabs and status line. The inline text can't wrap, so a long
-message is truncated on the right — press `Space` `c` `d` to read the current line's diagnostics in full in a
-wrapping popup.
+message is truncated on the right — press <kbd>Space c d</kbd> to read the current line's diagnostics in full in
+a wrapping popup.
 
 ## Grammar Checking with Harper
 
@@ -39,7 +39,7 @@ wavy, the terminal needs an underline support — see [Terminal Setup](terminal.
 ### Teaching Harper a Word
 
 Harper flags jargon, product names, and internal terms as misspellings. To teach it one, put the cursor on
-the flagged word — or anywhere on its line — and press `Space c a`.
+the flagged word — or anywhere on its line — and press <kbd>Space c a</kbd>.
 
 | Action                                 | Effect                                                                                        |
 | -------------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -66,16 +66,16 @@ dictionary is at `~/Library/Application Support/harper-ls/dictionary.txt` on mac
 
 ## Notes
 
-- The function keys (`F2`, `F12`, `Shift+F12`) also work while typing in insert mode. The prompt or picker
-  opens from normal mode, and you are returned to insert mode once the action finishes (rename confirmed,
-  jump landed, or picker closed).
+- The function keys (<kbd>F2</kbd>, <kbd>F12</kbd>, <kbd>Shift+F12</kbd>) also work while typing in insert mode.
+  The prompt or picker opens from normal mode, and you are returned to insert mode once the action finishes
+  (rename confirmed, jump landed, or picker closed).
 - Refactorings beyond rename depend on the server: TypeScript/JavaScript has the richest set (extract
   function/constant, inline); most others support rename only. When nothing applies, Neovim reports
   _No code actions available_.
-- In Markdown buffers completion stays off and `F2` keeps its Markdown meaning (rename image).
-- If `F12`/`Shift+F12` appear dead, the terminal, or macOS may be capturing them (enable "Use F1, F2, etc. keys
-  as standard function keys" in macOS keyboard settings); the `Space`-based alternatives always work. Diagnose
-  with `:luafile scripts/debug-keys.lua`.
+- In Markdown buffers completion stays off and <kbd>F2</kbd> keeps its Markdown meaning (rename image).
+- If <kbd>F12</kbd>/<kbd>Shift+F12</kbd> appear dead, the terminal, or macOS may be capturing them (enable
+  "Use F1, F2, etc. keys as standard function keys" in macOS keyboard settings); the <kbd>Space</kbd>-based
+  alternatives always work. Diagnose with `:luafile scripts/debug-keys.lua`.
 - Formatting is intentionally **not** done via LSP — `conform.nvim` owns it (`prettier` for Markdown, `stylua`
   for Lua).
 

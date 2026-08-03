@@ -66,6 +66,6 @@ mistake in Neovim: the flagged text should now carry the dark-red wave rather th
 
 - The underline colour lives in `theme.yml` (`HarperDiagnosticUnderline`) — change it there; see
   [Theming](theming.md).
-- Function keys (`F12`, `Shift+F12`) that appear dead are a
+- Function keys (<kbd>F12</kbd>, <kbd>Shift+F12</kbd>) that appear dead are a
   different terminal or operating system capture issue, covered in
   [Code Intelligence](lsp.md).

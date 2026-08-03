@@ -9,5 +9,10 @@
     // offers no way to turn that off — exempt tables from line-length checks.
     "tables": false
   },
-  "MD060": false
+  "MD060": false,
+  // <kbd> renders keybindings more legibly than backticks in docs/ — allow it specifically
+  // rather than disabling the no-inline-html rule outright.
+  "MD033": {
+    "allowed_elements": ["kbd"]
+  }
 }

@@ -12,9 +12,9 @@
 | `ripgrep`                                                                                         | Optional — needed for project grep and vault search     |
 | `pngpaste`                                                                                        | Optional (macOS) — needed for `:Obsidian paste_img`     |
 | ImageMagick                                                                                       | Optional — needed to view non-PNG images inline         |
-| A terminal with the [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) | Optional — needed for `Ctrl+Shift+I` (insert image)     |
+| A terminal with the [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) | Optional — needed for <kbd>Ctrl+Shift+I</kbd> (insert image) |
 
-Compatible terminals for `Ctrl+Shift+I`: kitty, WezTerm, Ghostty, foot.
+Compatible terminals for <kbd>Ctrl+Shift+I</kbd>: kitty, WezTerm, Ghostty, foot.
 
 ## Quick Install (Recommended)
 

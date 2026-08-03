@@ -8,34 +8,35 @@ These shortcuts are active only in Markdown buffers.
 
 ### Formatting
 
-| Key      | Mode           | Action                                            |
-| -------- | -------------- | ------------------------------------------------- |
-| `Ctrl+B` | Normal, Visual | Toggle **bold** (`**text**`) on word or selection |
-| `Ctrl+I` | Visual         | Toggle _italic_ (`_text_`) on the selection       |
+| Key                  | Mode           | Action                                            |
+| --------------------- | -------------- | --------------------------------------------------- |
+| <kbd>Ctrl+B</kbd>     | Normal, Visual | Toggle **bold** (`**text**`) on word or selection |
+| <kbd>Ctrl+I</kbd>     | Visual         | Toggle _italic_ (`_text_`) on the selection       |
 
-In Normal mode, `Ctrl+B` applies to the word under the cursor; in Visual mode it applies to the selection.
-Pressing the key again on already-formatted text removes the markers. Italic is Visual-only: in a terminal
-`Ctrl+I` and `Tab` are the same key, and `Tab` toggles folds in Normal mode (see [Folding](#folding)).
+In Normal mode, <kbd>Ctrl+B</kbd> applies to the word under the cursor; in Visual mode it applies to the
+selection. Pressing the key again on already-formatted text removes the markers. Italic is Visual-only: in a
+terminal <kbd>Ctrl+I</kbd> and <kbd>Tab</kbd> are the same key, and <kbd>Tab</kbd> toggles folds in Normal mode
+(see [Folding](#folding)).
 
 ### Links and Images
 
-| Key            | Mode   | Action                                                 |
-| -------------- | ------ | ------------------------------------------------------ |
-| `Ctrl+K`       | Normal | Insert a new link — prompts for text and URL           |
-| `Ctrl+K`       | Visual | Wrap selected text as a link — prompts for URL         |
-| `Ctrl+Shift+I` | Normal | Insert a new image tag — prompts for alt text and URL  |
-| `Ctrl+Shift+I` | Visual | Wrap selected text as image alt text — prompts for URL |
+| Key                      | Mode   | Action                                                 |
+| ------------------------- | ------ | --------------------------------------------------------- |
+| <kbd>Ctrl+K</kbd>         | Normal | Insert a new link — prompts for text and URL           |
+| <kbd>Ctrl+K</kbd>         | Visual | Wrap selected text as a link — prompts for URL         |
+| <kbd>Ctrl+Shift+I</kbd>   | Normal | Insert a new image tag — prompts for alt text and URL  |
+| <kbd>Ctrl+Shift+I</kbd>   | Visual | Wrap selected text as image alt text — prompts for URL |
 
-`Ctrl+Shift+I` requires a terminal supporting the Kitty keyboard protocol.
+<kbd>Ctrl+Shift+I</kbd> requires a terminal supporting the Kitty keyboard protocol.
 
 ### Checklists
 
-| Key      | Mode           | Action                                                  |
-| -------- | -------------- | ------------------------------------------------------- |
-| `Ctrl+L` | Normal, Insert | Cycle the current line through three states (see below) |
-| `Ctrl+L` | Visual         | Toggle checkbox on all selected lines                   |
+| Key                | Mode           | Action                                                  |
+| ------------------- | -------------- | ---------------------------------------------------------- |
+| <kbd>Ctrl+L</kbd>   | Normal, Insert | Cycle the current line through three states (see below) |
+| <kbd>Ctrl+L</kbd>   | Visual         | Toggle checkbox on all selected lines                   |
 
-The three states on repeated `Ctrl+L` presses:
+The three states on repeated <kbd>Ctrl+L</kbd> presses:
 
 ```text
 Any plain text           →  - [ ] plain text
@@ -48,12 +49,12 @@ If it is a plain line, `-` is prepended.
 
 ### List Continuation (Insert Mode)
 
-| Key         | Behavior                                                                       |
-| ----------- | ------------------------------------------------------------------------------ |
-| `Enter`     | On a list line, creates a new item with the same marker (`-`, `*`, `1.`, etc.) |
-| `Tab`       | Indents the current list item                                                  |
-| `Shift+Tab` | Outdents the current list item                                                 |
-| `Backspace` | On an empty list marker line, removes the marker                               |
+| Key                    | Behavior                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| <kbd>Enter</kbd>       | On a list line, creates a new item with the same marker (`-`, `*`, `1.`, etc.) |
+| <kbd>Tab</kbd>         | Indents the current list item                                                  |
+| <kbd>Shift+Tab</kbd>   | Outdents the current list item                                                 |
+| <kbd>Backspace</kbd>   | On an empty list marker line, removes the marker                               |
 
 ## Auto-Format on Save
 
@@ -91,42 +92,42 @@ The rendering is active in all modes. Raw syntax is revealed on the cursor line 
 
 Headings, list items that have nested children, and fenced code blocks can be collapsed and expanded.
 
-| Key   | Mode   | Action                           |
-| ----- | ------ | -------------------------------- |
-| `Tab` | Normal | Toggle the fold under the cursor |
+| Key            | Mode   | Action                           |
+| --------------- | ------ | --------------------------------- |
+| <kbd>Tab</kbd> | Normal | Toggle the fold under the cursor |
 
 A marker in the left gutter shows each foldable line's state — `▼` when expanded, `▶` when collapsed.
 Left-clicking the marker toggles that fold. Everything starts expanded when a file opens.
 
 Folding for non-Markdown files is driven by the language server instead — any range it reports as
-collapsible — with the same `Tab` toggle and gutter markers.
+collapsible — with the same <kbd>Tab</kbd> toggle and gutter markers.
 
 ## Additional Shortcuts (from Plugin Defaults)
 
 These `<localleader>` bindings (`\` by default) are always available in Markdown buffers
 alongside the Control-prefixed shortcuts:
 
-| Key    | Action                                            |
-| ------ | ------------------------------------------------- |
-| `\ms`  | Toggle heading style (ATX `#` / setext underline) |
-| `\mS`  | Toggle ~~strike through~~                         |
-| `\m\`` | Toggle `inline code`                              |
-| `\mr`  | Renumber ordered list items                       |
-| `\mh`  | Insert horizontal rule                            |
+| Key                  | Action                                            |
+| --------------------- | ------------------------------------------------- |
+| <kbd>\ms</kbd>       | Toggle heading style (ATX `#` / setext underline) |
+| <kbd>\mS</kbd>       | Toggle ~~strike through~~                         |
+| <kbd>\m`</kbd>       | Toggle `inline code`                              |
+| <kbd>\mr</kbd>       | Renumber ordered list items                       |
+| <kbd>\mh</kbd>       | Insert horizontal rule                            |
 
 ## Daily Notes
 
-`Space` `n` `d` (or `:Obsidian today`) opens today's note. Running it again the same day reopens the same note,
-so it works as a running daily scratchpad, and every feature on this page is active in it.
+<kbd>Space n d</kbd> (or `:Obsidian today`) opens today's note. Running it again the same day reopens the same
+note, so it works as a running daily scratchpad, and every feature on this page is active in it.
 
 Daily notes live in your Obsidian vault, so where they land and what they are named is configured alongside the
 vault — see [Obsidian Vault](obsidian.md#configuring-the-vault).
 
 ## Link Navigation
 
-In vault notes, `Enter` follows the link under the cursor. Everywhere else use the built-in key bindings:
+In vault notes, <kbd>Enter</kbd> follows the link under the cursor. Everywhere else use the built-in key bindings:
 
-- `g` `f` opens the file a relative link points at
-- `g` `x` opens a URL in the browser
+- <kbd>g f</kbd> opens the file a relative link points at
+- <kbd>g x</kbd> opens a URL in the browser
 
 See [Obsidian Vault](obsidian.md#keyboard-shortcuts) for the full set.

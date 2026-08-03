@@ -38,28 +38,29 @@ Run `:checkhealth obsidian` to confirm the vault resolved and the optional tools
 
 These are active only in notes inside the vault.
 
-| Key             | Action                                                                                       |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `Enter`         | Smart action — follows the link, toggles the checkbox, or folds the heading under the cursor |
-| `]` `o`         | Jump to the next link                                                                        |
-| `[` `o`         | Jump to the previous link                                                                    |
-| `g` `f`         | Follow the link under the cursor (built-in, taught to resolve wiki-links)                    |
-| `g` `x`         | Open the link under the cursor in the browser (built-in)                                     |
-| `Space` `n` `d` | Open today's daily note (`:Obsidian today`)                                                  |
-| `Space` `o`     | Open the Obsidian command menu — every command below, in a picker                            |
+| Key                        | Action                                                                                       |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| <kbd>Enter</kbd>            | Smart action — follows the link, toggles the checkbox, or folds the heading under the cursor |
+| <kbd>] o</kbd>              | Jump to the next link                                                                        |
+| <kbd>[ o</kbd>              | Jump to the previous link                                                                    |
+| <kbd>g f</kbd>              | Follow the link under the cursor (built-in, taught to resolve wiki-links)                    |
+| <kbd>g x</kbd>              | Open the link under the cursor in the browser (built-in)                                     |
+| <kbd>Space n d</kbd>        | Open today's daily note (`:Obsidian today`)                                                  |
+| <kbd>Space o</kbd>          | Open the Obsidian command menu — every command below, in a picker                            |
 
-`Enter` picks its behaviour from what is under the cursor, so it covers link-following, checkbox toggling, and
-heading folds with one key. In Insert mode `Enter` still continues the current list item.
+<kbd>Enter</kbd> picks its behaviour from what is under the cursor, so it covers link-following, checkbox
+toggling, and heading folds with one key. In Insert mode <kbd>Enter</kbd> still continues the current list item.
 
 Notes also get the standard [LSP shortcuts](lsp.md) — Obsidian ships an in-process language server, so
-`Space` `c` `r` renames a note and updates every backlink to it, and `Space` `g` `r` lists the back links.
+<kbd>Space c r</kbd> renames a note and updates every backlink to it, and <kbd>Space g r</kbd> lists the back
+links.
 
 ## Commands
 
-**`Space` `o` is the quickest way in** — it runs bare `:Obsidian`, which lists every command in a picker so you
-can fuzzy-find one instead of remembering its name. You can also type `:Obsidian` and press `Tab` to complete
-subcommands. The list is context-sensitive: note actions appear only inside a note, and the visual-mode ones only
-with a selection (for those, use `:Obsidian` from visual mode rather than `Space` `o`).
+**<kbd>Space o</kbd> is the quickest way in** — it runs bare `:Obsidian`, which lists every command in a picker
+so you can fuzzy-find one instead of remembering its name. You can also type `:Obsidian` and press <kbd>Tab</kbd>
+to complete subcommands. The list is context-sensitive: note actions appear only inside a note, and the
+visual-mode ones only with a selection (for those, use `:Obsidian` from visual mode rather than <kbd>Space o</kbd>).
 
 | Command                  | Action                                                                       |
 | ------------------------ | ---------------------------------------------------------------------------- |
@@ -82,8 +83,8 @@ with a selection (for those, use `:Obsidian` from visual mode rather than `Space
 | `:Obsidian open`         | Open the current note in the Obsidian app                                    |
 
 Pickers (`search`, `quick_switch`, `tags`, `backlinks`) open in the same
-[snacks picker](plugins.md) used elsewhere in this config. Inside a picker, `Ctrl+X` creates a new note from
-what you typed and `Ctrl+L` inserts a link to the selected note.
+[snacks picker](plugins.md) used elsewhere in this config. Inside a picker, <kbd>Ctrl+X</kbd> creates a new note
+from what you typed and <kbd>Ctrl+L</kbd> inserts a link to the selected note.
 
 ## Images
 
@@ -112,4 +113,4 @@ turned off. That avoids two plugins decorating the same buffer, and matches wher
 upstream plans to drop its UI module in favour of dedicated rendering plugins.
 
 Folding also stays with the Markdown implementation described in [Markdown Features](markdown.md#folding):
-`Tab` folds headings, list items, and fenced code blocks in vault notes exactly as it does anywhere else.
+<kbd>Tab</kbd> folds headings, list items, and fenced code blocks in vault notes exactly as it does anywhere else.
