@@ -1,3 +1,7 @@
+-- <F1> is bound to :help by default and sits right next to Esc, so it's an easy
+-- accidental hit. <Nop> it instead of leaving the help window to open and close.
+vim.keymap.set({ "n", "i" }, "<F1>", "<Nop>", { desc = "Disable accidental help trigger" })
+
 -- Move the current line (or visual selection) up/down with Alt/Option + arrow keys.
 vim.keymap.set("n", "<M-Up>", "<cmd>m .-2<CR>==", { desc = "Move line up" })
 vim.keymap.set("n", "<M-Down>", "<cmd>m .+1<CR>==", { desc = "Move line down" })
