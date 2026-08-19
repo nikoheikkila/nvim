@@ -9,7 +9,6 @@
 - [Read-Only Tables](#read-only-tables)
 - [Observer Pattern](#observer-pattern)
 - [Custom Iterator](#custom-iterator)
-- [Neovim Plugin Setup](#neovim-plugin-setup)
 - [Error Handling](#error-handling)
 
 ## OOP via Metatables
@@ -195,34 +194,6 @@ local function range(start, stop, step)
 end
 
 for n in range(1, 10, 2) do print(n) end  --> 1, 3, 5, 7, 9
-```
-
-## Neovim Plugin Setup
-
-```lua
-local api, keymap = vim.api, vim.keymap
-local M = {}
-
-function M.setup(opts)
-  opts = vim.tbl_deep_extend("force", { enabled = true, width = 80 }, opts or {})
-  if not opts.enabled then return end
-
-  local group = api.nvim_create_augroup("MyPlugin", { clear = true })
-  api.nvim_create_autocmd("BufWritePre", {
-    group = group, pattern = "*.lua",
-    callback = function(ev)
-      local lines = api.nvim_buf_get_lines(ev.buf, 0, -1, false)
-      for i, line in ipairs(lines) do lines[i] = line:gsub("%s+$", "") end
-      api.nvim_buf_set_lines(ev.buf, 0, -1, false, lines)
-    end,
-  })
-
-  keymap.set("n", "<leader>mp", function()
-    vim.notify("MyPlugin activated", vim.log.levels.INFO)
-  end, { desc = "Activate MyPlugin" })
-end
-
-return M
 ```
 
 ## Error Handling

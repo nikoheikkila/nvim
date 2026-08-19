@@ -1,6 +1,10 @@
 Ghostty
+Love2D
+LuaJIT
 MD013
 WezTerm
 catppuccin
 colorscheme
+metatables
 setext
+varargs

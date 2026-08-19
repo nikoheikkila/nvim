@@ -2,13 +2,13 @@
 name: lua-guide
 description: |
   Lua language guardrails, patterns, and best practices for AI-assisted development.
-  Use when working with Lua files (.lua), or when the user mentions Lua/LuaJIT/Neovim/Love2D.
+  Use when working with Lua files (.lua), or when the user mentions Lua/LuaJIT/Love2D.
   Provides table patterns, metatable guidelines, coroutine usage,
   and embedding conventions specific to this project's coding standards.
 license: MIT
 metadata:
-  author: samuel
-  version: "1.0"
+  author: Niko Heikkilä
+  version: "2.0"
   category: language
   language: lua
   extensions: ".lua"
@@ -16,15 +16,14 @@ metadata:
 
 # Lua Guide
 
-> Applies to: Lua 5.4+, LuaJIT 2.1, Neovim Plugins, Love2D, Embedded Scripting
+> Applies to: Lua 5.4+, LuaJIT 2.1, Love2D, Embedded Scripting
 
 ## Core Principles
 
-1. **Tables Are Everything**: Arrays, maps, objects, modules, and namespaces -- master them
+1. **Tables Are Everything**: Arrays, maps, objects, modules, and namespaces – master them
 2. **Local by Default**: Always declare variables `local`; globals are a performance and correctness hazard
 3. **Explicit Error Handling**: Use `pcall`/`xpcall` for recoverable errors; `error()` for programmer mistakes
 4. **Minimal Metatables**: Use metatables for genuine OOP needs, not as decoration on simple data
-5. **Embed-Friendly Design**: Lua exists to be embedded; keep the host/script boundary clean and narrow
 
 ## Guardrails
 
@@ -33,34 +32,38 @@ metadata:
 - Use `local` for every variable and function unless it must be global
 - Naming: `snake_case` for variables/functions, `PascalCase` for class-like tables, `UPPER_SNAKE_CASE` for constants
 - Indent with 2 spaces; one statement per line; avoid semicolons
-- Use `[[ ... ]]` long strings for multi-line text and SQL/HTML templates
+- Use `[[ ... ]]` long strings for multiline text and SQL/HTML templates
 - Prefer `#tbl` over `table.getn()` for sequence length
 
 ### Tables
 
 - Arrays are 1-based; `for i = 1, #arr` not `for i = 0, #arr - 1`
 - Use `ipairs` for sequential iteration, `pairs` for hash-map iteration
-- Do not mix array indices and string keys in the same table (undefined `#` behavior)
+- Do not mix array indices and string keys in the same table (undefined `#` behaviour)
 - Use `table.insert` / `table.remove` for array ops; avoid manual index gaps
-- Freeze config tables by setting a `__newindex` metamethod that errors
+- Freeze config tables by setting a `__newindex` meta method that errors
 
 ### Multiple Return Values
 
-Lua splices a call's *entire* return list into the tail of an argument list, so a multi-return function used
+Lua splices a call's _entire_ return list into the tail of an argument list, so a multi-return function used
 as the last argument silently passes extra arguments. Wrap it in parentheses to truncate to one value:
 
 ```lua
--- gsub returns (string, count) -- this passes TWO args and errors with
--- "Expected 1 argument" on an API that takes one:
-vim.api.nvim_create_namespace(name:gsub("/", "_"))
+local t = {}
 
--- Parenthesised: exactly one value.
-vim.api.nvim_create_namespace((name:gsub("/", "_")))
+-- gsub returns (string, count) -- this silently passes THREE args to
+-- table.insert(list, pos, value), and errors with "bad argument #2
+-- to 'insert' (number expected, got string)":
+table.insert(t, ("hello"):gsub("l", "L"))
+
+-- Parenthesised: exactly one value, so this is the intended
+-- two-arg table.insert(list, value).
+table.insert(t, (("hello"):gsub("l", "L")))
 ```
 
 - The same applies to `return (f())` when a function must yield exactly one value, and to
   `table.insert(t, (f()))`
-- It only bites in the *last* argument position; `f(g(), x)` already truncates `g()` to one value
+- It only bites in the _last_ argument position; `f(g(), x)` already truncates `g()` to one value
 - `select("#", ...)` counts varargs including trailing `nil`s; `#{...}` does not
 
 ### Error Handling
@@ -89,8 +92,8 @@ vim.api.nvim_create_namespace((name:gsub("/", "_")))
 ## References
 
 - [references/patterns.md](references/patterns.md) — OOP/metatables, mixins, modules, coroutines, custom
-  iterators, Neovim plugin setup, error handling
-- [references/testing.md](references/testing.md) — Busted patterns, testing standards, headless Neovim verification techniques
+  iterators, error handling
+- [references/testing.md](references/testing.md) — Busted patterns and testing standards
 - [references/tooling.md](references/tooling.md) — Selene, Luacheck (legacy), StyLua, essential CLI commands
 
 ## External References
@@ -99,7 +102,6 @@ vim.api.nvim_create_namespace((name:gsub("/", "_")))
 - [Programming in Lua (4th ed)](https://www.lua.org/pil/)
 - [LuaJIT Documentation](https://luajit.org/luajit.html)
 - [LuaJIT FFI Tutorial](https://luajit.org/ext_ffi_tutorial.html)
-- [Neovim Lua Guide](https://neovim.io/doc/user/lua-guide.html)
 - [Busted Testing Framework](https://lunarmodules.github.io/busted/)
 - [Selene Linter](https://github.com/Kampfkarren/selene)
 - [Luacheck Linter](https://github.com/mpeterv/luacheck) (legacy/unmaintained since 2018)
