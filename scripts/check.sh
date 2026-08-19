@@ -21,4 +21,7 @@ echo "== Integration tests: missing-binary guard path =="
 scripts/test-without-binary.sh markdownlint-cli2 -- \
   task test:integration -- tests/integration/markdown_lint_spec.lua
 
+echo "== Release tarball contents =="
+task test:package
+
 echo "All checks passed"

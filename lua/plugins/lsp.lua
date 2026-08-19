@@ -32,6 +32,10 @@ return {
     dependencies = {
       "mason-org/mason.nvim",
       "mason-org/mason-lspconfig.nvim",
+      -- Non-LSP mason packages. mason-lspconfig only knows servers and
+      -- mason.nvim itself has no ensure_installed, so the `vale` CLI that
+      -- vale-ls shells out to needs its own installer.
+      "WhoIsSethDaniel/mason-tool-installer.nvim",
       "saghen/blink.cmp",
     },
     config = function()
@@ -47,17 +51,41 @@ return {
         vim.lsp.config(name, config)
       end
 
+      -- Headless sessions (task install, CI, busted) must never trigger tool
+      -- downloads — install only when a UI is attached. Shared by both
+      -- installers below.
+      local ui_attached = #vim.api.nvim_list_uis() > 0
+
       local server_names = vim.tbl_keys(servers)
       require("mason-lspconfig").setup({
-        -- Headless sessions (task install, CI, busted) must never trigger
-        -- server downloads — install only when a UI is attached.
-        ensure_installed = #vim.api.nvim_list_uis() > 0 and server_names or {},
+        ensure_installed = ui_attached and server_names or {},
         -- automatic_enable runs vim.lsp.enable() for installed servers,
         -- including ones installed mid-session. Allowlisted to the servers
         -- table: the mason data dir may hold servers from earlier setups
         -- (vtsls, pyright, ...) that must not attach alongside these.
         automatic_enable = server_names,
       })
+
+      -- The CLI half of Vale: vale-ls spawns `vale` from PATH, and mason's bin
+      -- dir is on it once mason.setup() has run. scripts/install.sh reaches past
+      -- the headless guard with an explicit `:MasonInstall vale`, so a fresh
+      -- install can sync styles in the same headless session.
+      --
+      -- run_on_start is off and the check is driven directly: the plugin hangs
+      -- its own trigger on a VimEnter autocmd registered from its plugin/ file,
+      -- and this whole spec is BufReadPre-lazy. Opening a file at startup gets
+      -- in ahead of VimEnter, but `:edit`ing one in an already-running session
+      -- does not — there the autocmd is registered after VimEnter has fired and
+      -- never runs, so `vale` would silently never install. Calling it here is
+      -- the same work at a moment we control.
+      local tool_installer = require("mason-tool-installer")
+      tool_installer.setup({
+        ensure_installed = ui_attached and { "vale" } or {},
+        run_on_start = false,
+      })
+      if ui_attached then
+        tool_installer.check_install(false) -- false = install missing, don't update existing
+      end
 
       -- Global defaults for LSP diagnostics. Namespace-scoped config wins per
       -- key, so the markdownlint namespace setup in plugins/markdown.lua
@@ -67,29 +95,50 @@ return {
         virtual_text = { source = "if_many" },
       })
 
-      -- Harper's grammar diagnostics are all Hint severity, so the theme renders
-      -- them with the (bluish) DiagnosticUnderlineHint group — a flat, link-like
-      -- underline on terminals without undercurl. A custom handler draws a
-      -- dark-red wavy underline instead, in the HarperDiagnosticUnderline color
-      -- from theme.yml. It's enabled per-namespace on attach below, so it runs
-      -- for Harper alone and other servers' hints keep their default styling.
-      local harper_underline_ns = vim.api.nvim_create_namespace("harper_underline")
-      vim.diagnostic.handlers["harper/underline"] = {
-        show = function(_, bufnr, diagnostics, _)
-          for _, d in ipairs(diagnostics) do
-            -- pcall: end_col can point past a shrinking line between publishes.
-            pcall(vim.api.nvim_buf_set_extmark, bufnr, harper_underline_ns, d.lnum, d.col, {
-              end_row = d.end_lnum,
-              end_col = d.end_col,
-              hl_group = "HarperDiagnosticUnderline",
-              priority = 200, -- above treesitter (100) so the undercurl shows
-            })
-          end
-        end,
-        hide = function(_, bufnr)
-          vim.api.nvim_buf_clear_namespace(bufnr, harper_underline_ns, 0, -1)
-        end,
-      }
+      -- Prose diagnostics get their own underline colour instead of the theme's
+      -- severity ones, so a wordiness nit never looks like a compile error and
+      -- the two prose servers stay apart from each other. Harper's lints are all
+      -- Hint severity, which the theme draws with the bluish
+      -- DiagnosticUnderlineHint group — flat and link-like on terminals without
+      -- undercurl. Vale's run error/warning/suggestion, which is worse: red and
+      -- yellow squiggles on "utilize is too wordy".
+      --
+      -- Each handler draws its own extmarks in its own namespace, and is enabled
+      -- per *diagnostic* namespace on attach below, so it applies to that server
+      -- alone and every other server's diagnostics keep their default styling.
+      -- One table drives everything: the handler name is derived from the client
+      -- name rather than written out a second time, so a third prose server is
+      -- one line here and cannot half-register. (Spelling the name twice would
+      -- silently disable that server's diagnostics: LspAttach turns the built-in
+      -- underline off and routes drawing to a handler key that does not exist.)
+      local prose_underline = {} -- client name -> diagnostic handler name
+      local function register_underline(client_name, hl_group)
+        local name = client_name:gsub("_ls$", "") .. "/underline"
+        -- Parenthesised: gsub also returns a count, and nvim_create_namespace
+        -- takes exactly one argument.
+        local ns = vim.api.nvim_create_namespace((name:gsub("/", "_")))
+        prose_underline[client_name] = name
+        vim.diagnostic.handlers[name] = {
+          show = function(_, bufnr, diagnostics, _)
+            for _, d in ipairs(diagnostics) do
+              -- pcall: end_col can point past a shrinking line between publishes.
+              pcall(vim.api.nvim_buf_set_extmark, bufnr, ns, d.lnum, d.col, {
+                end_row = d.end_lnum,
+                end_col = d.end_col,
+                hl_group = hl_group,
+                priority = 200, -- above treesitter (100) so the undercurl shows
+              })
+            end
+          end,
+          hide = function(_, bufnr)
+            vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
+          end,
+        }
+      end
+
+      -- Colours come from theme.yml.
+      register_underline("harper_ls", "HarperDiagnosticUnderline") -- dark red
+      register_underline("vale_ls", "ValeDiagnosticUnderline") -- violet
 
       -- <leader>r menu: rename + kind-filtered code actions. `only` matching
       -- is hierarchical ("refactor.extract" catches .function, .constant, …)
@@ -105,26 +154,39 @@ return {
       }
 
       -- <leader>ca quick-fix menu: plain code actions, plus the client-side half
-      -- of Harper's dictionary support. Two things make it more than a bare
-      -- vim.lsp.buf.code_action() call:
+      -- of Harper's dictionary support and Vale's fixes. Two things make it more
+      -- than a bare vim.lsp.buf.code_action() call:
       --
       -- 1. No `context.only` filter, ever. Harper emits "Add "x" to the …
       --    dictionary." as kind-less lsp.Commands, and Neovim's own action_filter
       --    drops every kind-less action as soon as `only` is set — which is why
       --    the refactor menu above can never show them.
-      -- 2. Harper only answers a request whose range sits inside a lint span, so
-      --    with the cursor elsewhere on the line the request has to be snapped
-      --    into one; see lib/harper_utils.quick_fix_position for the measurements.
+      -- 2. The request has to land in a lint span. Harper only answers one whose
+      --    range sits inside a span; vale-ls answers from `context.diagnostics`
+      --    alone, which Neovim fills from the cursor position unless an explicit
+      --    range is passed. Both come out as "cursor on the flagged word only"
+      --    without a snap; see lib/harper_utils.quick_fix_position.
+      --
+      -- Passing a range also widens the context Neovim builds: with opts.range
+      -- set it stops filtering line diagnostics down to the ones containing the
+      -- cursor, so every prose flag on the line reaches the server.
       --
       -- Everything after that is Neovim's: the workspace edit for a replacement,
-      -- workspace/executeCommand for the dictionary commands (harper-ls does the
-      -- file write itself), and aggregation across attached servers.
+      -- workspace/executeCommand for the dictionary and vocabulary commands (the
+      -- servers do the file writes themselves), and aggregation across clients.
       local function quick_fix()
         local buf = vim.api.nvim_get_current_buf()
         local spans = {}
-        for _, client in ipairs(vim.lsp.get_clients({ bufnr = buf, name = "harper_ls" })) do
-          local ns = vim.lsp.diagnostic.get_namespace(client.id)
-          vim.list_extend(spans, vim.diagnostic.get(buf, { namespace = ns }))
+        -- Prose servers only, not every diagnostic in the buffer. Widening this
+        -- to "any diagnostic contains the cursor → stay put" looks safer but
+        -- breaks markdown: nvim-lint's markdownlint diagnostics can cover most of
+        -- a line and carry no code actions at all, so they would veto the snap in
+        -- exactly the buffers it is for.
+        for _, client in ipairs(vim.lsp.get_clients({ bufnr = buf })) do
+          if prose_underline[client.name] then
+            local ns = vim.lsp.diagnostic.get_namespace(client.id)
+            vim.list_extend(spans, vim.diagnostic.get(buf, { namespace = ns }))
+          end
         end
 
         local cursor = vim.api.nvim_win_get_cursor(0)
@@ -261,12 +323,18 @@ return {
             })
           end
 
-          -- Swap Harper's flat hint underline for the scoped dark-red wavy one:
-          -- disable the built-in underline on its namespace and route it through
-          -- the harper/underline handler registered above.
-          if client and client.name == "harper_ls" then
+          -- Swap a prose server's severity underline for its own scoped wavy one:
+          -- disable the built-in underline on that server's namespace and route
+          -- it through the handler registered above. `signs = false` applies to
+          -- both prose namespaces — prose nits never open the signcolumn, the
+          -- policy plugins/markdown.lua implements for markdownlint with empty
+          -- sign text. It matters most for Vale, whose error/warning severities
+          -- would otherwise put an E in the gutter next to "too wordy", but
+          -- Harper's Hint signs go the same way.
+          local handler = client and prose_underline[client.name]
+          if handler then
             vim.diagnostic.config(
-              { underline = false, ["harper/underline"] = true },
+              { underline = false, signs = false, [handler] = true },
               vim.lsp.diagnostic.get_namespace(client.id)
             )
           end

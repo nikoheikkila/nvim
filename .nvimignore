@@ -3,6 +3,8 @@
 # catch-all exclude last. Everything not explicitly included here is dropped from the
 # release tarball — add new rules here, don't rely on the default.
 
++ /.markdownlint.jsonc
++ /.vale.ini
 + /LICENSE
 + /README.md
 + /config.yml

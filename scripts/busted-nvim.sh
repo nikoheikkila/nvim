@@ -59,6 +59,9 @@ theme:
       HarperDiagnosticUnderline:
         sp: "#00ff00"
         style: undercurl
+      ValeDiagnosticUnderline:
+        sp: "#0000ff"
+        style: undercurl
 EOF
 
 # A throwaway vault for obsidian.nvim to resolve its single workspace against:
@@ -67,12 +70,12 @@ EOF
 # with the rest of $cfgroot.
 mkdir -p "$NVIM_CONFIG_ROOT/fixture-vault/.obsidian"
 
-# config.yml — obsidian.vault and harper.userDictPath are written as the literal
+# config.yml — obsidian.vault, harper.userDictPath and vale.configPath are written as the literal
 # $NVIM_CONFIG_ROOT string, not the expanded path: the quoted heredoc keeps them
 # verbatim and vim.fn.expand resolves env vars, so obsidian_spec and lsp_spec can
 # recompute the same paths (and lsp_spec can prove the expansion happens at all).
-# The values are sentinels distinct from the real config.yml. Harper values are
-# sentinels too (lsp_spec otherwise only type-checks them).
+# The values are sentinels distinct from the real config.yml. Harper and Vale
+# values are sentinels too (lsp_spec otherwise only type-checks them).
 cat > "$NVIM_CONFIG_ROOT/config.yml" <<'EOF'
 config:
   obsidian:
@@ -92,7 +95,24 @@ config:
       IgnoreLinkTitle: true
     linters:
       SpellCheck: false
+  vale:
+    configPath: "$NVIM_CONFIG_ROOT/.vale.ini"
+    debounceMs: 50
+    showMetrics: false
 EOF
+
+# .vale.ini -- the fallback config lsp_spec asserts vale_ls was handed. Vale's
+# built-in `Vale` style needs no `vale sync`, only an existing StylesPath, so
+# nothing here touches the network; the directory is created below. The name is
+# a sentinel distinct from the real file's `vale-styles`.
+cat > "$NVIM_CONFIG_ROOT/.vale.ini" <<'EOF'
+StylesPath = fixture-styles
+MinAlertLevel = suggestion
+
+[*.md]
+BasedOnStyles = Vale
+EOF
+mkdir -p "$NVIM_CONFIG_ROOT/fixture-styles"
 
 # .markdownlint.jsonc — exact basename required (cli2 recognizes it by name;
 # otherwise it exits 2). "default": true keeps MD041 active so the functional

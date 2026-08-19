@@ -21,4 +21,12 @@ theme:
       HarperDiagnosticUnderline:
         sp: "#8b0000"
         style: undercurl
+      # Vale prose-style diagnostics: violet wavy underline, scoped to Vale's
+      # namespace the same way. Vale reports error/warning/suggestion severities,
+      # so without this a wordiness nit draws the same red squiggle as a compile
+      # error. Distinct from Harper's red so the two prose sources are tellable
+      # apart at a glance (markdownlint is the dark-yellow line band).
+      ValeDiagnosticUnderline:
+        sp: "#8250df"
+        style: undercurl
 

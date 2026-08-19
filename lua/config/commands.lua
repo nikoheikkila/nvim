@@ -85,6 +85,70 @@ end, {
   desc = "Open a Harper dictionary (user or project) for editing",
 })
 
+-- `:ValeSync` downloads the style packages `.vale.ini` declares into its
+-- StylesPath, and `:ValeConfig` opens that file for editing. Both are one-time
+-- setup in practice: Vale reports nothing until the packages are on disk, and
+-- config/vale.lua withholds the config from vale-ls entirely while the
+-- StylesPath is missing rather than let Vale abort on every keystroke.
+--
+-- Shelling out rather than sending `workspace/executeCommand cli.sync` keeps
+-- this working before any server has attached — the reason `:HarperDict` lives
+-- here too — and it is what lets scripts/install.sh drive it from a headless
+-- Neovim right after mason has installed the CLI.
+vim.api.nvim_create_user_command("ValeSync", function()
+  local vale = require("config.vale")
+  local config, server_has_it = vale.config_path()
+  if not config then
+    return vim.notify("ValeSync: no .vale.ini in play — nothing to sync", vim.log.levels.WARN)
+  end
+
+  local function failed(message)
+    vim.notify("ValeSync: " .. message, vim.log.levels.ERROR)
+    -- Headless callers (scripts/install.sh) see only the exit code, so make it
+    -- speak — the convention scripts/headless-lua.sh documents.
+    if #vim.api.nvim_list_uis() == 0 then
+      vim.cmd("cquit 1")
+    end
+  end
+
+  -- The binary vale-ls itself lints with, resolved at call time: mason may have
+  -- created the shim seconds ago, and syncing with a different Vale than the
+  -- server runs is how a StylesPath ends up populated for a version that never
+  -- reads it.
+  local binary = vale.init_options().valeBinaryPath or "vale"
+  -- --config before the subcommand: that is the order Vale's own flag parsing
+  -- wants, and what vale-ls uses internally. The wait is bounded because it
+  -- blocks the editor for the whole download; install.sh's own curl budget is
+  -- the same order.
+  local ok, result = pcall(function()
+    return vim.system({ binary, "--config", config, "sync" }, { text = true }):wait(120000)
+  end)
+  if not ok then
+    return failed(("could not run `%s` — install it with :MasonInstall vale"):format(binary))
+  end
+  if result.code ~= 0 then
+    -- Vale colours its errors, and a notification renders the escapes literally.
+    local message = result.stderr ~= "" and result.stderr or result.stdout
+    return failed(vim.trim((message:gsub("\27%[[%d;]*m", ""))))
+  end
+  -- Vale's own stdout here is a progress bar, not a message worth relaying.
+  vim.notify(
+    "ValeSync: style packages installed"
+      -- The server resolved its configPath at startup, before the styles
+      -- existed, and nothing re-resolves it mid-session — say so rather than
+      -- leave the user wondering why the buffer is still unflagged.
+      .. (server_has_it and "" or " — restart Neovim to enable Vale")
+  )
+end, { desc = "Download the Vale style packages declared in .vale.ini" })
+
+vim.api.nvim_create_user_command("ValeConfig", function()
+  local config = require("config.vale").config_path()
+  if not config then
+    return vim.notify("ValeConfig: no .vale.ini in play", vim.log.levels.WARN)
+  end
+  vim.cmd.edit(vim.fn.fnameescape(config))
+end, { desc = "Open the Vale configuration (.vale.ini) for editing" })
+
 -- Rewrite only the exact bare commands; anything longer (`:qa`, `:xa`, `:wqa`,
 -- ranges, ...) fails the `getcmdline()` guard, falls through to Vim's default,
 -- and still quits Neovim.

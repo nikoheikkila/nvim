@@ -89,10 +89,12 @@ User-facing documentation lives under [`docs/`](docs/) and ships with each relea
 | ----------------------- | ---------------------------------------------------------------- |
 | `task lint`             | selene + `stylua --check` + markdownlint-cli2 + shellcheck       |
 | `task format`           | StyLua + `markdownlint-cli2 --fix`                               |
-| `task test`             | Both test suites (unit, then integration)                        |
+| `task test`             | The whole pipeline: unit, then integration, then package         |
 | `task test:unit`        | Pure-Lua specs for `lua/lib/` (no Neovim involved)               |
 | `task test:integration` | Specs running inside a fully-loaded headless Neovim              |
+| `task test:package`     | Stage the release tarball and check its contents                 |
 | `task install`          | Fetch plugins to match `lazy-lock.json` + install git hooks      |
+| `task vale:sync`        | Fetch the Vale style packages declared in `.vale.ini`            |
 | `scripts/check.sh`      | Everything CI runs, in CI's order — green here means green in CI |
 
 Pass arguments to a task after `--`, e.g. run a single spec file:

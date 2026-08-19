@@ -32,6 +32,16 @@ end)
   `nvim --cmd 'set loadplugins' -u <config>/init.lua -l script.lua [args...]` (argv lands in `_G.arg`;
   `-l` disables plugin loading unless 'loadplugins' is set first).
 
+- **Check exit codes without a pipe.** `nvim --headless ... | tail -3; echo $?` reports *tail's* status, so a
+  `cquit 1` looks like success. Run the command bare (`... >/dev/null 2>&1; echo $?`) when the exit code is
+  what is under test, and pipe only when reading output.
+- A headless script signals failure with `vim.cmd("cquit 1")` — plain `qa` exits 0 no matter what was
+  printed, and hangs forever on a modified buffer because no UI can answer the prompt. Use `qa!`.
+- Reading a plugin's real behaviour beats reasoning about it: `~/.local/share/nvim/lazy/<plugin>/` and
+  `$VIMRUNTIME/lua/vim/**` are on disk and pinned. When an event's *timing* is the question, prove it —
+  register an autocmd that reports state and let the real startup sequence run, rather than inferring the
+  order from documentation.
+
 ## Running Busted Inside Neovim (integration tests)
 
 - Busted itself can run inside a fully-loaded headless Neovim: point a `.busted` task's `lua` option at
@@ -125,3 +135,17 @@ end)
   Neovim sees them (macOS: Ctrl+arrows → Mission Control, Ctrl+click → right-click synthesis; Warp: strips Ctrl
   from mouse reports). `:map <key>` proves registration only — diagnose delivery with a `vim.on_key` logger
   (`vim.fn.keytrans(key)` per event) and design bindings around what actually arrives.
+
+## Testing Config-File-Driven Behaviour
+
+The integration harness injects throwaway config fixtures via `NVIM_CONFIG_ROOT` (`scripts/busted-nvim.sh`),
+which has a trap worth naming: **a fixture that supplies a value stops the fallback path from ever running.**
+Setting `vale.configPath` in the fixture `config.yml` meant the code that resolves a *default* config, and the
+readiness gate guarding it, executed in no test at all — while an assertion nearby looked like it covered them.
+
+- Ask which branch a fixture value *prevents*, and cover that branch separately.
+- Fallback and validation logic wants to be a named, exported function taking its inputs as arguments
+  (`vet_config(path)`), not an inline block in a module body. Then a spec drives every branch against a
+  `vim.fn.tempname()` directory, with no fixture involved and nothing to un-set.
+- Beware assertions phrased as "this also proves X". If X is a side path the fixture short-circuits, the
+  comment is documentation of a gap.

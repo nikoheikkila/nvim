@@ -50,3 +50,38 @@ config:
       RepeatedWords: true
       Spaces: true
       CorrectNumberSuffix: true
+  # Vale prose style linter (vale-ls). Complements Harper: Harper owns grammar
+  # and spelling, Vale owns style — wordiness, weasel words, passive voice,
+  # clichés. Which rules run is decided by `.vale.ini`, not here; `:ValeConfig`
+  # opens it and `:ValeSync` downloads the packages it declares. Option list:
+  # https://docs.vale.sh/guides/lsp
+  vale:
+    # configPath: which .vale.ini to lint against. Empty means "the one shipped
+    # next to this file", which is what makes Vale work in buffers belonging to
+    # no project (Obsidian notes, scratch files). A project with its own
+    # .vale.ini always wins regardless. "~", "$VARS", and paths relative to the
+    # project root all work. Delete the shipped .vale.ini to opt out entirely
+    # and hand config discovery back to Vale.
+    configPath: ""
+    # lintOnChange: diagnostics as you type. Off means on open and save only.
+    lintOnChange: true
+    # debounceMs: how long typing has to settle before a lint runs. Each lint
+    # spawns a Vale process, so lower is not automatically better.
+    debounceMs: 300
+    # filter: a Vale expression narrowing what is reported, e.g.
+    # ".Level in ['warning', 'error']" to drop suggestion-level alerts. Empty
+    # reports everything `.vale.ini`'s MinAlertLevel allows.
+    filter: ""
+    # valeBinaryPath: an absolute path to a specific `vale`. Empty takes it from
+    # PATH, where mason puts the copy it installs. Note vale-ls does NOT fall
+    # back to PATH when a path set here does not exist.
+    valeBinaryPath: ""
+    # installVale: let vale-ls download and manage its own Vale into a vale_bin/
+    # folder. Off because mason already installs the CLI.
+    installVale: false
+    # syncOnStartup: run `vale sync` every time the server starts. Off — that is
+    # a network fetch on every session; `:ValeSync` is the on-demand version.
+    syncOnStartup: false
+    # showMetrics: a word/sentence-count code lens. Inert until something calls
+    # vim.lsp.codelens.refresh(); nothing here does.
+    showMetrics: true

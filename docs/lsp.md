@@ -64,6 +64,39 @@ project one; delete the line, save, and the flag returns. Unless `config.yml` ov
 dictionary is at `~/Library/Application Support/harper-ls/dictionary.txt` on macOS and
 `~/.config/harper-ls/dictionary.txt` on Linux.
 
+## Prose Style with Vale
+
+[Vale](https://vale.sh) (`vale-ls`) checks the _style_ of your prose where Harper checks its grammar: wordy
+phrases, weasel words, passive voice, clichés, and redundancies. Both run at once in Markdown, plain text,
+reStructuredText, AsciiDoc and LaTeX, and they are colour-coded so you can tell them apart at a glance:
+
+| Underline                     | Source        | Complains about                            |
+| ----------------------------- | ------------- | ------------------------------------------ |
+| Dark-red wavy                 | Harper        | Spelling, grammar, capitalisation          |
+| Violet wavy                   | Vale          | Wordiness, weasel words, clichés           |
+| Dark-yellow band on the line  | markdownlint  | Markdown structure — headings, lists, ...  |
+
+Vale needs its style packages downloaded once. The installer does it for you; if you cloned the repository by
+hand, run <kbd>:ValeSync</kbd> inside Neovim and restart. Until then Vale stays quiet and says so on startup.
+
+Press <kbd>Space c a</kbd> on a flagged phrase — or anywhere on its line — for Vale's suggested rewrites,
+alongside Harper's corrections. Fixes apply straight to the buffer.
+
+### Choosing the Rules
+
+Which rules run is decided by `.vale.ini` next to `config.yml`; <kbd>:ValeConfig</kbd> opens it. It ships with
+[write-good](https://github.com/btford/write-good) and [proselint](https://github.com/amperser/proselint),
+with the rules that only repeat what Harper already says switched off. Add a package to `Packages` and its
+name to `BasedOnStyles`, then run <kbd>:ValeSync</kbd> again — `Microsoft`, `Google`, and `alex` are the
+popular ones. Turn a single noisy rule off with a `RuleName = NO` line.
+
+A project with its own `.vale.ini` always wins: open a file inside one and Vale follows that repository's
+house style instead, which is the point of committing one. Delete the shipped file to switch Vale off
+everywhere else.
+
+The behaviour of the server itself — how quickly it reacts to typing, whether it lints as you type at all, and
+which severities reach the buffer — lives under `config.vale` in `config.yml`.
+
 ## Notes
 
 - The function keys (<kbd>F2</kbd>, <kbd>F12</kbd>, <kbd>Shift+F12</kbd>) also work while typing in insert mode.

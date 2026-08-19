@@ -24,6 +24,29 @@ Fetch the new plugin with:
 task install
 ```
 
+### Installing a non-plugin tool
+
+Language servers come from the `servers` table in `lua/config/lsp_servers.lua` and are installed by
+mason-lspconfig. Everything else — linters, formatters, CLIs a server shells out to — goes in
+`mason-tool-installer.nvim`'s `ensure_installed` list in `lua/plugins/lsp.lua`, because mason-lspconfig only
+knows servers and `mason.nvim` itself has no `ensure_installed`. Today that list holds one entry, the `vale`
+CLI behind `vale-ls`. Both installers share the `ui_attached` guard, so a headless session never downloads;
+`scripts/install.sh` is the deliberate exception and drives `:MasonInstall` explicitly.
+
+An external tool that needs a one-time bootstrap after installation (Vale's `vale sync`) belongs in
+`scripts/install.sh` as well — that is the path a real end user takes, and anything it skips is broken on
+first launch for everyone who did not clone the repository. Note `.nvimignore` keeps `scripts/` out of the
+release tarball, so the bootstrap has to be inlined there rather than calling a helper script; `run_nvim` in
+that file is the shared scaffold for driving the installed config headlessly.
+
+### Checking the release tarball
+
+`.nvimignore` is an rsync merge-filter **allowlist**, so a new root-level file is silently absent from every
+release until it is listed. Nothing in the test suites catches that — they all run against the checkout. Run
+`task test:package` after adding or renaming anything at the repository root:
+it stages the tree exactly as CI's "Package artifact" step does, prints it, and asserts that every file
+`config/paths.lua` is asked for made it in. `--tree` prints the listing without the assertions.
+
 ### Verifying a plugin loads
 
 `:checkhealth <plugin>` can report `No healthcheck found for "<plugin>" plugin` for a `keys`-lazy-loaded plugin that
@@ -42,11 +65,10 @@ Tests are run through the tasks in `Taskfile.yml`. Invoking `busted` directly sk
 rocks-tree wiring the tasks set up (see Install below), so the integration suite won't resolve.
 
 `task test` runs the
-full pipeline (`test:unit` then `test:integration`), and each is runnable individually.
+full pipeline (`test:unit`, `test:integration`, then `test:package`), and each is runnable individually.
 
-Under the hood, both
-tasks wrap two [Busted](https://lunarmodules.github.io/busted/) suites, configured by `.busted` at the
-project root:
+The first two wrap [Busted](https://lunarmodules.github.io/busted/) suites, configured by `.busted` at the
+project root; the third checks the shipped artifact rather than the code:
 
 - **Unit** (`task test:unit`) — `tests/unit/*_spec.lua`, one spec per `lua/lib/`
   module. Pure Lua, runs under the plain `busted` binary (homebrew Lua, no Neovim). The `package.path`
@@ -57,6 +79,10 @@ project root:
   busted under `scripts/busted-nvim.sh`, an interpreter shim that boots a **fully-loaded headless Neovim**
   (`nvim -u init.lua -l`), so specs assert against the real `vim` API. **Extend these specs when
   adding a user command or global keymap.**
+- **Package** (`task test:package`) — `scripts/verify-package.sh`. No Busted and no Neovim: it stages the
+  repository through the `.nvimignore` allowlist exactly as CI's "Package artifact" step does and asserts the
+  result still carries everything the editor reads. It covers the one gap the two suites structurally cannot,
+  since both run against the checkout, where every file is present by definition.
 
 Integration-suite mechanics worth knowing before writing specs:
 

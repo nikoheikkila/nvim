@@ -7,10 +7,11 @@
 -- it on the first interactive launch, and auto-enables it.
 local yaml_utils = require("lib.yaml_utils")
 local harper_utils = require("lib.harper_utils")
+local vale = require("config.vale")
 local paths = require("config.paths")
 
 -- A missing/unreadable config.yml yields nil, so resolve_config falls back to
--- harper's defaults.
+-- harper's defaults. (Vale reads the file itself, via config/vale.lua.)
 local config = yaml_utils.read_file(paths.config_file("config.yml"))
 
 -- harper-ls resolves "~" and workspace-relative paths itself, but not "$VAR" —
@@ -44,5 +45,18 @@ return {
   -- lib/harper_utils.lua, falling back to harper's defaults when absent.
   harper_ls = {
     settings = { ["harper-ls"] = harper },
+  },
+  -- Vale prose style checking, the complement to Harper: Harper owns grammar and
+  -- spelling, Vale's write-good/proselint packages own wordiness, weasel words,
+  -- passive voice and clichés. Diagnostics/code-actions only, on nvim-lspconfig's
+  -- default filetypes (markdown, text, rst, asciidoc, tex, html, xml). It lints
+  -- the buffer as you type — vale-ls debounces `debounceMs` and pipes the unsaved
+  -- text through Vale's stdin — but never an unnamed buffer, which has no path to
+  -- resolve syntax and config against. Its options (`config.vale.*` in
+  -- config.yml), the shipped-.vale.ini fallback, and the project-config-wins
+  -- hook all live in config/vale.lua — see there for why each works as it does.
+  vale_ls = {
+    init_options = vale.init_options(),
+    before_init = vale.before_init,
   },
 }

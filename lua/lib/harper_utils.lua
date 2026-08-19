@@ -1,3 +1,5 @@
+local yaml_utils = require("lib.yaml_utils")
+
 local M = {}
 
 -- harper-ls settings with meaningful non-empty defaults, mirrored from
@@ -40,29 +42,6 @@ local DEFAULTS = {
 -- left unexpanded.
 M.OPTIONAL_PATHS = { "userDictPath", "workspaceDictPath", "fileDictPath", "ignoredLintsPath" }
 
--- Deep-merge `overrides` over `defaults`, accepting an override leaf only when
--- its Lua type matches the default's (recursing into nested maps). This is the
--- per-field type guard the other resolvers apply, generalised to nested tables:
--- a wrong-typed or absent field silently falls back, so a malformed config.yml
--- never yields an unexpected shape.
-local function merge(defaults, overrides)
-  if type(overrides) ~= "table" then
-    overrides = {}
-  end
-  local result = {}
-  for key, default in pairs(defaults) do
-    local override = overrides[key] -- plain index: a `false` override must survive
-    if type(default) == "table" then
-      result[key] = merge(default, override)
-    elseif type(override) == type(default) then
-      result[key] = override
-    else
-      result[key] = default
-    end
-  end
-  return result
-end
-
 -- Keep only the string entries of a parsed sequence; returns nil when nothing
 -- usable remains so callers can omit the field entirely.
 local function string_list(value)
@@ -83,16 +62,7 @@ end
 -- path fields and excludePatterns only when the user supplied usable values —
 -- keeping empty ones out so harper-ls falls back to its own defaults.
 function M.resolve_config(parsed)
-  local harper = type(parsed) == "table" and type(parsed.config) == "table" and parsed.config.harper
-  if type(harper) ~= "table" then
-    harper = {}
-  end
-  local settings = merge(DEFAULTS, harper)
-  for _, key in ipairs(M.OPTIONAL_PATHS) do
-    if type(harper[key]) == "string" and harper[key] ~= "" then
-      settings[key] = harper[key]
-    end
-  end
+  local settings, harper = yaml_utils.resolve_section(parsed, "harper", DEFAULTS, M.OPTIONAL_PATHS)
   local patterns = string_list(harper.excludePatterns)
   if patterns then
     settings.excludePatterns = patterns
@@ -148,15 +118,6 @@ function M.quick_fix_position(cursor, spans)
   return best and { lnum = best.lnum, col = best.col } or nil
 end
 
--- "Non-empty string wins", the rule resolve_config applies to the path fields
--- and config/paths.lua applies to NVIM_CONFIG_ROOT.
-local function non_empty(value, fallback)
-  if type(value) == "string" and value ~= "" then
-    return value
-  end
-  return fallback
-end
-
 -- Where harper-ls keeps the user dictionary when config.yml leaves the path
 -- empty: dirs::config_dir()/harper-ls/dictionary.txt, which is
 -- ~/Library/Application Support on macOS and $XDG_CONFIG_HOME (or ~/.config)
@@ -166,15 +127,15 @@ function M.user_dict_path(opts)
   opts = type(opts) == "table" and opts or {}
   local home = opts.home or ""
   local config_home = opts.mac and (home .. "/Library/Application Support")
-    or non_empty(opts.xdg_config_home, home .. "/.config")
-  return non_empty(opts.configured, config_home .. "/harper-ls/dictionary.txt")
+    or yaml_utils.non_empty(opts.xdg_config_home, home .. "/.config")
+  return yaml_utils.non_empty(opts.configured, config_home .. "/harper-ls/dictionary.txt")
 end
 
 -- The workspace dictionary defaults to .harper-dictionary.txt in the LSP root —
 -- the same name nvim-lspconfig lists in harper_ls's root_markers.
 function M.workspace_dict_path(opts)
   opts = type(opts) == "table" and opts or {}
-  return non_empty(opts.configured, (opts.root or ".") .. "/.harper-dictionary.txt")
+  return yaml_utils.non_empty(opts.configured, (opts.root or ".") .. "/.harper-dictionary.txt")
 end
 
 return M

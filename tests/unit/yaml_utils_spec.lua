@@ -144,3 +144,55 @@ describe("read_file", function()
     os.remove(path)
   end)
 end)
+
+-- merge_defaults and non_empty live here rather than in one resolver because
+-- harper_utils and vale_utils both build their settings tables with them.
+describe("merge_defaults", function()
+  local DEFAULTS = { a = 1, b = "x", c = false, nested = { d = true, e = 2 } }
+
+  it("returns a copy of the defaults for a nil / non-table override", function()
+    assert.are.same(DEFAULTS, M.merge_defaults(DEFAULTS, nil))
+    assert.are.same(DEFAULTS, M.merge_defaults(DEFAULTS, "nope"))
+  end)
+
+  it("does not mutate or alias the defaults", function()
+    local merged = M.merge_defaults(DEFAULTS, { a = 9, nested = { d = false } })
+    assert.equal(1, DEFAULTS.a)
+    assert.is_true(DEFAULTS.nested.d)
+    assert.are_not.equal(DEFAULTS.nested, merged.nested)
+  end)
+
+  it("takes an override only when its type matches the default's", function()
+    local merged = M.merge_defaults(DEFAULTS, { a = 2, b = 7, c = true })
+    assert.equal(2, merged.a)
+    assert.equal("x", merged.b) -- number over a string default: rejected
+    assert.is_true(merged.c)
+  end)
+
+  it("accepts a false override rather than treating it as absent", function()
+    assert.is_false(M.merge_defaults({ flag = true }, { flag = false }).flag)
+  end)
+
+  it("recurses into nested maps and keeps unmentioned siblings", function()
+    local merged = M.merge_defaults(DEFAULTS, { nested = { d = false } })
+    assert.is_false(merged.nested.d)
+    assert.equal(2, merged.nested.e)
+  end)
+
+  it("ignores keys the defaults do not declare", function()
+    assert.is_nil(M.merge_defaults(DEFAULTS, { unknown = true }).unknown)
+  end)
+end)
+
+describe("non_empty", function()
+  it("returns the value when it is a non-empty string", function()
+    assert.equal("set", M.non_empty("set", "fallback"))
+  end)
+
+  it("falls back on an empty string, nil, and non-strings", function()
+    assert.equal("fallback", M.non_empty("", "fallback"))
+    assert.equal("fallback", M.non_empty(nil, "fallback"))
+    assert.equal("fallback", M.non_empty(0, "fallback"))
+    assert.equal("fallback", M.non_empty(false, "fallback"))
+  end)
+end)

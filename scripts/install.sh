@@ -80,6 +80,22 @@ download() {
   fi
 }
 
+# Run the freshly installed configuration headlessly. Neovim resolves its config
+# as $XDG_CONFIG_HOME/$NVIM_APPNAME regardless of the working directory, so both
+# are pointed at the output directory -- a no-op for the default location,
+# required for a custom --out. The cd runs in a subshell, leaving the caller's
+# working directory untouched. Output goes to $workdir/$1.log so a failing caller
+# can print it; the exit status is the caller's to interpret.
+run_nvim() {
+  log=$1
+  shift
+  (
+    cd "$out" &&
+      XDG_CONFIG_HOME="$config_home" NVIM_APPNAME="$appname" \
+        nvim --headless "$@"
+  ) >"$workdir/$log.log" 2>&1
+}
+
 out=""
 while [ $# -gt 0 ]; do
   case $1 in
@@ -147,24 +163,44 @@ out=$(cd "$out" && pwd)
 tar -xzf "$workdir/$ASSET" -C "$out"
 echo "Extracted configuration into $out"
 
-# Neovim resolves its config as $XDG_CONFIG_HOME/$NVIM_APPNAME regardless of
-# the working directory, so both are pointed at the output directory -- a
-# no-op for the default location, required for a custom --out. The cd runs in
-# a subshell, leaving the caller's working directory untouched.
 config_home=$(dirname "$out")
 appname=$(basename "$out")
 echo "Installing plugins (this may take a while)..."
-if (
-  cd "$out" &&
-    XDG_CONFIG_HOME="$config_home" NVIM_APPNAME="$appname" \
-      nvim --headless "+Lazy! install" +qa
-) >"$workdir/lazy-install.log" 2>&1; then
-  echo "Installation successful: $out"
-  if [ "$config_home/$appname" != "${XDG_CONFIG_HOME:-$HOME/.config}/nvim" ]; then
-    echo "Launch it with: XDG_CONFIG_HOME=\"$config_home\" NVIM_APPNAME=\"$appname\" nvim"
-  fi
+if run_nvim lazy-install "+Lazy! install" +qa; then
+  echo "Extracted plugins into place"
 else
   echo "install.sh: plugin installation failed; nvim output follows:" >&2
   cat "$workdir/lazy-install.log" >&2
   exit 1
+fi
+
+# Vale prose styles. The shipped .vale.ini declares a StylesPath that `vale sync`
+# populates; until that directory exists, lua/config/vale.lua withholds
+# the config from vale-ls and Vale stays silent -- so a fresh install has no
+# prose linting without this step. mason installs the `vale` CLI only on the
+# first *interactive* launch (the headless guard in lua/plugins/lsp.lua), which
+# is why it is asked for explicitly here: end-user setup is where downloads
+# belong. mason.nvim declares no lazy `cmd`, hence the force-load, and
+# :MasonInstall blocks in headless mode, so :ValeSync runs with the CLI already
+# on PATH.
+#
+# Deliberately non-fatal, unlike the plugin install above: styles are an
+# enhancement, the configuration is usable without them, and :ValeSync repeats
+# the step from inside the editor. `qa!` rather than `qa` -- plain `qa` hangs
+# forever on a modified buffer with no UI to answer its prompt.
+echo "Installing Vale style packages..."
+if run_nvim vale-sync \
+  -c "lua require('lazy').load({ plugins = { 'nvim-lspconfig' } })" \
+  -c "MasonInstall vale" \
+  -c "ValeSync" \
+  -c "qa!"; then
+  echo "Installed Vale style packages"
+else
+  echo "install.sh: could not install Vale styles; run :ValeSync inside Neovim to retry." >&2
+  sed 's/^/  /' "$workdir/vale-sync.log" >&2
+fi
+
+echo "Installation successful: $out"
+if [ "$config_home/$appname" != "${XDG_CONFIG_HOME:-$HOME/.config}/nvim" ]; then
+  echo "Launch it with: XDG_CONFIG_HOME=\"$config_home\" NVIM_APPNAME=\"$appname\" nvim"
 fi

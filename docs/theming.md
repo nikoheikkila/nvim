@@ -45,6 +45,10 @@ defined here **replaces** the theme's styling for that group entirely — the sh
 to render Markdown inline code non-italic (defining `@markup.raw.markdown_inline` without `style` removes
 the theme's italic).
 
+The shipped `theme.yml` also defines `HarperDiagnosticUnderline` and `ValeDiagnosticUnderline` — the colours
+the two prose checkers are drawn in (dark red and violet). They are ordinary overrides, so recolour them here
+like any other group; see [Terminal Setup](terminal.md) if the wave renders flat.
+
 Two syntax notes: group names containing `@` (Tree-sitter captures) must be quoted, and hex colour values
 must be quoted too — an unquoted `#` starts a YAML comment.
 

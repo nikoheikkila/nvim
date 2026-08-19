@@ -44,6 +44,25 @@ metadata:
 - Use `table.insert` / `table.remove` for array ops; avoid manual index gaps
 - Freeze config tables by setting a `__newindex` metamethod that errors
 
+### Multiple Return Values
+
+Lua splices a call's *entire* return list into the tail of an argument list, so a multi-return function used
+as the last argument silently passes extra arguments. Wrap it in parentheses to truncate to one value:
+
+```lua
+-- gsub returns (string, count) -- this passes TWO args and errors with
+-- "Expected 1 argument" on an API that takes one:
+vim.api.nvim_create_namespace(name:gsub("/", "_"))
+
+-- Parenthesised: exactly one value.
+vim.api.nvim_create_namespace((name:gsub("/", "_")))
+```
+
+- The same applies to `return (f())` when a function must yield exactly one value, and to
+  `table.insert(t, (f()))`
+- It only bites in the *last* argument position; `f(g(), x)` already truncates `g()` to one value
+- `select("#", ...)` counts varargs including trailing `nil`s; `#{...}` does not
+
 ### Error Handling
 
 - Use `pcall(fn, ...)` to catch errors; `xpcall(fn, handler, ...)` for tracebacks

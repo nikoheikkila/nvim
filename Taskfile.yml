@@ -25,6 +25,16 @@ tasks:
       - task: hooks
       - nvim --headless "+Lazy! install" +qa
 
+  vale:sync:
+    desc: Download the Vale style packages declared in .vale.ini
+    # The developer-clone equivalent of the Vale step in scripts/install.sh.
+    # Deliberately outside `install`, which is documented as fetching plugins
+    # only and must stay download-free (the headless guard in plugins/lsp.lua).
+    if: command -v vale
+    sources:
+      - .vale.ini
+    cmd: vale --config .vale.ini sync
+
   update:
     desc: Update LazyVim plugins
     generates:
@@ -50,6 +60,7 @@ tasks:
     cmds:
       - task: test:unit
       - task: test:integration
+      - task: test:package
 
   lint:lua:
     desc: Lint Lua sources and tests
@@ -65,7 +76,9 @@ tasks:
     if: command -v markdownlint-cli2
     sources:
       - ./**/*.md
-    cmd: markdownlint-cli2 {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}"**/*.md"{{end}}
+    # "!vale-styles/**" excludes the third-party style packages `task vale:sync`
+    # downloads; their READMEs are not ours to lint or fix.
+    cmd: markdownlint-cli2 {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}"**/*.md" "!vale-styles/**"{{end}}
 
   lint:shell:
     desc: Lint Shell scripts
@@ -107,7 +120,11 @@ tasks:
     if: command -v markdownlint-cli2
     sources:
       - ./**/*.md
-    cmd: markdownlint-cli2 --fix {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}"**/*.md"{{end}}
+    cmd: markdownlint-cli2 --fix {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}"**/*.md" "!vale-styles/**"{{end}}
+
+  test:package:
+    desc: Verify the release tarball's contents against the .nvimignore allowlist
+    cmd: scripts/verify-package.sh
 
   test:unit:
     desc: Run unit tests

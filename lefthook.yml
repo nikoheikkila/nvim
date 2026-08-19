@@ -10,3 +10,4 @@ pre-push:
   jobs:
     - run: task test:unit
     - run: task test:integration
+    - run: task test:package

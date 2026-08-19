@@ -23,9 +23,12 @@ curl -sSL https://raw.githubusercontent.com/nikoheikkila/nvim/refs/heads/main/sc
 ```
 
 The script downloads the latest [release](https://github.com/nikoheikkila/nvim/releases), extracts it into
-`$XDG_CONFIG_HOME/nvim` (or `~/.config/nvim` when `XDG_CONFIG_HOME` is unset), and pre-installs all plugins,
-so the configuration is ready on the first launch of `nvim`. An existing configuration is moved aside to
-`<dir>.bak.<timestamp>` first — nothing is overwritten.
+`$XDG_CONFIG_HOME/nvim` (or `~/.config/nvim` when `XDG_CONFIG_HOME` is unset), pre-installs all plugins, and
+downloads the Vale style packages, so the configuration is ready on the first launch of `nvim`. An existing
+configuration is moved aside to `<dir>.bak.<timestamp>` first — nothing is overwritten.
+
+Only the Vale step is allowed to fail without failing the install: prose style checking is an extra, and
+<kbd>:ValeSync</kbd> retries it from inside Neovim.
 
 To install into a custom Neovim configuration directory, pass the `-o` / `--out` flag (the `sh -s --` form
 is required to forward flags through the pipe):
@@ -56,11 +59,24 @@ Neovim only loads configuration from its standard locations, so a custom directo
    git clone <repo-url> ~/.config/nvim
    ```
 
-3. **Start Neovim** — lazy.nvim bootstraps itself on first launch and installs all plugins automatically:
+3. **Open a file in Neovim** — lazy.nvim bootstraps itself on first launch and installs all plugins
+   automatically:
 
    ```sh
-   nvim
+   nvim README.md
    ```
+
+   Opening a file, rather than starting Neovim empty, is what activates the language-server support:
+   `mason.nvim` then downloads the servers and linters in the background. `:Mason` shows the progress.
+
+4. **Download the Vale style packages** (skip if you do not want prose style checking). Once `:Mason` lists
+   `vale` as installed, run this inside Neovim and restart:
+
+   ```vim
+   :ValeSync
+   ```
+
+   Until you do, Vale stays quiet and reminds you on startup. The quick install above does this step for you.
 
 ## Optional Tools
 
