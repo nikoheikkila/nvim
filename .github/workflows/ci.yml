@@ -124,7 +124,7 @@ jobs:
         uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
 
       - name: Install Neovim
-        uses: ./.github/actions/install-neovim
+        uses: ./.github/actions/install-neovim # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
 
       - name: Set up Lua 5.1
         uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
@@ -280,10 +280,10 @@ jobs:
           persist-credentials: false
 
       - name: Download release package
-        uses: ./.github/actions/download-release-package
+        uses: ./.github/actions/download-release-package # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
 
       - name: Install Neovim
-        uses: ./.github/actions/install-neovim
+        uses: ./.github/actions/install-neovim # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
 
       - name: Extract artifact as Neovim config
         env:
@@ -325,7 +325,7 @@ jobs:
           persist-credentials: false
 
       - name: Download release package
-        uses: ./.github/actions/download-release-package
+        uses: ./.github/actions/download-release-package # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
 
       - name: Create GitHub release
         env:
