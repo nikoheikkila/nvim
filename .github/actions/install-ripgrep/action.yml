@@ -1,0 +1,30 @@
+name: Install ripgrep
+description: Downloads a pinned ripgrep release for the current runner and adds it to PATH.
+
+inputs:
+  version:
+    description: ripgrep release tag to install
+    required: false
+    default: "15.1.0"
+
+runs:
+  using: composite
+  steps:
+    - name: Install ripgrep
+      shell: bash
+      env:
+        RG_VERSION: ${{ inputs.version }}
+      run: | # zizmor: ignore[github-env] version is validated as strict semver; os/arch/RUNNER_TEMP come from the runner
+        [[ "$RG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "invalid ripgrep version: $RG_VERSION" >&2; exit 1; }
+        arch=$([ "$RUNNER_ARCH" = "ARM64" ] && echo "aarch64" || echo "x86_64")
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          target="${arch}-apple-darwin"
+        elif [ "$arch" = "aarch64" ]; then
+          target="aarch64-unknown-linux-gnu"
+        else
+          target="x86_64-unknown-linux-musl"
+        fi
+        curl -fsSL --connect-timeout 10 --max-time 120 --retry 3 -O "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${target}.tar.gz"
+        tar -xzf "ripgrep-${RG_VERSION}-${target}.tar.gz" -C "$RUNNER_TEMP"
+        "$RUNNER_TEMP/ripgrep-${RG_VERSION}-${target}/rg" --version
+        echo "$RUNNER_TEMP/ripgrep-${RG_VERSION}-${target}" >> "$GITHUB_PATH"

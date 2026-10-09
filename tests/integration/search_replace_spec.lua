@@ -57,6 +57,10 @@ describe("search & replace", function()
         end,
       }
       real_root = project.root
+      local orig = vim.fn.executable
+      vim.fn.executable = function(name)
+        return name == "rg" and 1 or orig(name)
+      end
     end)
 
     after_each(function()

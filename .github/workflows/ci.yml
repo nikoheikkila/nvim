@@ -126,6 +126,9 @@ jobs:
       - name: Install Neovim
         uses: ./.github/actions/install-neovim # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
 
+      - name: Install ripgrep
+        uses: ./.github/actions/install-ripgrep # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
+
       - name: Set up Lua 5.1
         uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
         with:
