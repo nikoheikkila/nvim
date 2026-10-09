@@ -57,10 +57,11 @@ There is deliberately **no `vim.fn.executable` guard** for the servers (unlike l
 mason owns installation, missing servers simply never attach, and mason surfaces its own install errors.
 
 **Non-LSP tools** need a second installer: `mason-lspconfig` only knows servers, and `mason.nvim` itself has no
-`ensure_installed`. `mason-tool-installer.nvim` covers the one case there is — the `vale` CLI that `vale-ls`
-shells out to — behind the same `ui_attached` guard, which both installers now share. The one place that
-guard is deliberately bypassed is `scripts/install.sh`, which force-loads nvim-lspconfig and runs an explicit
-`:MasonInstall vale` in a headless Neovim; `:MasonInstall` blocks in headless mode
+`ensure_installed`. `mason-tool-installer.nvim` covers both cases there are — the `vale` CLI that `vale-ls`
+shells out to, and `ast-grep` for grug-far's structural engines (see `plugins.md`) — behind the same
+`ui_attached` guard, which both installers now share. The one place that guard is deliberately bypassed is
+`scripts/install.sh`, which force-loads nvim-lspconfig and runs an explicit `:MasonInstall ast-grep`, then
+`:MasonInstall vale`, each in its own headless Neovim; `:MasonInstall` blocks in headless mode
 (`mason/api/command.lua` branches on `platform.is_headless`), so the `:ValeSync` in the same invocation runs
 with the CLI already on PATH. End-user setup is where downloads belong; `task install` still fetches plugins
 only.

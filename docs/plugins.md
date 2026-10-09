@@ -10,13 +10,14 @@
 | [`nvim-neo-tree/neo-tree.nvim`](https://github.com/nvim-neo-tree/neo-tree.nvim)                             | File tree sidebar with mouse support and bulk file operations                                   |
 | [`folke/snacks.nvim`](https://github.com/folke/snacks.nvim)                                                 | Fuzzy file picker, project-wide text search, and inline image viewing                           |
 | [`kdheepak/lazygit.nvim`](https://github.com/kdheepak/lazygit.nvim)                                         | Lazygit in a floating window                                                                    |
+| [`MagicDuck/grug-far.nvim`](https://github.com/MagicDuck/grug-far.nvim)                                     | Project-wide search & replace with a diff preview (see [editing](editing.md#search--replace))   |
 | [`akinsho/bufferline.nvim`](https://github.com/akinsho/bufferline.nvim)                                     | Buffer tabs at the top                                                                          |
 | [`nvim-lualine/lualine.nvim`](https://github.com/nvim-lualine/lualine.nvim)                                 | Status line                                                                                     |
 | [`folke/zen-mode.nvim`](https://github.com/folke/zen-mode.nvim)                                             | Distraction-free writing mode                                                                   |
 | [`brenton-leighton/multiple-cursors.nvim`](https://github.com/brenton-leighton/multiple-cursors.nvim)       | Multiple cursors with real-time editing (see [Multiple Cursors](editing.md#multiple-cursors))   |
 | [`projekt0n/github-nvim-theme`](https://github.com/projekt0n/github-nvim-theme)                             | Default colour scheme — configurable via `theme.yml` (see [Theming](theming.md))                |
 | [`neovim/nvim-lspconfig`](https://github.com/neovim/nvim-lspconfig)                                         | Base configurations for language servers                                                        |
-| [`mason-org/mason.nvim`](https://github.com/mason-org/mason.nvim)                                           | Automatic language-server installation                                                          |
+| [`mason-org/mason.nvim`](https://github.com/mason-org/mason.nvim)                                           | Automatic installation of language servers, Vale, and ast-grep                                  |
 | [`mason-org/mason-lspconfig.nvim`](https://github.com/mason-org/mason-lspconfig.nvim)                       | Bridges mason and config; auto-enables installed servers                                        |
 | [`saghen/blink.cmp`](https://github.com/saghen/blink.cmp)                                                   | Autocompletion (see [Code Intelligence](lsp.md))                                                |
 

@@ -14,6 +14,7 @@ The leader key is <kbd>Space</kbd>.
 | ------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | <kbd>Space Space</kbd>                          | Fuzzy file picker (project-scoped, see [Project Scope](#project-scope))            |
 | <kbd>Space .</kbd>                               | Live grep across the project                                                       |
+| <kbd>Space S</kbd>                               | Search & replace across the project (see [Search & Replace](#search--replace))     |
 | <kbd>Space e</kbd>                               | Toggle the file tree sidebar                                                       |
 | <kbd>Space g g</kbd>                             | Open Lazygit for the current file's repository (quit with <kbd>q</kbd>)            |
 | <kbd>Space n d</kbd>                             | Open today's vault note (see [Obsidian Vault](obsidian.md))                        |
@@ -27,7 +28,8 @@ The leader key is <kbd>Space</kbd>.
 
 ## Project Scope
 
-<kbd>Space Space</kbd>, <kbd>Space .</kbd> and <kbd>Space g g</kbd> all search one directory — the "project".
+<kbd>Space Space</kbd>, <kbd>Space .</kbd>, <kbd>Space S</kbd> and <kbd>Space g g</kbd> all search one directory — the
+"project".
 It is chosen like this:
 
 1. **The folder you opened.** Start Neovim on a directory (`nvim <directory>`) and that directory is the project, even
@@ -39,6 +41,43 @@ It is chosen like this:
 Naming a directory fixes the scope for the whole session: after `nvim <directory>`, opening a file from another repository
 does not move the picker. <kbd>Space g g</kbd> is the exception — Lazygit always follows the current file's repository,
 since a repository is repository-wide anyway.
+
+## Search & Replace
+
+<kbd>Space S</kbd> opens a search & replace window over the [project](#project-scope), powered by
+[grug-far.nvim](https://github.com/MagicDuck/grug-far.nvim). Select some text first to search for it.
+
+Type what to look for in **Search** and what to put in its place in **Replace**. Every match then shows up twice: the
+current line in red and the line after the replacement in green. Nothing is written yet — that preview is the whole
+point.
+
+| Key                                   | Action                                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> | Next / previous input                                                                       |
+| <kbd>Ctrl+S</kbd>                     | **Accept:** apply every replacement in the project                                          |
+| <kbd>Ctrl+Y</kbd>                     | Apply only the change under the cursor (from an input: the first one), then move on         |
+| <kbd>q</kbd> / <kbd>Esc</kbd>         | Close without applying anything (Normal mode). <kbd>Space S</kbd> restores your input       |
+| <kbd>Enter</kbd>                      | Jump to the result under the cursor; <kbd>Space S</kbd> brings the window back              |
+| <kbd>Ctrl+P</kbd>                     | Peek at the result under the cursor without leaving the window                              |
+| <kbd>Ctrl+T</kbd>                     | Search & replace history                                                                    |
+| <kbd>Ctrl+E</kbd>                     | Switch between text search and code-aware search (ast-grep)                                 |
+| <kbd>\ c</kbd>                        | Close and clear everything, for a fresh start next time (<kbd>\\</kbd> is the local leader) |
+| <kbd>g ?</kbd>                        | All keys                                                                                    |
+
+The <kbd>Ctrl</kbd> keys and <kbd>Tab</kbd> work while typing too. The line atop the window lists the same keys.
+
+Closing the window only hides it: <kbd>Space S</kbd> brings back your search, replacement and results until you quit
+Neovim, with the results searched again in case files changed meanwhile. Only <kbd>\ c</kbd> starts over.
+
+**Search** is a regular expression in [ripgrep's syntax](https://docs.rs/regex/latest/regex/#syntax), case-sensitive
+by default. Put capture groups in parentheses and refer to them in **Replace** as `$1`, `$2`, … — `foo(\d+)` →
+`bar$1` turns `foo42` into `bar42`. To search for literal text, add `--fixed-strings` (`-F`) to **Flags**; `-i` makes
+the search case-insensitive. **Files Filter** narrows the search to matching files (`*.lua`). Hidden files are
+searched, but `.gitignore` is respected. <kbd>Tab</kbd> moves to the next input, so match a tab character with `\t`.
+
+The window covers 80% of the editor by default; change `searchReplace` in `config.yml` to resize it. The diff colours
+come from your theme — override `GrugFarResultsMatchAdded` / `GrugFarResultsMatchRemoved` under `groups` in
+`theme.yml` (see [Theming](theming.md)). Search & replace needs `ripgrep`; ast-grep is installed for you.
 
 ## Title Case
 

@@ -85,3 +85,9 @@ config:
     # showMetrics: a word/sentence-count code lens. Inert until something calls
     # vim.lsp.codelens.refresh(); nothing here does.
     showMetrics: true
+  # Project-wide search & replace (grug-far.nvim, Space S). See docs/editing.md.
+  searchReplace:
+    # Size of the modal as a fraction of the editor (0 < ratio <= 1), border
+    # included. Out-of-range values fall back to the default 0.8.
+    width: 0.8
+    height: 0.8

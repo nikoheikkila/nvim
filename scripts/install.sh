@@ -174,6 +174,21 @@ else
   exit 1
 fi
 
+# ast-grep, the CLI behind grug-far's structural search engines (Space S, then
+# \e). Like `vale` below, mason installs it only on the first *interactive*
+# launch, so a fresh install asks for it explicitly. Non-fatal: the default
+# ripgrep engine does not need it, and mason retries on the next launch.
+echo "Installing ast-grep..."
+if run_nvim ast-grep \
+  -c "lua require('lazy').load({ plugins = { 'nvim-lspconfig' } })" \
+  -c "MasonInstall ast-grep" \
+  -c "qa!"; then
+  echo "Installed ast-grep"
+else
+  echo "install.sh: could not install ast-grep; it is retried on the next interactive launch." >&2
+  sed 's/^/  /' "$workdir/ast-grep.log" >&2
+fi
+
 # Vale prose styles. The shipped .vale.ini declares a StylesPath that `vale sync`
 # populates; until that directory exists, lua/config/vale.lua withholds
 # the config from vale-ls and Vale stays silent -- so a fresh install has no

@@ -9,7 +9,7 @@
 | A [Nerd Font](https://www.nerdfonts.com/)                                                         | Used by render-markdown.nvim for heading and list icons |
 | `prettier`                                                                                        | Optional — needed for auto-format on save               |
 | `markdownlint-cli2`                                                                               | Optional — needed for live Markdown linting             |
-| `ripgrep`                                                                                         | Optional — needed for project grep and vault search     |
+| `ripgrep`                                                                                         | Optional — needed for project grep, search & replace, and vault search |
 | `pngpaste`                                                                                        | Optional (macOS) — needed for `:Obsidian paste_img`     |
 | ImageMagick                                                                                       | Optional — needed to view non-PNG images inline         |
 | A terminal with the [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) | Optional — needed for <kbd>Ctrl+Shift+I</kbd> (insert image) |

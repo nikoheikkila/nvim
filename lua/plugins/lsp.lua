@@ -34,7 +34,9 @@ return {
       "mason-org/mason-lspconfig.nvim",
       -- Non-LSP mason packages. mason-lspconfig only knows servers and
       -- mason.nvim itself has no ensure_installed, so the `vale` CLI that
-      -- vale-ls shells out to needs its own installer.
+      -- vale-ls shells out to, and the `ast-grep` CLI behind grug-far's
+      -- structural search engines (plugins/search_replace.lua), need their own
+      -- installer.
       "WhoIsSethDaniel/mason-tool-installer.nvim",
       "saghen/blink.cmp",
     },
@@ -80,7 +82,7 @@ return {
       -- the same work at a moment we control.
       local tool_installer = require("mason-tool-installer")
       tool_installer.setup({
-        ensure_installed = ui_attached and { "vale" } or {},
+        ensure_installed = ui_attached and { "vale", "ast-grep" } or {},
         run_on_start = false,
       })
       if ui_attached then
