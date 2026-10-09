@@ -134,4 +134,7 @@ tasks:
   test:integration:
     desc: Run integration tests
     if: command -v busted
-    cmd: busted --run=integration {{ .CLI_ARGS | default "" }}
+    # Fails the run if a spec changed the working tree -- some plugins under
+    # test write files (grug-far's Replace), and an unconfined spec rewrites
+    # this repository. See scripts/guard-worktree.sh.
+    cmd: scripts/guard-worktree.sh -- busted --run=integration {{ .CLI_ARGS | default "" }}

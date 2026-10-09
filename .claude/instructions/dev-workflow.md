@@ -29,9 +29,10 @@ task install
 Language servers come from the `servers` table in `lua/config/lsp_servers.lua` and are installed by
 mason-lspconfig. Everything else — linters, formatters, CLIs a server shells out to — goes in
 `mason-tool-installer.nvim`'s `ensure_installed` list in `lua/plugins/lsp.lua`, because mason-lspconfig only
-knows servers and `mason.nvim` itself has no `ensure_installed`. Today that list holds one entry, the `vale`
-CLI behind `vale-ls`. Both installers share the `ui_attached` guard, so a headless session never downloads;
-`scripts/install.sh` is the deliberate exception and drives `:MasonInstall` explicitly.
+knows servers and `mason.nvim` itself has no `ensure_installed`. Today that list holds two entries: the `vale`
+CLI behind `vale-ls`, and `ast-grep` for grug-far's structural search engines. Both installers share the
+`ui_attached` guard, so a headless session never downloads; `scripts/install.sh` is the deliberate exception and
+drives `:MasonInstall` explicitly.
 
 An external tool that needs a one-time bootstrap after installation (Vale's `vale sync`) belongs in
 `scripts/install.sh` as well — that is the path a real end user takes, and anything it skips is broken on
@@ -166,6 +167,18 @@ without uninstalling the real binary, use `scripts/test-without-binary.sh <binar
 temporary `PATH` containing symlinks to everything except the named binary — safer than naively stripping the binary's
 whole directory from `$PATH`, since unrelated tools (including `nvim` itself) often live alongside it (e.g. both under
 `/opt/homebrew/bin`).
+
+### Guarding the working tree and proving tests can fail
+
+`task test:integration` runs busted under `scripts/guard-worktree.sh`, which snapshots the work tree (tracked and
+untracked, via a throwaway git index) before and after and fails the run if anything changed. It exists because
+an integration spec drove grug-far's Replace with an emptied Paths input — grug-far then searches the cwd, which
+is this repository — and rewrote a file here without any test failing. Confine file-writing specs with a `:tcd`
+into a `tempname()` directory (`tests/integration/search_replace_spec.lua` does).
+
+`scripts/mutate.sh <file> <sed-expression> -- <command>` is the mutation check: it applies the edit, runs the
+command, restores the file under a `trap` (also on Ctrl-C), and exits 0 when the mutant is killed, 1 when it
+survives, 2 when the expression changes nothing — the case a hand-rolled `sed -i` + `cp` loop misses.
 
 ### Running Lua verification scripts headlessly
 

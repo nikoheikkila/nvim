@@ -146,6 +146,11 @@ Rules to know before writing integration specs (details and rationale in
   `scripts/test-without-binary.sh <binary> -- <command...>` — CI covers the markdownlint guard path this way.
 - `vim.notify` calls are recorded from session start by `tests/integration/helper.lua` and exposed via
   `require("notify_log")` — use it to assert one-time warnings regardless of which spec triggered them.
+- Specs run inside this repository, so a plugin action that writes files (search & replace, save, rename) writes
+  here unless the spec confines it: `:tcd` a throwaway tabpage into a `vim.fn.tempname()` directory.
+  `task test:integration` fails when a run changed the working tree (`scripts/guard-worktree.sh`).
+- Check that a new test can actually fail: `scripts/mutate.sh <file> <sed-expression> -- <command>` applies one
+  edit, runs the command, reports KILLED or SURVIVED, and always restores the file.
 
 For ad-hoc verification of plugin behavior, use `scripts/headless-lua.sh <script.lua>` — plain `nvim -l`
 skips the user config entirely and is the most common source of false "module not found" confusion.

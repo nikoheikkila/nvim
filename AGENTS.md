@@ -34,6 +34,14 @@
   (`scripts/busted-nvim.sh`), so mutating the real files is never required — and `git checkout` won't restore
   uncommitted or untracked content afterwards.
   `scripts/verify-config-isolation.sh` demonstrates the isolation safely (corrupt + byte-restore under a `trap`).
+- **Integration specs run inside this repository, so a plugin action that writes files writes here.** A search &
+  replace, sync, save, or rename driven by a spec acts on whatever its inputs or the cwd name — one unconfined
+  grug-far Replace once rewrote a file in this repo. Give file-writing specs a throwaway tabpage `:tcd`'d into a
+  `vim.fn.tempname()` dir. `task test:integration` runs under `scripts/guard-worktree.sh` and fails if the
+  working tree changed; treat that failure as damage to restore, not a flake.
+- A new test is evidence only once it has been seen to fail. `scripts/mutate.sh <file> <sed-expr> -- <cmd>`
+  applies one edit, runs the command, and always restores the file — and refuses an expression that matches
+  nothing, the silent no-op that makes a weak test look strong.
 - Check the Global Keymap Registry in `config.md` before choosing a key for a new mapping, and add a row when you
   create one. Keymaps are otherwise scattered across `keys` tables in a dozen files with no other index.
 - Adding a config file the editor reads means four edits, not one: read it through `config/paths.lua`, write a
@@ -77,7 +85,7 @@ Detailed guidance lives under `.claude/instructions/`. Read the file covering an
 - [`markdown.md`](.claude/instructions/markdown.md) — `lib/markdown_utils.lua` and the markdown plugin stack:
   markdown-plus, render-markdown, conform, nvim-lint live linting, folding
 - [`plugins.md`](.claude/instructions/plugins.md) — theme, treesitter, bufferline/lualine, zen-mode, lazygit,
-  multicursor, snacks.nvim picker
+  multicursor, snacks.nvim picker, grug-far search & replace
 - [`obsidian.md`](.claude/instructions/obsidian.md) — Obsidian vault: `config.yml` plumbing, the
   single-workspace decision, coexistence opts, snacks.image
 - [`explorer.md`](.claude/instructions/explorer.md) — neo-tree file-tree sidebar

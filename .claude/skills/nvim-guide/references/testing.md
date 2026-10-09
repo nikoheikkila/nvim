@@ -106,6 +106,28 @@
   attempting to set it. When such a test flips a window-local option (e.g. `vim.wo.number`) to exercise a branch,
   restore it in `after_each`, not as the last line of the `it` block — an assertion failure earlier in the block
   skips an inline restore and leaks the changed value into every later spec sharing that window.
+- **Don't set `vim.o.columns`/`vim.o.lines` in a UI-less Neovim.** Under `--headless`/`-l` there is no grid to
+  resize, and changing them segfaults the process (seen on 0.12.5, mid-suite, taking every later spec with it).
+  When a test needs a bigger window — e.g. a help line that is cut to the window width — size it through the
+  code's own seam instead (override the module function that computes the float size).
+- **A fed Insert-mode key's mapping can run on a later event-loop turn.** After
+  `nvim_feedkeys(vim.keycode("A<Tab>"), "x", false)`, a buffer-local Insert-mode Lua mapping had not run yet when
+  the next line asserted — it fired during the following `vim.wait`. Latch on the mapping's *effect*
+  (`vim.wait(5000, function() return cursor_row() == 2 end, 10)`) rather than asserting straight after the feed.
+  Normal-mode mappings fed the same way ran synchronously.
+- **A plugin's "done" status can be stale or premature.** Debounced plugins keep the *previous* run's
+  `success` until the debounce fires, and streaming ones render results before they finish. Latch on the rendered
+  output you expect *and* an idle status before acting — plugins often refuse an action while a task is in
+  progress (grug-far: "search in progress"), which shows up as a write that silently never happened.
+- **A plugin calling `startinsert` prints `-- INSERT --` into a `-l` run's stdout**, which is the test report.
+  Set `vim.o.showmode = false` for those specs and restore it in `teardown`.
+- **A spec that drives a file-writing plugin action writes into the repository unless confined.** Plugins act on
+  the cwd or on their own path inputs, and "set inputs" helpers that clear unspecified fields (grug-far's
+  `update_input_values(values, true)`) empty a path field back to "the cwd". `:tcd` a throwaway tabpage into a
+  `tempname()` dir and keep path inputs populated; `scripts/guard-worktree.sh` fails a run that changed the tree.
+- **Prove each new assertion can fail** with `scripts/mutate.sh <file> <sed-expr> -- <test command>`: it
+  restores the file even on Ctrl-C and rejects an expression that changes nothing. A mutant that survives means
+  the test cannot see that behaviour — e.g. a help-line assertion in a window too narrow to show the line.
 - **A registered mapping is not a delivered keypress.** The OS and terminal rewrite or swallow events before
   Neovim sees them (macOS: Ctrl+arrows → Mission Control, Ctrl+click → right-click synthesis; Warp: strips Ctrl
   from mouse reports). `:map <key>` proves registration only — diagnose delivery with a `vim.on_key` logger
