@@ -70,6 +70,11 @@ EOF
 # with the rest of $cfgroot.
 mkdir -p "$NVIM_CONFIG_ROOT/fixture-vault/.obsidian"
 
+# Templates for obsidian_spec's new-note-from-template scenario (vault-relative
+# folder, matching config.yml's obsidian.templates.folder).
+mkdir -p "$NVIM_CONFIG_ROOT/fixture-vault/fixture-templates"
+printf '# {{title}}\n\nDate: {{date}}\n' > "$NVIM_CONFIG_ROOT/fixture-vault/fixture-templates/Interview.md"
+
 # config.yml — obsidian.vault, harper.userDictPath and vale.configPath are written as the literal
 # $NVIM_CONFIG_ROOT string, not the expanded path: the quoted heredoc keeps them
 # verbatim and vim.fn.expand resolves env vars, so obsidian_spec and lsp_spec can
@@ -84,6 +89,9 @@ config:
     dailyNotes:
       folder: "fixture-journal"
       dateFormat: "YYYY-MM-DD"
+    templates:
+      folder: "fixture-templates"
+      notesFolder: "fixture-inbox"
   harper:
     dialect: "British"
     diagnosticSeverity: "warning"

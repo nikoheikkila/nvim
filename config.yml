@@ -9,6 +9,13 @@ config:
     dailyNotes:
       folder: "000 - Inbox/Journal"
       dateFormat: "YYYY-MM-DD"
+    # Templates (`:Obsidian new_from_template`, Space n t). Both folders are
+    # relative to the vault root. `folder` holds the template files; it has no
+    # default, so uncomment it to enable templates. `notesFolder` is where new
+    # notes are created (made if missing).
+    templates:
+      folder: "004 - Templates"
+      notesFolder: "000 - Inbox"
   # Harper grammar/spell checker (harper-ls). See docs for the full option list:
   # https://writewithharper.com/docs/integrations/neovim
   harper:

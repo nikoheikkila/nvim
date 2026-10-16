@@ -14,27 +14,43 @@ local DEFAULTS = {
     folder = "000 - Inbox/Journal",
     dateFormat = "YYYY-MM-DD",
   },
+  templates = {
+    -- Where notes created from a template land when config.yml names no folder.
+    -- templates.folder deliberately has no default; when it is not configured,
+    -- the plugin's own warning shows.
+    notesFolder = "000 - Inbox",
+  },
 }
+
+-- A wrong-typed section is treated as empty so each of its fields falls back.
+local function as_table(value)
+  return type(value) == "table" and value or {}
+end
+
+-- An absent, empty, or wrong-typed value keeps the default — one rule for
+-- every field.
+local function pick(source, key, default)
+  local value = source[key]
+  if type(value) == "string" and value ~= "" then
+    return value
+  end
+  return default
+end
+
+local function resolve_templates(templates)
+  templates = as_table(templates)
+  return {
+    folder = pick(templates, "folder", nil),
+    notesFolder = pick(templates, "notesFolder", DEFAULTS.templates.notesFolder),
+  }
+end
 
 -- Merge parsed `config.obsidian` over DEFAULTS, guarding each field's type so a
 -- malformed or partial config.yml never yields a non-string where a string is
--- expected. An absent, empty, or wrong-typed value keeps the default — one rule
--- for every field. `parsed` is yaml_utils.parse() output (table | nil).
+-- expected (see pick). `parsed` is yaml_utils.parse() output (table | nil).
 function M.resolve_config(parsed)
-  local obsidian = type(parsed) == "table" and type(parsed.config) == "table" and parsed.config.obsidian
-  if type(obsidian) ~= "table" then
-    obsidian = {}
-  end
-
-  local daily = type(obsidian.dailyNotes) == "table" and obsidian.dailyNotes or {}
-
-  local function pick(source, key, default)
-    local value = source[key]
-    if type(value) == "string" and value ~= "" then
-      return value
-    end
-    return default
-  end
+  local obsidian = as_table(as_table(as_table(parsed).config).obsidian)
+  local daily = as_table(obsidian.dailyNotes)
 
   return {
     vault = pick(obsidian, "vault", DEFAULTS.vault),
@@ -42,6 +58,7 @@ function M.resolve_config(parsed)
       folder = pick(daily, "folder", DEFAULTS.dailyNotes.folder),
       dateFormat = pick(daily, "dateFormat", DEFAULTS.dailyNotes.dateFormat),
     },
+    templates = resolve_templates(obsidian.templates),
   }
 end
 
@@ -58,6 +75,15 @@ end
 -- DEFAULTS above); the workspace is named after its last path segment.
 function M.workspaces(vault)
   return { { name = basename(vault), path = vault } }
+end
+
+-- obsidian.nvim's note_id_func: keep the user's title as the file name, and
+-- fall back to a sortable timestamp instead of upstream's random-suffix ID.
+function M.note_id(title)
+  if title ~= nil and title ~= "" then
+    return title
+  end
+  return os.date("%Y-%m-%d-%H%M%S")
 end
 
 return M

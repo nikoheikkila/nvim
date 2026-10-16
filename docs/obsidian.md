@@ -18,6 +18,9 @@ config:
     dailyNotes:
       folder: "000 - Inbox/Journal"
       dateFormat: "YYYY-MM-DD"
+    templates:
+      folder: "999 - Templates"
+      notesFolder: "000 - Inbox"
 ```
 
 | Key                     | Meaning                                                                |
@@ -25,12 +28,18 @@ config:
 | `vault`                 | Vault root. `$HOME`, `~`, and other environment variables are expanded |
 | `dailyNotes.folder`     | Where daily notes go, relative to the vault root                       |
 | `dailyNotes.dateFormat` | Daily-note filename, as a Moment.JS pattern                            |
+| `templates.folder`      | Where template files live, relative to the vault root. No default      |
+| `templates.notesFolder` | Where new notes are created, relative to the vault root; made if missing |
 
 A `/` in `dateFormat` creates subdirectories, so `"YYYY/MM/DD"` writes
 `<folder>/2026/07/28.md`.
 
 Omitting the file, a key, or leaving a value empty falls back to the defaults above. If the whole
 `config.obsidian` block is missing, the vault defaults to `~/Vaults`.
+
+New notes get an ID of the form `YYYY-MM-DD-HHmmss` by default, or the title you typed when you give one. The
+`notesFolder` and ID rules apply globally, so plain `:Obsidian new` follows them too, not only
+`:Obsidian new_from_template`. Leave `templates.folder` unset and templates stay off.
 
 Run `:checkhealth obsidian` to confirm the vault resolved and the optional tools were found.
 
@@ -46,6 +55,7 @@ These are active only in notes inside the vault.
 | <kbd>g f</kbd>              | Follow the link under the cursor (built-in, taught to resolve wiki-links)                    |
 | <kbd>g x</kbd>              | Open the link under the cursor in the browser (built-in)                                     |
 | <kbd>Space n d</kbd>        | Open today's daily note (`:Obsidian today`)                                                  |
+| <kbd>Space n t</kbd>        | New note from a template (`:Obsidian new_from_template`)                                     |
 | <kbd>Space o</kbd>          | Open the Obsidian command menu — every command below, in a picker                            |
 
 <kbd>Enter</kbd> picks its behaviour from what is under the cursor, so it covers link-following, checkbox
@@ -75,6 +85,7 @@ visual-mode ones only with a selection (for those, use `:Obsidian` from visual m
 | `:Obsidian backlinks`    | List notes linking to the current one                                        |
 | `:Obsidian toc`          | Jump to a heading in the current note                                        |
 | `:Obsidian links`        | List the links in the current note                                           |
+| `:Obsidian new_from_template` | Create a note from a template                                           |
 | `:Obsidian template`     | Insert a template                                                            |
 | `:Obsidian rename`       | Rename the current note, updating every link to it                           |
 | `:Obsidian extract_note` | Move the visual selection into a new note                                    |
