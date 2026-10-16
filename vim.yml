@@ -1,3 +1,6 @@
 globals:
   vim:
     any: true
+  # obsidian.nvim global, used in tests/integration/obsidian_spec.lua
+  Obsidian:
+    any: true

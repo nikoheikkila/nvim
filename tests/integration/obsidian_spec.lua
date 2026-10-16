@@ -186,4 +186,368 @@ describe("plugins.obsidian", function()
       assert.truthy(vim.wo.foldexpr:find("markdown_foldexpr", 1, true))
     end)
   end)
+
+  -- Feature: new note from template (<leader>nt -> :Obsidian new_from_template).
+  -- The snacks picker and the title prompt are the external seams: both are
+  -- stubbed so the real action, Note.create and buffer opening run synchronously.
+  describe("new note from template", function()
+    local work = vault .. "/work.md"
+    local inbox = vault .. "/fixture-inbox"
+    local outside_dir
+    local orig_find_files, orig_input, orig_select, orig_notify, orig_subdir, orig_folder
+    local tab, work_buf, cwd
+
+    setup(function()
+      vim.fn.writefile({ "# Work" }, work)
+      vim.cmd("tabnew")
+      tab = vim.api.nvim_get_current_tabpage()
+      cwd = vim.fn.tempname()
+      vim.fn.mkdir(cwd, "p")
+      vim.cmd("tcd " .. vim.fn.fnameescape(cwd))
+    end)
+
+    before_each(function()
+      vim.cmd.edit(vim.fn.fnameescape(work))
+      work_buf = vim.api.nvim_get_current_buf()
+
+      local picker = require("obsidian.picker")
+      orig_find_files, orig_input, orig_select = picker.find_files, vim.fn.input, picker.select
+      orig_notify, orig_subdir, orig_folder = vim.notify, Obsidian.opts.notes_subdir, Obsidian.opts.templates.folder
+      picker.find_files = function(opts)
+        opts.callback({ tostring(opts.dir) .. "/Interview.md" })
+      end
+      vim.fn.input = function()
+        return ""
+      end
+    end)
+
+    after_each(function()
+      if outside_dir then
+        local scratch = vim.fn.bufnr(outside_dir .. "/scratch.txt")
+        if scratch ~= -1 then
+          vim.cmd("bwipeout! " .. scratch)
+        end
+        vim.fn.delete(outside_dir, "rf")
+        outside_dir = nil
+      end
+      local picker = require("obsidian.picker")
+      picker.find_files = orig_find_files
+      picker.select = orig_select
+      vim.fn.input = orig_input
+      vim.notify = orig_notify
+      Obsidian.opts.notes_subdir = orig_subdir
+      Obsidian.opts.templates.folder = orig_folder
+      vim.fn.delete(inbox, "rf")
+      vim.fn.delete(vault .. "/Meetings", "rf")
+      vim.fn.delete(vault .. "/empty-templates", "rf")
+      vim.fn.delete(vault .. "/" .. orig_folder .. "/image.png")
+      vim.fn.delete(vault .. "/" .. orig_folder .. "/Notes.md")
+    end)
+
+    teardown(function()
+      vim.cmd("tabclose! " .. vim.api.nvim_tabpage_get_number(tab))
+      vim.fn.delete(work)
+      vim.fn.delete(cwd, "rf")
+    end)
+
+    it("reads the notes folder from config.yml (new-note-from-template.feature)", function()
+      assert.equal(
+        "fixture-inbox",
+        Obsidian.opts.notes_subdir,
+        "expected notes_subdir to come from config.yml notesFolder via plugins/obsidian.lua"
+      )
+    end)
+
+    it("creates a timestamped note in the inbox from the picked template, keeping the previous buffer", function()
+      local today = os.date("%Y-%m-%d")
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+
+      local files = vim.fn.glob(inbox .. "/*.md", false, true)
+      assert.equal(1, #files, "expected one note in 'fixture-inbox' after <leader>nt")
+      local id = vim.fn.fnamemodify(files[1], ":t:r")
+      assert.truthy(id:match("^%d%d%d%d%-%d%d%-%d%d%-%d%d%d%d%d%d$"), "note ID is not YYYY-MM-DD-HHmmss: " .. id)
+      assert.equal(today, id:sub(1, 10), "note ID date prefix is not today's date: " .. id)
+
+      local lines = vim.fn.readfile(files[1])
+      assert.is_true(vim.tbl_contains(lines, "# " .. id), "heading is not the timestamp ID")
+      assert.is_true(vim.tbl_contains(lines, "Date: " .. today), "date line missing today's date")
+
+      assert.equal(vim.fn.resolve(files[1]), vim.fn.resolve(vim.api.nvim_buf_get_name(0)))
+      assert.is_true(vim.api.nvim_buf_is_loaded(work_buf))
+      assert.same({ "# Work" }, vim.api.nvim_buf_get_lines(work_buf, 0, -1, false))
+    end)
+
+    it("works from a buffer outside the vault (new-note-from-template.feature)", function()
+      outside_dir = vim.fn.tempname()
+      vim.fn.mkdir(outside_dir, "p")
+      local outside = outside_dir .. "/scratch.txt"
+      vim.fn.writefile({ "outside" }, outside)
+      vim.cmd.edit(vim.fn.fnameescape(outside))
+      local outside_buf = vim.api.nvim_get_current_buf()
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+
+      local files = vim.fn.glob(inbox .. "/*.md", false, true)
+      assert.equal(1, #files, "expected one note in 'fixture-inbox' when invoked from outside the vault")
+      assert.equal(vim.fn.resolve(files[1]), vim.fn.resolve(vim.api.nvim_buf_get_name(0)))
+      assert.is_true(vim.api.nvim_buf_is_loaded(outside_buf), "expected the outside buffer to be kept")
+      assert.same({ "outside" }, vim.api.nvim_buf_get_lines(outside_buf, 0, -1, false))
+    end)
+
+    it("creates the note in a custom notes folder (new-note-from-template.feature)", function()
+      local meetings = vault .. "/Meetings"
+      Obsidian.opts.notes_subdir = "Meetings"
+      vim.fn.mkdir(meetings, "p")
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+
+      local in_meetings = vim.fn.glob(meetings .. "/*.md", false, true)
+      local in_inbox = vim.fn.glob(inbox .. "/*.md", false, true)
+
+      assert.equal(1, #in_meetings, "expected one note in 'Meetings' after <leader>nt")
+      assert.same({}, in_inbox, "expected no note in 'fixture-inbox' when notesFolder is 'Meetings'")
+    end)
+
+    it("creates the notes folder when it does not exist (new-note-from-template.feature)", function()
+      local meetings = vault .. "/Meetings"
+      assert.equal(0, vim.fn.isdirectory(meetings), "precondition: 'Meetings' must not exist")
+      Obsidian.opts.notes_subdir = "Meetings"
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+
+      local created = vim.fn.isdirectory(meetings)
+      local in_meetings = vim.fn.glob(meetings .. "/*.md", false, true)
+
+      assert.equal(1, created, "expected the missing 'Meetings' folder to be created")
+      assert.equal(1, #in_meetings, "expected one note in the created 'Meetings' folder")
+    end)
+
+    it("creates no note and keeps the current buffer when the picker is cancelled", function()
+      local opened = 0
+      require("obsidian.picker").find_files = function()
+        opened = opened + 1
+      end
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+
+      assert.equal(1, opened, "expected the template picker to open exactly once")
+      assert.same({}, vim.fn.glob(inbox .. "/*", false, true), "expected no file in 'fixture-inbox' after cancelling")
+      assert.equal(work_buf, vim.api.nvim_get_current_buf())
+      assert.same({ "# Work" }, vim.api.nvim_buf_get_lines(work_buf, 0, -1, false))
+    end)
+
+    it("creates :Obsidian new notes with the default ID in the inbox (new-note-from-template.feature)", function()
+      local today = os.date("%Y-%m-%d")
+
+      vim.cmd("Obsidian new")
+
+      local name = vim.fn.resolve(vim.api.nvim_buf_get_name(0))
+      local id = vim.fn.fnamemodify(name, ":t:r")
+      assert.equal(1, vim.fn.filereadable(name), "expected the new note to exist on disk: " .. name)
+      assert.equal(today, id:sub(1, 10), "note ID date prefix is not today's date: " .. id)
+      assert.equal(vim.fn.resolve(inbox), vim.fn.fnamemodify(name, ":h"), "expected 'fixture-inbox' as the folder")
+      assert.truthy(id:match("^%d%d%d%d%-%d%d%-%d%d%-%d%d%d%d%d%d$"), "note ID is not YYYY-MM-DD-HHmmss: " .. id)
+    end)
+
+    it("names the note after the typed title", function()
+      vim.fn.input = function()
+        return "Ada Lovelace"
+      end
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+
+      local file = inbox .. "/Ada Lovelace.md"
+      assert.equal(1, vim.fn.filereadable(file), "expected 'Ada Lovelace.md' in 'fixture-inbox'")
+      assert.is_true(vim.tbl_contains(vim.fn.readfile(file), "# Ada Lovelace"), "heading is not the typed title")
+    end)
+
+    it("fills an unknown template variable from the prompt (new-note-from-template.feature)", function()
+      local folder = vault .. "/" .. Obsidian.opts.templates.folder
+      local template = folder .. "/Notes.md"
+      vim.fn.mkdir(folder, "p")
+      vim.fn.writefile({ "Candidate: {{candidate}}" }, template)
+      require("obsidian.picker").find_files = function(opts)
+        opts.callback({ template })
+      end
+      vim.fn.input = function(arg)
+        local prompt = type(arg) == "table" and arg.prompt or arg
+        if tostring(prompt):lower():find("candidate", 1, true) then
+          return "Ada"
+        end
+        return ""
+      end
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+
+      local files = vim.fn.glob(inbox .. "/*.md", false, true)
+      assert.equal(1, #files, "expected one note in 'fixture-inbox' after <leader>nt")
+      assert.is_true(
+        vim.tbl_contains(vim.fn.readfile(files[1]), "Candidate: Ada"),
+        "expected 'Candidate: Ada' in the new note"
+      )
+    end)
+
+    it("still creates the note when the unknown variable prompt is skipped (new-note-from-template.feature)", function()
+      local folder = vault .. "/" .. Obsidian.opts.templates.folder
+      local template = folder .. "/Notes.md"
+      vim.fn.mkdir(folder, "p")
+      vim.fn.writefile({ "Candidate: {{candidate}}" }, template)
+      require("obsidian.picker").find_files = function(opts)
+        opts.callback({ template })
+      end
+      local problems = {}
+      vim.notify = function(msg, level, opts)
+        if level and level >= vim.log.levels.WARN and opts and opts.title == "Obsidian.nvim" then
+          table.insert(problems, tostring(msg))
+        end
+      end
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+
+      assert.same({}, problems, "<leader>nt warned or errored when the variable prompt was skipped")
+      local files = vim.fn.glob(inbox .. "/*.md", false, true)
+      assert.equal(1, #files, "expected one note in 'fixture-inbox' after skipping the prompt")
+      assert.is_true(
+        vim.tbl_contains(vim.fn.readfile(files[1]), "Candidate: {{candidate}}"),
+        "expected the unresolved 'Candidate: {{candidate}}' line in the new note"
+      )
+      local id = vim.fn.fnamemodify(files[1], ":t:r")
+      assert.truthy(id:match("^%d%d%d%d%-%d%d%-%d%d%-%d%d%d%d%d%d$"), "note ID is not YYYY-MM-DD-HHmmss: " .. id)
+    end)
+
+    it("shows no templates and creates no note when the templates folder is empty", function()
+      local picker = require("obsidian.picker")
+      local empty = vault .. "/empty-templates"
+      vim.fn.mkdir(empty, "p")
+      Obsidian.opts.templates.folder = "empty-templates"
+      picker.find_files = orig_find_files
+      local shown
+      picker.select = function(items)
+        shown = items
+      end
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+      local listed = vim.wait(5000, function()
+        return shown ~= nil
+      end, 10)
+
+      assert.is_true(listed, "expected the template picker to open")
+      assert.same({}, shown, "expected the picker to list no templates")
+      assert.same({}, vim.fn.glob(inbox .. "/*", false, true), "expected no file in 'fixture-inbox' after cancelling")
+      assert.equal(work_buf, vim.api.nvim_get_current_buf())
+    end)
+
+    it("offers only Markdown files from the templates folder (new-note-from-template.feature)", function()
+      local picker = require("obsidian.picker")
+      local image = vault .. "/" .. Obsidian.opts.templates.folder .. "/image.png"
+      vim.fn.writefile({ "not markdown" }, image)
+      picker.find_files = orig_find_files
+      local shown
+      picker.select = function(items)
+        shown = items
+      end
+
+      vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+      local listed = vim.wait(5000, function()
+        return shown ~= nil
+      end, 10)
+
+      assert.is_true(listed, "expected the template picker to open")
+      local names = vim.tbl_map(function(item)
+        return vim.fn.fnamemodify(type(item) == "table" and (item.filename or item.value or item[1]) or item, ":t")
+      end, shown)
+      assert.is_true(vim.tbl_contains(names, "Interview.md"), "expected 'Interview' listed: " .. vim.inspect(shown))
+      assert.is_false(vim.tbl_contains(names, "image.png"), "expected 'image.png' not listed: " .. vim.inspect(shown))
+    end)
+
+    for state, folder in pairs({ ["unset"] = vim.NIL, ["a directory that is missing"] = "no-such-dir" }) do
+      it("warns once and creates nothing when the templates folder is " .. state, function()
+        local picked, notices = false, {}
+        Obsidian.opts.templates.folder = folder ~= vim.NIL and folder or nil
+        require("obsidian.picker").find_files = function()
+          picked = true
+        end
+        vim.notify = function(msg, level)
+          table.insert(notices, { msg = msg, level = level })
+        end
+        vim.v.errmsg = ""
+
+        vim.api.nvim_feedkeys(vim.keycode(vim.g.mapleader .. "nt"), "x", false)
+
+        local errmsg = vim.v.errmsg
+        assert.equal("", errmsg, "<leader>nt raised an error")
+        assert.is_false(picked, "picker must not open when the templates folder is unusable")
+        local warnings = vim.tbl_filter(function(n)
+          return n.level == vim.log.levels.WARN or n.level == vim.log.levels.ERROR
+        end, notices)
+        assert.equal(1, #warnings, "expected exactly one WARN/ERROR notification, got: " .. vim.inspect(notices))
+        assert.truthy(
+          tostring(warnings[1].msg):find("Templates folder is not defined or does not exist", 1, true),
+          "unexpected warning: " .. vim.inspect(warnings[1])
+        )
+        assert.same({}, vim.fn.glob(inbox .. "/*", false, true), "expected no file in 'fixture-inbox'")
+      end)
+    end
+  end)
+
+  describe("daily notes alongside templates", function()
+    local journal = vault .. "/fixture-journal"
+    local tab, cwd
+
+    -- obsidian.nvim opens notes at symlink-resolved paths (macOS /var -> /private/var).
+    local function in_journal(name)
+      return name ~= ""
+        and vim.startswith(vim.fs.normalize(vim.fn.resolve(name)), vim.fs.normalize(vim.fn.resolve(journal)))
+    end
+
+    setup(function()
+      vim.cmd("tabnew")
+      tab = vim.api.nvim_get_current_tabpage()
+      cwd = vim.fn.tempname()
+      vim.fn.mkdir(cwd, "p")
+      vim.cmd("tcd " .. vim.fn.fnameescape(cwd))
+    end)
+
+    after_each(function()
+      -- Wipe the note buffer so it cannot outlive its deleted file.
+      for _, b in ipairs(vim.api.nvim_list_bufs()) do
+        if in_journal(vim.api.nvim_buf_get_name(b)) then
+          vim.cmd("bwipeout! " .. b)
+        end
+      end
+      vim.fn.delete(journal, "rf")
+    end)
+
+    teardown(function()
+      -- Wiping the note buffer may already have closed the tab's last window.
+      if vim.api.nvim_tabpage_is_valid(tab) then
+        vim.cmd("tabclose! " .. vim.api.nvim_tabpage_get_number(tab))
+      end
+      vim.fn.delete(cwd, "rf")
+    end)
+
+    it("opens today's note in the daily notes folder (new-note-from-template.feature)", function()
+      vim.cmd("Obsidian today")
+      -- Note:open() schedules the buffer switch; a sentinel scheduled after it
+      -- runs after it, so it cannot land in a later spec's window.
+      local flushed = false
+      vim.schedule(function()
+        flushed = true
+      end)
+      assert.is_true(
+        vim.wait(1000, function()
+          return flushed
+        end, 1),
+        "expected the scheduled buffer switch to flush"
+      )
+      assert.is_true(in_journal(vim.api.nvim_buf_get_name(0)), "expected today's note to be the current buffer")
+
+      assert.same(
+        { vim.fs.normalize(journal .. "/" .. os.date("%Y-%m-%d") .. ".md") },
+        vim.tbl_map(vim.fs.normalize, vim.fn.glob(journal .. "/*", false, true)),
+        "expected :Obsidian today to create today's note in dailyNotes.folder 'fixture-journal'"
+      )
+    end)
+  end)
 end)

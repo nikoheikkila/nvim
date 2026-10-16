@@ -9,6 +9,7 @@ local paths = require("config.paths")
 -- path, which the pure resolver deliberately leaves literal.
 local cfg = obsidian_utils.resolve_config(yaml_utils.read_file(paths.config_file("config.yml")))
 local vault = vim.fn.expand(cfg.vault)
+local templates = cfg.templates or {}
 
 return {
   {
@@ -39,6 +40,7 @@ return {
     -- in .claude/instructions/config.md).
     keys = {
       { "<leader>o", "<cmd>Obsidian<cr>", desc = "Obsidian command menu" },
+      { "<leader>nt", "<cmd>Obsidian new_from_template<cr>", desc = "New note from template" },
     },
     ---@module 'obsidian'
     ---@type obsidian.config
@@ -60,6 +62,11 @@ return {
       -- Only the `:Obsidian <subcommand>` form; drops the legacy
       -- :ObsidianFoo aliases, which upstream stops maintaining in 4.0.0.
       legacy_commands = false,
+
+      templates = { folder = templates.folder },
+      note_id_func = obsidian_utils.note_id,
+      new_notes_location = "notes_subdir",
+      notes_subdir = templates.notesFolder,
 
       daily_notes = {
         folder = cfg.dailyNotes.folder,

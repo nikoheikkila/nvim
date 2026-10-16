@@ -9,6 +9,7 @@ local yaml_utils = require("lib.yaml_utils")
 local DEFAULTS = {
   vault = "$HOME/Vaults",
   dailyNotes = { folder = "000 - Inbox/Journal", dateFormat = "YYYY-MM-DD" },
+  templates = { folder = nil, notesFolder = "000 - Inbox" },
 }
 
 describe("resolve_config", function()
@@ -38,6 +39,7 @@ describe("resolve_config", function()
     assert.are.same({
       vault = "/srv/notes",
       dailyNotes = { folder = "Journal/Daily", dateFormat = "YYYY/MM/DD" },
+      templates = DEFAULTS.templates,
     }, M.resolve_config(yaml_utils.parse(text)))
   end)
 
@@ -46,6 +48,38 @@ describe("resolve_config", function()
     -- starts with "000", so it must stay quoted in config.yml to survive.
     local parsed = yaml_utils.parse('config:\n  obsidian:\n    dailyNotes:\n      folder: "000 - Inbox"\n')
     assert.are.equal("000 - Inbox", M.resolve_config(parsed).dailyNotes.folder)
+  end)
+
+  it("reads templates.folder and templates.notesFolder from config.yml", function()
+    local text = table.concat({
+      "config:",
+      "  obsidian:",
+      "    templates:",
+      '      folder: "900 - Templates"',
+      '      notesFolder: "100 - Notes"',
+      "",
+    }, "\n")
+    local templates = M.resolve_config(yaml_utils.parse(text)).templates
+
+    assert.are.same({ folder = "900 - Templates", notesFolder = "100 - Notes" }, templates)
+  end)
+
+  it("falls back to template defaults for empty or wrong-typed values", function()
+    local malformed = { "", 42, true, {} }
+
+    for _, value in ipairs(malformed) do
+      local templates = M.resolve_config({
+        config = { obsidian = { templates = { folder = value, notesFolder = value } } },
+      }).templates
+
+      assert.are.same({ folder = nil, notesFolder = "000 - Inbox" }, templates)
+    end
+
+    for _, value in ipairs({ "nope", 42, true }) do
+      local templates = M.resolve_config({ config = { obsidian = { templates = value } } }).templates
+
+      assert.are.same({ folder = nil, notesFolder = "000 - Inbox" }, templates)
+    end
   end)
 
   it("falls back to defaults for nil input", function()
@@ -59,12 +93,17 @@ describe("resolve_config", function()
 
   it("fills only the missing fields on a partial config", function()
     local only_vault = M.resolve_config({ config = { obsidian = { vault = "/tmp/v" } } })
-    assert.are.same({ vault = "/tmp/v", dailyNotes = DEFAULTS.dailyNotes }, only_vault)
+    assert.are.same({
+      vault = "/tmp/v",
+      dailyNotes = DEFAULTS.dailyNotes,
+      templates = DEFAULTS.templates,
+    }, only_vault)
 
     local only_folder = M.resolve_config({ config = { obsidian = { dailyNotes = { folder = "Log" } } } })
     assert.are.same({
       vault = DEFAULTS.vault,
       dailyNotes = { folder = "Log", dateFormat = DEFAULTS.dailyNotes.dateFormat },
+      templates = DEFAULTS.templates,
     }, only_folder)
   end)
 
@@ -103,5 +142,16 @@ describe("workspaces", function()
   it("falls back to a placeholder name for degenerate paths", function()
     assert.are.equal("vault", M.workspaces("/")[1].name)
     assert.are.equal("vault", M.workspaces("")[1].name)
+  end)
+end)
+
+describe("note_id", function()
+  it("returns a typed title as-is", function()
+    assert.are.equal("My Note", M.note_id("My Note"))
+  end)
+
+  it("falls back to a YYYY-MM-DD-HHmmss timestamp for nil and empty titles", function()
+    assert.truthy(M.note_id(nil):match("^%d%d%d%d%-%d%d%-%d%d%-%d%d%d%d%d%d$"))
+    assert.truthy(M.note_id(""):match("^%d%d%d%d%-%d%d%-%d%d%-%d%d%d%d%d%d$"))
   end)
 end)
