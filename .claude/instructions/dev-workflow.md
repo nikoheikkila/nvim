@@ -24,6 +24,21 @@ Fetch the new plugin with:
 task install
 ```
 
+### Plugin updates install themselves
+
+lazy.nvim's checker fetches upstream every `checker.frequency` seconds, but it can only report what it finds,
+and with no notifier plugin that report is a hit-enter prompt. So `checker.notify` is `false`, and
+`lua/config/plugin_updates.lua` runs `require("lazy").update({ plugins = ..., show = false })` on `User VeryLazy`
+(updates fetched by an earlier session) and `User LazyCheck` (a fresh fetch). Neither event fires headless, so the
+test suites never update anything. Each background update rewrites the tracked `lazy-lock.json`; commit it as
+`chore: update plugins`. `task update` still updates everything on demand.
+
+lazy.nvim decides "has updates" from checkout vs upstream and never consults the lockfile, so a lockfile left
+behind the checkouts (e.g. after dropping or reverting an update commit) looks up to date to it. With nothing to
+update, `auto_update()` therefore compares the lockfile with the checkouts (`lib/lockfile_utils.lua`) and rewrites it
+when they disagree. A side effect: the lazy.nvim rollback flow (check out an old lockfile, then `:Lazy restore`)
+must run `:Lazy restore` in the same session, because the next startup rewrites the lockfile to match the checkouts.
+
 ### Installing a non-plugin tool
 
 Language servers come from the `servers` table in `lua/config/lsp_servers.lua` and are installed by

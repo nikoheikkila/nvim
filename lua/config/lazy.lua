@@ -27,6 +27,10 @@ require("lazy").setup({
   -- Configure any other settings here. See the documentation for more details.
   -- colorscheme that will be used when installing plugins.
   install = { colorscheme = { "habamax" } },
-  -- automatically check for plugin updates
-  checker = { enabled = true },
+  -- fetch plugin updates periodically; config/plugin_updates.lua installs them,
+  -- so the checker's own hit-enter "Plugin Updates" notification is disabled
+  checker = { enabled = true, notify = false },
 })
+
+-- After setup, so this VeryLazy autocmd runs after the one that starts the checker.
+require("config.plugin_updates").setup()
