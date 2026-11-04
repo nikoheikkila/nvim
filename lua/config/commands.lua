@@ -149,6 +149,12 @@ vim.api.nvim_create_user_command("ValeConfig", function()
   vim.cmd.edit(vim.fn.fnameescape(config))
 end, { desc = "Open the Vale configuration (.vale.ini) for editing" })
 
+-- `:Update` installs the latest release (`!`: even when already current); see
+-- config/updater.lua.
+vim.api.nvim_create_user_command("Update", function(opts)
+  require("config.updater").update({ force = opts.bang })
+end, { bang = true, desc = "Update this Neovim configuration to the latest release" })
+
 -- Rewrite only the exact bare commands; anything longer (`:qa`, `:xa`, `:wqa`,
 -- ranges, ...) fails the `getcmdline()` guard, falls through to Vim's default,
 -- and still quits Neovim.

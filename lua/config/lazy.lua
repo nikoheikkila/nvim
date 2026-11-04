@@ -34,3 +34,5 @@ require("lazy").setup({
 
 -- After setup, so this VeryLazy autocmd runs after the one that starts the checker.
 require("config.plugin_updates").setup()
+-- The daily "a new config release is available" check (`:Update` installs it).
+require("config.updater").setup()

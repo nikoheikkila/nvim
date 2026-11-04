@@ -81,7 +81,8 @@ printf '# {{title}}\n\nDate: {{date}}\n' > "$NVIM_CONFIG_ROOT/fixture-vault/fixt
 # recompute the same paths (and lsp_spec can prove the expansion happens at all).
 # The values are sentinels distinct from the real config.yml. Harper and Vale
 # values are sentinels too (lsp_spec otherwise only type-checks them), and so are
-# the searchReplace ratios search_replace_spec sizes the float against.
+# the searchReplace ratios search_replace_spec sizes the float against, and the
+# updates flag updater_spec reads (the opposite of the shipped default).
 cat > "$NVIM_CONFIG_ROOT/config.yml" <<'EOF'
 config:
   obsidian:
@@ -111,6 +112,8 @@ config:
   searchReplace:
     width: 0.5
     height: 0.6
+  updates:
+    checkOnStartup: false
 EOF
 
 # .vale.ini -- the fallback config lsp_spec asserts vale_ls was handed. Vale's

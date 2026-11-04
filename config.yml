@@ -92,6 +92,12 @@ config:
     # showMetrics: a word/sentence-count code lens. Inert until something calls
     # vim.lsp.codelens.refresh(); nothing here does.
     showMetrics: true
+  # Configuration updates. `:Update` installs the latest release; see
+  # docs/updating.md. This file is yours: an update never overwrites it.
+  updates:
+    # checkOnStartup: look for a new release at most once a day, in the
+    # background, and say so when there is one. It never installs anything.
+    checkOnStartup: true
   # Project-wide search & replace (grug-far.nvim, Space S). See docs/editing.md.
   searchReplace:
     # Size of the modal as a fraction of the editor (0 < ratio <= 1), border

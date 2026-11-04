@@ -63,6 +63,20 @@ release until it is listed. Nothing in the test suites catches that — they all
 it stages the tree exactly as CI's "Package artifact" step does, prints it, and asserts that every file
 `config/paths.lua` is asked for made it in. `--tree` prints the listing without the assertions.
 
+### Release version stamp and `:Update`
+
+`lua/config/version.lua` is `return { version = "dev" }` in the repository. The package job in
+`.github/workflows/ci.yml` overwrites the _staged_ copy with the release's CalVer tag, and Verify Release checks
+the stamp. Never commit a real version there. `"dev"` is what keeps a checkout out of the daily update check.
+
+`:Update` (`lua/config/updater.lua`, with the pure logic in `lib/update_utils.lua`) does what `scripts/install.sh`
+does, from inside the editor. It refuses any config directory that has a `.git`, so it can never replace this
+repository. The specs drive it through `updater.run(opts)` against temp dirs and a `file://` fixture tarball, with
+`latest` stubbed, so they never touch the network. An update replaces the whole directory except
+`update_utils.USER_FILES` and the Vale `StylesPath`. **A new user-editable root file must join `USER_FILES`**, or
+every update silently resets it. `updater_spec` fails when a `config_file("…")` name is missing from that list, and
+when `REPO`/`ASSET` drift from `scripts/install.sh` and `ci.yml`.
+
 ### Verifying a plugin loads
 
 `:checkhealth <plugin>` can report `No healthcheck found for "<plugin>" plugin` for a `keys`-lazy-loaded plugin that

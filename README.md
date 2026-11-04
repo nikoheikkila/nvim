@@ -33,6 +33,7 @@ The script installs the latest [release](https://github.com/nikoheikkila/nvim/re
 ## Documentation
 
 - [Installation](docs/installation.md) — requirements, quick install, manual install, optional tools
+- [Updating](docs/updating.md) — `:Update`, what an update keeps, rolling back, the daily update check
 - [Plugins](docs/plugins.md) — the plugin set and how to update it safely
 - [Theming](docs/theming.md) — pick and configure the color scheme via `theme.yml`
 - [Editing](docs/editing.md) — general shortcuts, search & replace, buffer tabs, multiple cursors

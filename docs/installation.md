@@ -45,6 +45,11 @@ few minutes and run it again, or use the [Manual Install](#manual-install-from-s
 Neovim only loads configuration from its standard locations, so a custom directory must be launched with
 `XDG_CONFIG_HOME` and `NVIM_APPNAME` pointing at it — the script prints the exact command when it finishes.
 
+## Updating
+
+Run <kbd>:Update</kbd> inside Neovim to install a newer release. See [Updating](updating.md) for what an update
+keeps, how to roll back, and the daily update check.
+
 ## Manual Install (From Source)
 
 1. **Back up any existing config**

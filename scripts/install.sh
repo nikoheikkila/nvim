@@ -216,6 +216,7 @@ else
 fi
 
 echo "Installation successful: $out"
+echo "Run :Update inside Neovim to install future releases."
 if [ "$config_home/$appname" != "${XDG_CONFIG_HOME:-$HOME/.config}/nvim" ]; then
   echo "Launch it with: XDG_CONFIG_HOME=\"$config_home\" NVIM_APPNAME=\"$appname\" nvim"
 fi

@@ -241,10 +241,18 @@ jobs:
 
       - name: Package artifact
         id: package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           stage="$RUNNER_TEMP/stage"
           mkdir -p "$stage"
           rsync -a --filter='merge .nvimignore' ./ "$stage/"
+
+          # Stamp the release into the staged copy only; the repository keeps the
+          # "dev" placeholder. `:Update` (lua/config/updater.lua) compares this
+          # against the latest tag, and refuses an archive whose stamp disagrees
+          # with the tag it downloaded.
+          printf 'return { version = "%s" }\n' "$VERSION" > "$stage/lua/config/version.lua"
 
           # The name is deliberately version-agnostic: it lets scripts/install.sh
           # download from releases/latest/download/ instead of resolving the asset
@@ -297,6 +305,17 @@ jobs:
           tar -xzf "artifact/${ARTIFACT}" -C "$config"
           mkdir -p "$HOME/.config"
           ln -sfn "$config" "$HOME/.config/nvim"
+
+      - name: Check version stamp
+        env:
+          VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          stamp="$RUNNER_TEMP/nvim-config/lua/config/version.lua"
+          cat "$stamp"
+          if ! grep -qF "\"$VERSION\"" "$stamp"; then
+            echo "::error::lua/config/version.lua in the artifact does not carry $VERSION"
+            exit 1
+          fi
 
       - name: Smoke-test install
         run: |
