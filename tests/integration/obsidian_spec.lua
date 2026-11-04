@@ -14,6 +14,31 @@ describe("plugins.obsidian", function()
   local cfg = obsidian_utils.resolve_config(yaml_utils.read_file(paths.config_file("config.yml")))
   local vault = vim.fn.expand(cfg.vault)
 
+  -- Delete `path` (file or directory) after wiping every buffer loaded from it
+  -- or from under it. A buffer left over a deleted file makes the next
+  -- :checktime, in whichever spec runs it, print E211 into the test report.
+  -- Paths are compared resolved: on macOS the temp dirs are reached through the
+  -- /var -> /private/var symlink, and buffer names may carry either spelling.
+  local function remove(path)
+    local root = vim.fs.normalize(vim.fn.resolve(path))
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      local name = vim.api.nvim_buf_get_name(buf)
+      local resolved = name ~= "" and vim.fs.normalize(vim.fn.resolve(name))
+      if resolved and (resolved == root or vim.startswith(resolved, root .. "/")) then
+        -- Swap an empty buffer into its windows first: wiping a buffer closes
+        -- the windows showing it, and closing a spec's last window closes the
+        -- tabpage it `:tcd`'d into, so later specs would run outside it.
+        for _, win in ipairs(vim.fn.win_findbuf(buf)) do
+          vim.api.nvim_win_call(win, function()
+            vim.cmd("enew!")
+          end)
+        end
+        vim.api.nvim_buf_delete(buf, { force = true })
+      end
+    end
+    vim.fn.delete(path, "rf")
+  end
+
   -- The merged spec opts, i.e. what setup() was handed.
   local function plugin_opts(name)
     local spec = require("lazy.core.config").plugins[name]
@@ -223,11 +248,7 @@ describe("plugins.obsidian", function()
 
     after_each(function()
       if outside_dir then
-        local scratch = vim.fn.bufnr(outside_dir .. "/scratch.txt")
-        if scratch ~= -1 then
-          vim.cmd("bwipeout! " .. scratch)
-        end
-        vim.fn.delete(outside_dir, "rf")
+        remove(outside_dir)
         outside_dir = nil
       end
       local picker = require("obsidian.picker")
@@ -237,16 +258,16 @@ describe("plugins.obsidian", function()
       vim.notify = orig_notify
       Obsidian.opts.notes_subdir = orig_subdir
       Obsidian.opts.templates.folder = orig_folder
-      vim.fn.delete(inbox, "rf")
-      vim.fn.delete(vault .. "/Meetings", "rf")
-      vim.fn.delete(vault .. "/empty-templates", "rf")
-      vim.fn.delete(vault .. "/" .. orig_folder .. "/image.png")
-      vim.fn.delete(vault .. "/" .. orig_folder .. "/Notes.md")
+      remove(inbox)
+      remove(vault .. "/Meetings")
+      remove(vault .. "/empty-templates")
+      remove(vault .. "/" .. orig_folder .. "/image.png")
+      remove(vault .. "/" .. orig_folder .. "/Notes.md")
     end)
 
     teardown(function()
       vim.cmd("tabclose! " .. vim.api.nvim_tabpage_get_number(tab))
-      vim.fn.delete(work)
+      remove(work)
       vim.fn.delete(cwd, "rf")
     end)
 
@@ -510,20 +531,11 @@ describe("plugins.obsidian", function()
     end)
 
     after_each(function()
-      -- Wipe the note buffer so it cannot outlive its deleted file.
-      for _, b in ipairs(vim.api.nvim_list_bufs()) do
-        if in_journal(vim.api.nvim_buf_get_name(b)) then
-          vim.cmd("bwipeout! " .. b)
-        end
-      end
-      vim.fn.delete(journal, "rf")
+      remove(journal)
     end)
 
     teardown(function()
-      -- Wiping the note buffer may already have closed the tab's last window.
-      if vim.api.nvim_tabpage_is_valid(tab) then
-        vim.cmd("tabclose! " .. vim.api.nvim_tabpage_get_number(tab))
-      end
+      vim.cmd("tabclose! " .. vim.api.nvim_tabpage_get_number(tab))
       vim.fn.delete(cwd, "rf")
     end)
 
