@@ -39,7 +39,11 @@ tasks:
     desc: Update LazyVim plugins
     generates:
       - lazy-lock.json
-    cmd: nvim --headless "+Lazy! update" +qa
+    ignore_error: true
+    cmds:
+      - nvim --headless "+Lazy! update" +qa
+      - git add lazy-lock.json
+      - "git commit -m 'chore: update plugins'"
 
   lint:
     desc: Lint codebase
