@@ -144,37 +144,37 @@ url_api = "https://api.github.com/repos/evilmartians/lefthook/releases/assets/63
 provenance = "github-attestations"
 
 [[tools.lua]]
-version = "5.1.5"
+version = "5.5.1"
 backend = "vfox:jdx/vfox-lua"
-specifiers = ["5.1.5"]
+specifiers = ["5.5.1"]
 
 [tools.lua."platforms.linux-arm64"]
-checksum = "sha256:2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333"
-url = "https://www.lua.org/ftp/lua-5.1.5.tar.gz"
+checksum = "sha256:1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce"
+url = "https://www.lua.org/ftp/lua-5.5.1.tar.gz"
 
 [tools.lua."platforms.linux-arm64-musl"]
-checksum = "sha256:2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333"
-url = "https://www.lua.org/ftp/lua-5.1.5.tar.gz"
+checksum = "sha256:1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce"
+url = "https://www.lua.org/ftp/lua-5.5.1.tar.gz"
 
 [tools.lua."platforms.linux-x64"]
-checksum = "sha256:2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333"
-url = "https://www.lua.org/ftp/lua-5.1.5.tar.gz"
+checksum = "sha256:1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce"
+url = "https://www.lua.org/ftp/lua-5.5.1.tar.gz"
 
 [tools.lua."platforms.linux-x64-musl"]
-checksum = "sha256:2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333"
-url = "https://www.lua.org/ftp/lua-5.1.5.tar.gz"
+checksum = "sha256:1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce"
+url = "https://www.lua.org/ftp/lua-5.5.1.tar.gz"
 
 [tools.lua."platforms.macos-arm64"]
-checksum = "sha256:2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333"
-url = "https://www.lua.org/ftp/lua-5.1.5.tar.gz"
+checksum = "sha256:1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce"
+url = "https://www.lua.org/ftp/lua-5.5.1.tar.gz"
 
 [tools.lua."platforms.macos-x64"]
-checksum = "sha256:2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333"
-url = "https://www.lua.org/ftp/lua-5.1.5.tar.gz"
+checksum = "sha256:1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce"
+url = "https://www.lua.org/ftp/lua-5.5.1.tar.gz"
 
 [tools.lua."platforms.windows-x64"]
-checksum = "sha256:2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333"
-url = "https://www.lua.org/ftp/lua-5.1.5.tar.gz"
+checksum = "sha256:1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce"
+url = "https://www.lua.org/ftp/lua-5.5.1.tar.gz"
 
 [[tools.markdownlint-cli2]]
 version = "0.24.1"
