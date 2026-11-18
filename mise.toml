@@ -48,8 +48,10 @@ prettier = "3.10.1"
 # and cached together with Lua. The explicit luarocks path keeps a Homebrew
 # luarocks from catching the install, and fails loudly if the plugin's own
 # LuaRocks build failed (it does not fail the Lua install by itself).
+#
+# renovate.json caps this below 5.2 so a "latest Lua" bump can't break it.
 [tools.lua]
-version = "5.5.1"
+version = "5.1.5"
 postinstall = '''
 "$MISE_TOOL_INSTALL_PATH/luarocks/bin/luarocks" install busted 2.3.0-1 \
   --tree "$MISE_TOOL_INSTALL_PATH/luarocks"'''

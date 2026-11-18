@@ -6,5 +6,13 @@
   "platformAutomerge": true,
   "automerge": true,
   "automergeType": "pr",
-  "automergeStrategy": "squash"
+  "automergeStrategy": "squash",
+  "packageRules": [
+    {
+      "description": "busted runs inside Neovim's LuaJIT, which speaks the Lua 5.1 ABI; see mise.toml",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["lua"],
+      "allowedVersions": "<5.2"
+    }
+  ]
 }
