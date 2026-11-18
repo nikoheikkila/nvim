@@ -34,7 +34,7 @@ zizmor = "1.32.0"
 vale = "3.27.0"
 
 # Node runs the npm-based tools below; mise installs it before them.
-node = "24.22.3"
+node = "26.13.1"
 markdownlint-cli2 = "0.24.1"
 prettier = "3.10.1"
 
