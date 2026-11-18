@@ -101,7 +101,7 @@ The first two wrap [Busted](https://lunarmodules.github.io/busted/) suites, conf
 project root; the third checks the shipped artifact rather than the code:
 
 - **Unit** (`task test:unit`) — `tests/unit/*_spec.lua`, one spec per `lua/lib/`
-  module. Pure Lua, runs under the plain `busted` binary (homebrew Lua, no Neovim). The `package.path`
+  module. Pure Lua, runs under the plain `busted` binary (mise's Lua 5.1, no Neovim). The `package.path`
   preamble in each spec makes `lib.*` importable without Neovim.
 - **Integration** (`task test:integration`) — `tests/integration/*_spec.lua`,
   the config-level contract: leader keys, the `:q`/`:x`/`:wq` abbreviations, global
@@ -149,22 +149,30 @@ Integration-suite mechanics worth knowing before writing specs:
 
 ### Install
 
+Every tool is pinned in `mise.toml`. From the checkout, trust the file once and install the toolchain:
+
 ```sh
-brew install luarocks
-luarocks install busted                    # unit suite (default homebrew Lua tree)
-luarocks --lua-version=5.1 install busted  # integration suite: Neovim's LuaJIT is 5.1-ABI (installs to ~/.luarocks)
-brew install selene   # or: cargo install selene
-brew install stylua   # or: cargo install stylua
+mise trust && mise install
 ```
 
-Verify: `busted --version`, `selene --version`, and `stylua --version`
+`task install` runs `mise install` too, through its `tools` dependency. That step is skipped in CI, where
+`jdx/mise-action` installs the tools instead. After pulling a changed `mise.toml`, re-running `task install` brings the
+tools back in sync. Verify with `mise ls`, `busted --version`, `selene --version`, and `stylua --version`.
+
+`mise install` also keeps `mise.lock` (download URLs and checksums per platform) and `.mise/locks/` (npm dependency
+locks) current. Commit them with every `mise.toml` change: `jdx/mise-action` installs with `--locked`, so CI fails on
+a tool the lock doesn't cover.
+
+Both suites use one Lua: 5.1, compiled from source by mise's `lua` plugin with LuaRocks bundled. The `lua` tool's
+`postinstall` installs busted into that bundled tree, and `mise.toml`'s `[env]` exports the tree as `BUSTED_ROCKS_TREE`.
 
 `selene` and `stylua` are standalone Rust binaries with no Lua/LuaRocks dependency — unlike a Lua-based linter or
 formatter, they can never break due to a local Lua-version mismatch.
 
-Do **not** set `lua = "luajit"` on the _default_ `.busted` task — the default rocks tree is not 5.1 and
-`busted.runner` won't resolve. The integration task instead points `lua` at `scripts/busted-nvim.sh`,
-which wires `LUA_PATH`/`LUA_CPATH` to the `~/.luarocks` 5.1 tree before exec'ing `nvim -l`.
+The unit task runs under mise's Lua 5.1 directly. The integration task points `lua` at `scripts/busted-nvim.sh`, which
+wires `LUA_PATH`/`LUA_CPATH` to `$BUSTED_ROCKS_TREE` (failing fast when unset) before exec'ing `nvim -l`. Don't set
+`lua = "luajit"` on the _default_ task: nothing installs a standalone LuaJIT, and luarocks cannot run under one
+(luarocks/luarocks#1797).
 
 ### Run
 
@@ -174,13 +182,12 @@ Lua formatting is StyLua (`stylua.toml`: 2-space indent, 120 columns — matchin
 `task format` from the CLI, format-on-save in the editor via conform.nvim (see `markdown.md`), and as an enforced
 `stylua --check` inside `task lint`, so CI fails on formatting drift — run `task format` before committing Lua changes.
 
-CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS as three jobs: `lint` runs
-`task lint`; `test` runs `task test:unit`; and `integration-test` installs a pinned Neovim release
-binary, a Lua 5.1 busted tree via the same leafo actions (exported to the shim as
-`BUSTED_ROCKS_TREE`), markdownlint-cli2, and the locked plugins (`task install` against
-a `~/.config/nvim` symlink to the checkout) before running `task test:integration` — plus a
-Linux-only rerun of the lint spec through `test-without-binary.sh` so the missing-binary guard path
-stays covered.
+CI (`.github/workflows/ci.yml`) runs both suites on Ubuntu and macOS. Jobs install their tools from `mise.toml` with
+`jdx/mise-action`, and Linux jobs first apt-install `libreadline-dev libncurses-dev` for the Lua build. `lint` runs
+`task lint`; `unit-test` runs `task test:unit`; and `integration-test` runs `task install` against a `~/.config/nvim`
+symlink to the checkout, then `task test:integration`, plus a Linux-only rerun of the lint spec through
+`scripts/test-without-binary.sh` so the missing-binary guard path stays covered. `verify-release` installs only Neovim
+(`install_args: neovim`).
 
 ### Verifying interactive/headless picker behavior
 

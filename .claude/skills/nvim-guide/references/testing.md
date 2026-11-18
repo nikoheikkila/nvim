@@ -24,8 +24,9 @@
   get the real `vim` API. See `scripts/busted-nvim.sh` and the `integration` task in `.busted`.
 - The rocks tree must be **Lua 5.1** (Neovim's LuaJIT ABI). Two traps, both hit in practice: the default
   homebrew tree (Lua 5.5) has C modules that cannot load into LuaJIT, and luarocks itself cannot parse
-  the luarocks.org manifest *under LuaJIT* (luarocks/luarocks#1797) — install with
-  `luarocks --lua-version=5.1 install busted` (PUC 5.1 builds are LuaJIT-ABI-compatible).
+  the luarocks.org manifest *under LuaJIT* (luarocks/luarocks#1797) — install busted into a PUC Lua 5.1 tree
+  (PUC 5.1 builds are LuaJIT-ABI-compatible). In this repo `mise.toml` does it: its Lua 5.1 tool's `postinstall`
+  installs busted into the bundled LuaRocks tree, exported as `BUSTED_ROCKS_TREE`.
 - **Never verify async behavior with a blind `vim.wait(ms)` sleep.** Prefer, in order: (1) synchronous
   seams — linter parsers are pure functions, `vim.diagnostic.set` renders immediately,
   `vim.system():wait()` blocks on real process exit; (2) `vim.wait` latched on a precise completion

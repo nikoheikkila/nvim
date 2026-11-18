@@ -8,6 +8,10 @@
 # lua/plugins/git.lua's `lazygit` guard or lua/plugins/picker.lua's `rg`
 # guard, without uninstalling the real binary.
 #
+# Run it with real tool directories ahead of mise's shims on PATH (a
+# mise-activated shell, `mise x --`, CI): a shim re-adds every tool's directory
+# to its child's PATH, including the hidden binary's.
+#
 # Usage: scripts/test-without-binary.sh <binary-name> -- <command> [args...]
 # Example:
 #   scripts/test-without-binary.sh rg -- \

@@ -11,39 +11,32 @@ documentation changes as pull requests against `main`.
 
 ## Prerequisites
 
-| Tool                                                        | Purpose                                                       |
-| ----------------------------------------------------------- | ------------------------------------------------------------- |
-| Neovim ≥ 0.12.4                                             | The editor itself; integration tests run inside it            |
-| [Task](https://taskfile.dev/)                               | Task runner — all lint/format/test commands go through it     |
-| [lefthook](https://github.com/evilmartians/lefthook)        | Git hooks (installed automatically by `task install`)         |
-| LuaRocks + [Busted](https://lunarmodules.github.io/busted/) | Test framework for both suites                                |
-| [selene](https://github.com/Kampfkarren/selene)             | Lua linter                                                    |
-| [StyLua](https://github.com/JohnnyMorganz/StyLua)           | Lua formatter (checked in CI — formatting drift fails `lint`) |
-| shellcheck                                                  | Shell-script linter                                           |
-| `markdownlint-cli2`                                         | Markdown linter (also used by the live-linting feature)       |
-| `prettier`                                                  | Markdown formatter (format-on-save inside the editor)         |
+Every tool is pinned in [`mise.toml`](mise.toml) and installed by [mise](https://mise.jdx.dev/). The only things you
+install yourself are mise and a C toolchain, because mise builds Lua from source: Xcode Command Line Tools on macOS,
+`build-essential libreadline-dev` on Debian/Ubuntu.
 
-On macOS with Homebrew:
+| Tool                                                                  | Purpose                                                                   |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Neovim                                                                | The editor itself, pinned in `mise.toml`; integration tests run inside it |
+| [Task](https://taskfile.dev/)                                         | Task runner — all lint/format/test commands go through it                 |
+| [lefthook](https://github.com/evilmartians/lefthook)                  | Git hooks (installed automatically by `task install`)                     |
+| Lua 5.1 + LuaRocks + [Busted](https://lunarmodules.github.io/busted/) | Test framework for both suites                                            |
+| [ripgrep](https://github.com/BurntSushi/ripgrep)                      | Needed by the search & replace and picker specs                           |
+| [selene](https://github.com/Kampfkarren/selene)                       | Lua linter                                                                |
+| [StyLua](https://github.com/JohnnyMorganz/StyLua)                     | Lua formatter (checked in CI — formatting drift fails `lint`)             |
+| shellcheck                                                            | Shell-script linter                                                       |
+| [jactionlint](https://github.com/jdx/jactionlint)                     | GitHub Actions workflow linter (maintained actionlint fork)               |
+| [zizmor](https://github.com/zizmorcore/zizmor)                        | GitHub Actions security linter                                            |
+| [Vale](https://vale.sh/)                                              | Prose linter; `task vale:sync` fetches its styles                         |
+| `markdownlint-cli2`                                                   | Markdown linter (also used by the live-linting feature)                   |
+| `prettier`                                                            | Markdown formatter (format-on-save inside the editor)                     |
 
-```sh
-brew install \
-    go-task \
-    lefthook \
-    luarocks \
-    selene \
-    stylua \
-    shellcheck \
-    markdownlint-cli2 \
-    prettier
+CI tests against the Neovim pinned in `mise.toml`, the latest stable release, while releases still promise Neovim
+≥ 0.12.4, the floor `scripts/install.sh` enforces. Avoid relying on newer APIs without raising that floor.
 
-luarocks install busted                    # unit suite (default Homebrew Lua tree)
-luarocks --lua-version=5.1 install busted  # integration suite (installs to ~/.luarocks)
-```
-
-Busted is installed **twice** on purpose: the unit suite runs under your regular Lua, while the integration
-suite runs inside Neovim, whose LuaJIT speaks the Lua 5.1 ABI, so it needs a 5.1 rocks tree.
-
-If you have suggestions on how to work around this, please share!
+Both suites share one Lua 5.1. The integration suite runs busted inside Neovim, whose LuaJIT speaks the Lua 5.1 ABI, and
+`lua/lib/` runs under that same LuaJIT in production. mise installs busted into that Lua's own LuaRocks tree and exports
+it as `BUSTED_ROCKS_TREE` for `scripts/busted-nvim.sh`.
 
 `selene` and `stylua` are standalone Rust binaries with no Lua dependency, so they never break on a local
 Lua-version mismatch.
@@ -59,13 +52,24 @@ Lua-version mismatch.
    cd ~/.config/nvim
    ```
 
-2. Install the plugins pinned by `lazy-lock.json` — this also installs the git hooks via lefthook:
+2. Install the pinned tools with mise:
+
+   ```sh
+   mise trust     # once: allow this repository's mise.toml
+   mise install   # every tool, including Lua 5.1 and busted
+   ```
+
+   Keep mise [activated](https://mise.jdx.dev/getting-started.html) in your shell: `task`, the tools, and the
+   `BUSTED_ROCKS_TREE` the integration suite needs only exist inside it, and the git hooks inherit its `PATH`.
+
+3. Run `task install` to keep the mise tools in sync, install the git hooks via lefthook, and fetch the plugins pinned
+   by `lazy-lock.json`:
 
    ```sh
    task install
    ```
 
-3. Verify your environment by running everything CI runs:
+4. Verify your environment by running everything CI runs:
 
    ```sh
    scripts/check.sh
@@ -85,17 +89,17 @@ User-facing documentation lives under [`docs/`](docs/) and ships with each relea
 
 ## Development Workflow
 
-| Command                 | What it does                                                     |
-| ----------------------- | ---------------------------------------------------------------- |
-| `task lint`             | selene + `stylua --check` + markdownlint-cli2 + shellcheck       |
-| `task format`           | StyLua + `markdownlint-cli2 --fix`                               |
-| `task test`             | The whole pipeline: unit, then integration, then package         |
-| `task test:unit`        | Pure-Lua specs for `lua/lib/` (no Neovim involved)               |
-| `task test:integration` | Specs running inside a fully-loaded headless Neovim              |
-| `task test:package`     | Stage the release tarball and check its contents                 |
-| `task install`          | Fetch plugins to match `lazy-lock.json` + install git hooks      |
-| `task vale:sync`        | Fetch the Vale style packages declared in `.vale.ini`            |
-| `scripts/check.sh`      | Everything CI runs, in CI's order — green here means green in CI |
+| Command                 | What it does                                                                       |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `task lint`             | selene + `stylua --check` + markdownlint-cli2 + shellcheck + jactionlint + zizmor  |
+| `task format`           | StyLua + `markdownlint-cli2 --fix`                                                 |
+| `task test`             | The whole pipeline: unit, then integration, then package                           |
+| `task test:unit`        | Pure-Lua specs for `lua/lib/` (no Neovim involved)                                 |
+| `task test:integration` | Specs running inside a fully-loaded headless Neovim                                |
+| `task test:package`     | Stage the release tarball and check its contents                                   |
+| `task install`          | Sync `mise.toml` tools, fetch plugins to match `lazy-lock.json`, install git hooks |
+| `task vale:sync`        | Fetch the Vale style packages declared in `.vale.ini`                              |
+| `scripts/check.sh`      | Everything CI runs, in CI's order — green here means green in CI                   |
 
 Pass arguments to a task after `--`, e.g. run a single spec file:
 

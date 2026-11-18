@@ -12,12 +12,15 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Supersede stale pull-request runs, but never cancel a push to main: that run
+  # ends in publish-release, and cancelling it can leave a release half done.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -26,34 +29,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Task
-        uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
-
-      - name: Install selene
-        env:
-          SELENE_VERSION: "0.31.0"
-        run: |
-          curl -sSLO "https://github.com/Kampfkarren/selene/releases/download/${SELENE_VERSION}/selene-${SELENE_VERSION}-linux.zip"
-          unzip -o "selene-${SELENE_VERSION}-linux.zip" -d "$RUNNER_TEMP/selene"
-          chmod +x "$RUNNER_TEMP/selene/selene"
-          echo "$RUNNER_TEMP/selene" >> "$GITHUB_PATH"
-
-      - name: Install StyLua
-        env:
-          STYLUA_VERSION: "v2.5.2"
-        run: |
-          curl -sSLO "https://github.com/JohnnyMorganz/StyLua/releases/download/${STYLUA_VERSION}/stylua-linux-x86_64.zip"
-          unzip -o "stylua-linux-x86_64.zip" -d "$RUNNER_TEMP/stylua"
-          chmod +x "$RUNNER_TEMP/stylua/stylua"
-          echo "$RUNNER_TEMP/stylua" >> "$GITHUB_PATH"
-
-      - name: Install markdownlint-cli2
-        run: npm install -g markdownlint-cli2 # zizmor: ignore[adhoc-packages] no lockfile for a global CLI tool
-
-      - name: Install shellcheck
+      # mise.toml's Lua 5.1 is compiled from source and links readline and
+      # ncurses, whose headers the Ubuntu runner image lacks. Only a mise cache
+      # miss needs them, but the step is too cheap to be worth skipping on a hit.
+      - name: Install Lua build dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck
+          sudo apt-get install -y libreadline-dev libncurses-dev
+
+      # Installs everything in mise.toml rather than a per-job subset, so no
+      # job's tool list can drift from it.
+      - name: Install tools
+        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
 
       - name: Lint
         run: task lint
@@ -61,92 +49,57 @@ jobs:
   unit-test:
     name: Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-    env:
-      # gh-actions-lua builds Lua from source on macOS via `brew install`,
-      # and the runner image's pre-tapped aws/tap trips a tap-trust warning.
-      # No-op on Linux; silences the warning without adding Homebrew of our own.
-      HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
-
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      - name: Set up Task
-        uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+      # See the lint job.
+      - name: Install Lua build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreadline-dev libncurses-dev
 
-      - name: Set up Lua
-        uses: leafo/gh-actions-lua@32909a2dea0a48c433aec79e7fcd31b4cd55800f # v13
-        with:
-          luaVersion: "5.4"
-          # Skip the action's Lua-build cache: it warns on the GitHub cache
-          # service's transient 400s, and this repo builds uncached elsewhere.
-          buildCache: "false"
-
-      - name: Set up LuaRocks
-        uses: leafo/gh-actions-luarocks@1c4a92caecc8f6850f673cbadfd57b3e555417ce # v6
-
-      - name: Install busted
-        run: luarocks install busted
+      - name: Install tools
+        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
 
       - name: Unit tests
         run: task test:unit
 
   # tests/integration/ runs real Busted inside a fully-loaded headless Neovim
-  # (see .busted's `integration` task and scripts/busted-nvim.sh). Lua 5.1 on
-  # purpose: Neovim's LuaJIT speaks the 5.1 ABI, and 5.1-built C modules load
-  # into it — while luarocks itself cannot parse the luarocks.org manifest
-  # under LuaJIT (luarocks/luarocks#1797).
+  # (see .busted's `integration` task and scripts/busted-nvim.sh), on mise.toml's
+  # Lua 5.1 (its comment says why it must be 5.1). mise-action exports the
+  # BUSTED_ROCKS_TREE the shim loads busted from.
   integration-test:
     name: Integration Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-    env:
-      BUSTED_ROCKS_TREE: ${{ github.workspace }}/.luarocks
-      # gh-actions-lua builds Lua from source on macOS via `brew install`,
-      # and the runner image's pre-tapped aws/tap trips a tap-trust warning.
-      # No-op on Linux; silences the warning without adding Homebrew of our own.
-      HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
-
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      - name: Set up Task
-        uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+      # See the lint job.
+      - name: Install Lua build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreadline-dev libncurses-dev
 
-      - name: Install Neovim
-        uses: ./.github/actions/install-neovim # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
-
-      - name: Install ripgrep
-        uses: ./.github/actions/install-ripgrep # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
-
-      - name: Set up Lua 5.1
-        uses: leafo/gh-actions-lua@32909a2dea0a48c433aec79e7fcd31b4cd55800f # v13
-        with:
-          luaVersion: "5.1"
-          # Skip the action's Lua-build cache: it warns on the GitHub cache
-          # service's transient 400s, and this repo builds uncached elsewhere.
-          buildCache: "false"
-
-      - name: Set up LuaRocks
-        uses: leafo/gh-actions-luarocks@1c4a92caecc8f6850f673cbadfd57b3e555417ce # v6
-
-      - name: Install busted
-        run: luarocks install busted
-
-      # Exercises the functional lint path; without it the suite would fall
-      # back to the missing-binary guard path.
-      - name: Install markdownlint-cli2
-        run: npm install -g markdownlint-cli2 # zizmor: ignore[adhoc-packages] no lockfile for a global CLI tool
+      # Includes markdownlint-cli2, which the lint spec's functional path needs;
+      # the last step hides it again to cover the missing-binary guard path.
+      - name: Install tools
+        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
 
       # The suite loads the real config: stdpath("config") must resolve to
       # this checkout, and the lazy-lock.json plugins must exist on disk.
@@ -173,6 +126,7 @@ jobs:
   package:
     name: Package
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [lint, unit-test, integration-test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'renovate[bot]'
     outputs:
@@ -282,11 +236,13 @@ jobs:
   verify-release:
     name: Verify Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [package]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          # Cone mode always checks out root-level files, so mise.toml comes along.
           sparse-checkout: .github/actions
           persist-credentials: false
 
@@ -294,7 +250,9 @@ jobs:
         uses: ./.github/actions/download-release-package # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
 
       - name: Install Neovim
-        uses: ./.github/actions/install-neovim # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
+        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          install_args: neovim
 
       - name: Extract artifact as Neovim config
         env:
@@ -333,6 +291,7 @@ jobs:
   publish-release:
     name: Publish Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [package, verify-release]
     permissions:
       contents: write # Needed to create the GitHub release and push its tag

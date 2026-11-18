@@ -16,7 +16,7 @@ const selene = (path) => run`selene ${path}`;
 const stylua = (path) => run`stylua --check ${path}`;
 const markdownLint = (path) => run`markdownlint-cli2 ${path}`;
 const shellCheck = (path) => run`shellcheck ${path}`;
-const actionlint = (path) => run`actionlint ${path}`;
+const actionlint = (path) => run`jactionlint ${path}`;
 const zizmor = (path) => run`zizmor --persona auditor ${path}`;
 
 // Each check emits machine-readable output: JSON where the tool supports it,

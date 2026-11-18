@@ -26,8 +26,8 @@
 
 ## Invariants
 
-- Tests run through `Taskfile.yml` — `task test` is `test:unit`, `test:integration`, `test:package`. Invoking
-  `busted` directly resolves the wrong rocks tree — see
+- Tests run through `Taskfile.yml` — `task test` is `test:unit`, `test:integration`, `test:package`. Invoking `busted`
+  directly skips `scripts/guard-worktree.sh`, and outside a mise-activated shell resolves the wrong rocks tree — see
   [`dev-workflow.md`](.claude/instructions/dev-workflow.md).
 - Don't edit the real `theme.yml`, `config.yml`, `.markdownlint.jsonc`, or `.vale.ini` to test or prove
   something. Integration specs read throwaway fixtures injected via `NVIM_CONFIG_ROOT`

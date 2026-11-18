@@ -48,8 +48,8 @@ matters most for Vale, whose error/warning severities would otherwise put an `E`
 
 `ensure_installed` is passed to mason-lspconfig **only when a UI is attached**
 (`#vim.api.nvim_list_uis() > 0`). Headless sessions — `task install`, CI, `busted-nvim.sh`, the headless
-verification scripts — must never trigger server downloads: CI would be slow and flaky, and `task install` is
-documented as fetching plugins only. Consequence: after `task install`, servers download on the **first
+verification scripts — must never trigger server downloads: CI would be slow and flaky, and `task install` only
+syncs `mise.toml`'s dev tools and fetches plugins. Consequence: after `task install`, servers download on the **first
 interactive launch** (mason shows progress; `:Mason` to inspect). Servers installed mid-session are enabled
 immediately, but already-open buffers may need `:edit` to attach.
 
@@ -63,8 +63,8 @@ shells out to, and `ast-grep` for grug-far's structural engines (see `plugins.md
 `scripts/install.sh`, which force-loads nvim-lspconfig and runs an explicit `:MasonInstall ast-grep`, then
 `:MasonInstall vale`, each in its own headless Neovim; `:MasonInstall` blocks in headless mode
 (`mason/api/command.lua` branches on `platform.is_headless`), so the `:ValeSync` in the same invocation runs
-with the CLI already on PATH. End-user setup is where downloads belong; `task install` still fetches plugins
-only.
+with the CLI already on PATH. End-user setup is where these downloads belong; `task install` still never
+installs mason packages.
 
 ## blink.cmp
 
@@ -100,8 +100,8 @@ supply. `ev.data` is guarded because a spec can fire `LspAttach` synthetically w
 
 `config/folding.lua` owns the shared UX (`<Tab>` toggle, the `▼`/`▶` `statuscolumn` indicator, click-to-toggle)
 that markdown reuses with its own foldexpr — see `config.md` and `markdown.md`. Requires Neovim ≥ 0.11 for
-`vim.lsp.foldexpr`/`foldtext` (0.12.4 here); LSP folds populate after the server answers, so they may appear a
-beat after attach.
+`vim.lsp.foldexpr`/`foldtext` (`mise.toml` pins the version here); LSP folds populate after the server answers, so
+they may appear a beat after attach.
 
 ## Keymaps (buffer-local, registered on `LspAttach`)
 

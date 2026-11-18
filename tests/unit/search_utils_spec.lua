@@ -1,5 +1,4 @@
--- Run with: busted
--- Requires: brew install luarocks && luarocks install busted
+-- Run with: task test:unit
 
 package.path = "./lua/?.lua;./lua/?/init.lua;" .. package.path
 

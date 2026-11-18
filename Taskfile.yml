@@ -8,6 +8,12 @@ vars:
 
 tasks:
 
+  tools:
+    desc: Install the development tools pinned in mise.toml
+    # jdx/mise-action owns tool installs in CI (.github/workflows/ci.yml).
+    if: '{{ eq .CI "false" }}'
+    cmd: mise install
+
   hooks:
     if: '{{ eq .CI "false" }}'
     sources:
@@ -18,7 +24,11 @@ tasks:
     cmd: lefthook install
 
   install:
-    desc: Install LazyVim plugins
+    desc: Install development tools and LazyVim plugins
+    # `deps`, not a cmd: Task runs deps before the `sources` up-to-date check,
+    # so the tools stay in sync even when lazy-lock.json is unchanged.
+    deps:
+      - task: tools
     sources:
       - lazy-lock.json
     cmds:
@@ -28,9 +38,9 @@ tasks:
   vale:sync:
     desc: Download the Vale style packages declared in .vale.ini
     # The developer-clone equivalent of the Vale step in scripts/install.sh.
-    # Deliberately outside `install`, which is documented as fetching plugins
-    # only and must stay download-free (the headless guard in plugins/lsp.lua).
-    if: command -v vale
+    # Deliberately outside `install`, which syncs mise.toml's dev tools and
+    # fetches plugins but never downloads editor-side packages (the headless
+    # guard in plugins/lsp.lua).
     sources:
       - .vale.ini
     cmd: vale --config .vale.ini sync
@@ -68,7 +78,6 @@ tasks:
 
   lint:lua:
     desc: Lint Lua sources and tests
-    if: command -v stylua && command -v selene
     sources:
       - ./**/*.lua
     cmds:
@@ -77,7 +86,6 @@ tasks:
 
   lint:md:
     desc: Lint Markdown files
-    if: command -v markdownlint-cli2
     sources:
       - ./**/*.md
     # "!vale-styles/**" excludes the third-party style packages `task vale:sync`
@@ -86,10 +94,9 @@ tasks:
 
   lint:shell:
     desc: Lint Shell scripts
-    if: command -v shellcheck
     sources:
       - ./**/*.sh
-    cmd: '{{if .CLI_ARGS}}shellcheck {{ .CLI_ARGS }}{{else}}find . -type f -name "*.sh" -exec shellcheck {} \;{{end}}'
+    cmd: '{{if .CLI_ARGS}}shellcheck {{ .CLI_ARGS }}{{else}}find . -type f -name "*.sh" -exec shellcheck {} +{{end}}'
 
   lint:ci:
     desc: Lint GitHub Actions workflows
@@ -100,28 +107,27 @@ tasks:
       - task: zizmor
 
   actionlint:
-    desc: Run actionlint
-    if: command -v actionlint
-    cmd: actionlint
+    desc: Run jactionlint, the maintained actionlint fork
+    cmd: jactionlint
 
   zizmor:
     desc: Run zizmor
-    if: command -v zizmor
-    cmd: zizmor --persona auditor .
-    env:
-      GITHUB_TOKEN:
-        sh: '[[ -n "$GITHUB_TOKEN" ]] && echo "$GITHUB_TOKEN" || gh auth token'
+    # Online audits use $GITHUB_TOKEN (set in CI) or the gh CLI's token. With
+    # neither, the variable must be unset, not empty: zizmor then runs its
+    # offline audits, while an empty token is a hard error.
+    cmd: |
+      token="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}"
+      if [ -n "$token" ]; then export GITHUB_TOKEN="$token"; else unset GITHUB_TOKEN; fi
+      zizmor --persona auditor .
 
   format:lua:
     desc: Format Lua sources and tests
-    if: command -v stylua
     sources:
       - ./**/*.lua
     cmd: stylua {{ .CLI_ARGS | default "." }}
 
   format:md:
     desc: Fix auto-fixable Markdown lint issues
-    if: command -v markdownlint-cli2
     sources:
       - ./**/*.md
     cmd: markdownlint-cli2 --fix {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}"**/*.md" "!vale-styles/**"{{end}}
@@ -132,12 +138,10 @@ tasks:
 
   test:unit:
     desc: Run unit tests
-    if: command -v busted
     cmd: busted --run=unit {{ .CLI_ARGS | default "" }}
 
   test:integration:
     desc: Run integration tests
-    if: command -v busted
     # Fails the run if a spec changed the working tree -- some plugins under
     # test write files (grug-far's Replace), and an unconfined spec rewrites
     # this repository. See scripts/guard-worktree.sh.

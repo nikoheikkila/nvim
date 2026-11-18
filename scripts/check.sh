@@ -8,6 +8,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Use mise.toml's tools with their real install directories first on PATH, as
+# jdx/mise-action does in CI, whatever the calling shell has. Shims would defeat
+# test-without-binary.sh below: a mise shim re-adds every tool's directory to
+# its child's PATH, including the one being hidden.
+eval "$(mise env -s bash)"
+
 echo "== Lint =="
 task lint
 

@@ -1,0 +1,61 @@
+# Development tools for this repository: the linters, formatters and test
+# runners Taskfile.yml calls, and the Neovim the integration suite boots.
+# `task install` installs them locally (through its `tools` dependency); CI
+# installs the same set with jdx/mise-action. Renovate bumps the exact pins.
+#
+# Deliberately not listed: the language servers and CLIs mason installs for the
+# editor itself (lua/config/lsp_servers.lua, lua/plugins/lsp.lua), and anything
+# a release needs -- scripts/install.sh is plain POSIX sh for end users and
+# never uses mise.
+
+[settings]
+# mise.lock pins every tool's download URL and checksum per platform (with
+# npm dependency locks under .mise/locks), and mise-action installs with
+# --locked because it exists. Set here so `mise install` keeps it current for
+# every contributor, not just those with a global `lockfile = true`.
+lockfile = true
+
+[tools]
+task = "3.54.0"
+lefthook = "2.2.2"
+
+# The editor under test, plus ripgrep for the search & replace and picker specs.
+neovim = "0.12.6"
+ripgrep = "15.2.0"
+
+stylua = "2.6.0"
+# Not in mise's registry, so it comes straight from GitHub releases. The
+# release zip drops the executable bit, which `rename_exe` restores.
+"github:Kampfkarren/selene" = { version = "0.32.0", rename_exe = "selene" }
+shellcheck = "0.11.0"
+# The maintained actionlint fork; it ships only a `jactionlint` executable.
+jactionlint = "2.6.0"
+zizmor = "1.32.0"
+vale = "3.27.0"
+
+# Node runs the npm-based tools below; mise installs it before them.
+node = "24.22.3"
+markdownlint-cli2 = "0.24.1"
+prettier = "3.10.1"
+
+# One Lua for both busted suites, and it has to be 5.1: the integration suite
+# runs busted inside Neovim's LuaJIT, which speaks the 5.1 ABI, so busted's C
+# modules must be built against 5.1 -- and lua/lib runs under that LuaJIT in
+# production, so the unit suite tests the semantics it ships with.
+#
+# The lua plugin compiles from source (needs a C compiler and readline headers)
+# and bundles LuaRocks. busted goes into that bundled tree, so it is installed
+# and cached together with Lua. The explicit luarocks path keeps a Homebrew
+# luarocks from catching the install, and fails loudly if the plugin's own
+# LuaRocks build failed (it does not fail the Lua install by itself).
+[tools.lua]
+version = "5.1.5"
+postinstall = '''
+"$MISE_TOOL_INSTALL_PATH/luarocks/bin/luarocks" install busted 2.3.0-1 \
+  --tree "$MISE_TOOL_INSTALL_PATH/luarocks"'''
+
+[env]
+# The Lua 5.1 rocks tree scripts/busted-nvim.sh loads busted from inside
+# Neovim. Guarded because `tools.lua` is undefined until `mise install` has
+# built Lua -- unguarded, every mise command in a fresh clone errors out.
+BUSTED_ROCKS_TREE = { value = "{% if tools.lua is defined %}{{ tools.lua.path }}/luarocks{% endif %}", tools = true }
