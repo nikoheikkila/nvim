@@ -35,7 +35,7 @@ vale = "3.28.1"
 
 # Node runs the npm-based tools below; mise installs it before them.
 node = "26.13.1"
-markdownlint-cli2 = "0.24.1"
+markdownlint-cli2 = "0.24.2"
 prettier = "3.10.1"
 
 # One Lua for both busted suites, and it has to be 5.1: the integration suite
