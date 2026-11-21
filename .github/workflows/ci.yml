@@ -41,7 +41,7 @@ jobs:
       # Installs everything in mise.toml rather than a per-job subset, so no
       # job's tool list can drift from it.
       - name: Install tools
-        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
 
       - name: Lint
         run: task lint
@@ -67,7 +67,7 @@ jobs:
           sudo apt-get install -y libreadline-dev libncurses-dev
 
       - name: Install tools
-        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
 
       - name: Unit tests
         run: task test:unit
@@ -99,7 +99,7 @@ jobs:
       # Includes markdownlint-cli2, which the lint spec's functional path needs;
       # the last step hides it again to cover the missing-binary guard path.
       - name: Install tools
-        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
 
       # The suite loads the real config: stdpath("config") must resolve to
       # this checkout, and the lazy-lock.json plugins must exist on disk.
@@ -250,7 +250,7 @@ jobs:
         uses: ./.github/actions/download-release-package # zizmor: ignore[self-repository] local composite action in this repo, not a third-party ref
 
       - name: Install Neovim
-        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           install_args: neovim
 
