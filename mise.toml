@@ -21,7 +21,7 @@ lefthook = "2.2.2"
 
 # The editor under test, plus ripgrep for the search & replace and picker specs.
 neovim = "0.12.6"
-ripgrep = "15.2.0"
+ripgrep = "16.0.0"
 
 stylua = "2.6.0"
 # Not in mise's registry, so it comes straight from GitHub releases. The
