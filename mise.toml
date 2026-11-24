@@ -17,7 +17,7 @@ lockfile = true
 
 [tools]
 task = "3.54.0"
-lefthook = "2.2.2"
+lefthook = "2.2.3"
 
 # The editor under test, plus ripgrep for the search & replace and picker specs.
 neovim = "0.12.6"
