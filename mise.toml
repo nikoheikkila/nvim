@@ -31,7 +31,7 @@ shellcheck = "0.11.0"
 # The maintained actionlint fork; it ships only a `jactionlint` executable.
 jactionlint = "2.6.0"
 zizmor = "1.33.1"
-vale = "3.28.1"
+vale = "3.29.0"
 
 # Node runs the npm-based tools below; mise installs it before them.
 node = "26.13.1"
