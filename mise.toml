@@ -29,7 +29,7 @@ stylua = "2.6.0"
 "github:Kampfkarren/selene" = { version = "0.32.0", rename_exe = "selene" }
 shellcheck = "0.11.0"
 # The maintained actionlint fork; it ships only a `jactionlint` executable.
-jactionlint = "2.6.0"
+jactionlint = "v2.7.0"
 zizmor = "1.33.1"
 vale = "3.29.0"
 
